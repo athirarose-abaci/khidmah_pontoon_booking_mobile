@@ -1,31 +1,31 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Colors } from '../../constants/customStyles';
-import { BlurView } from '@react-native-community/blur';
 
-export default function LoginComponent({ setCurrentScreen }) {
+const { width, height } = Dimensions.get('window');
+
+const LoginComponent = ({ setCurrentScreen }) => {
   const [email, setEmail] = useState('');
 
   return (
-    <View style={styles.wrapper}>
-      <BlurView
-        style={styles.blurContainer}
-        blurType="light"   // options: 'light', 'dark', 'xlight'
-        blurAmount={2}    // increase for stronger glass effect
-        reducedTransparencyFallbackColor="white"
-      />
-
-      <View style={styles.content}>
+    <View style={styles.screen}>
+      <LiquidGlassView
+        blurAmount={25}                      
+        color="rgba(255,255,255,0.15)"       
+        borderRadius={30}                    
+        style={styles.glassContainer}
+      >
         <Text style={styles.title}>Login</Text>
         <Text style={styles.subTitle}>Sign in to manage reservations.</Text>
 
         <View style={styles.inputRow}>
-          <Ionicons name="mail-outline" size={22} color={Colors.secondary} style={{ marginRight: 15 }} />
+          <Ionicons name="mail-open-outline" size={22} color={Colors.primary} style={{ marginRight: 15 }} />
           <TextInput
             placeholder="Email Address"
-            placeholderTextColor={Colors.input_placeholder}
+            placeholderTextColor={Colors.font_gray}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -42,67 +42,96 @@ export default function LoginComponent({ setCurrentScreen }) {
           <LinearGradient
             colors={['#75C8AD', '#61C8D5']}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            end={{ x: 0, y: 1 }}
             style={styles.btnGradient}
           >
             <Text style={styles.btnText}>Login with OTP</Text>
           </LinearGradient>
         </TouchableOpacity>
-      </View>
+      </LiquidGlassView>
+      <TouchableOpacity
+        onPress={() => setCurrentScreen('register')}
+        style={styles.newUserContainer}
+      >
+        <Text style={styles.newUserText}>
+          New User? <Text style={styles.createAccountText}>Create an Account</Text>
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
+export default LoginComponent;
+
 const styles = StyleSheet.create({
-  wrapper: {
+  screen: {
     flex: 1,
-    borderRadius: 35,
-    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  blurContainer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // translucent overlay
-    borderRadius: 35,
+  glassContainer: {
+    width: width * 0.9,              
+    paddingVertical: height * 0.04,
+    paddingHorizontal: width * 0.08,
+    borderRadius: 30,
+    overflow: 'hidden',         
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)', 
+    borderLeftWidth: 2,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',    
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
     color: Colors.white,
   },
   subTitle: {
     fontSize: 14,
-    color: Colors.white,
+    color: Colors.primary,
     marginTop: 4,
-    marginBottom: 24,
+    marginBottom: 34,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: Colors.white,
   },
   input: {
     flex: 1,
     color: Colors.white,
     fontSize: 16,
     borderBottomWidth: 1,
-    borderColor: Colors.white,
+    borderColor: Colors.border_line,
     paddingBottom: 8,
   },
   btnGradient: {
     paddingVertical: 14,
-    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 45,
+    marginTop: 25,
     width: '75%',
     alignSelf: 'center',
+    borderRadius: 12,
+    borderLeftWidth: 2,
+    borderRightWidth: 1,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.95)', 
   },
   btnText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Poppins-Regular'
+  },
+  newUserContainer: {
+    marginTop: 20,
+  },
+  newUserText: {
+    color: Colors.font_gray,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+  },
+  createAccountText: {
+    color: Colors.primary,
+    fontFamily: 'Poppins-Medium',
+    fontWeight: 'bold',
   },
 });

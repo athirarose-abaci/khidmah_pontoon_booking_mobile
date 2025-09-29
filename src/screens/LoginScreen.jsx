@@ -35,7 +35,7 @@ export default function LoginScreen() {
       />
       <View style={styles.main_container}>
         <BackgroundImage>
-          <View style={styles.logo_container}>
+          <View style={[styles.logo_container, currentScreen === 'register' && {marginTop: -25, marginBottom: 35}, currentScreen === 'otp' && {marginTop: -10, marginBottom: 15}]}>
             <Image
               source={require('../assets/images/logo.png')}
               style={styles.logo}
@@ -77,32 +77,15 @@ const styles = StyleSheet.create({
     height: '38%',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingBottom: 10,
+    marginTop: 15,
   },
   logo: { width: 200, height: 100, resizeMode: 'contain' },
   form_container: {
     width: '100%',
     height: '45%',
     backgroundColor: 'transparent',
-    padding: 20
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginTop: 15
   },
-  // container: {
-  //   flex: 1,
-  //   padding: 24,
-  //   justifyContent: 'center',
-  //   backgroundColor: '#fff',
-  // },
-  // title: {
-  //   fontSize: 32,
-  //   fontWeight: 'bold',
-  //   marginBottom: 24,
-  //   textAlign: 'center',
-  // },
-  // input: {
-  //   borderWidth: 1,
-  //   borderColor: '#ccc',
-  //   borderRadius: 6,
-  //   padding: 12,
-  //   marginBottom: 16,
-  // },
 });
