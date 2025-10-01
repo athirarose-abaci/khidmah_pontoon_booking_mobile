@@ -34,8 +34,8 @@ const TicketsTabs = () => {
 }
 const ProfileTabs = () => {
     return(
-        <Stack.Navigator initialRouteName="Profile">
-            <Stack.Screen name="Profile" component={ProfileScreen} options={{headerShown: false}}/>
+        <Stack.Navigator initialRouteName="ProfileHome">
+            <Stack.Screen name="ProfileHome" component={ProfileScreen} options={{headerShown: false}}/>
         </Stack.Navigator>
     )
 }

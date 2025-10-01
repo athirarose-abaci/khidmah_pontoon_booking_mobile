@@ -1,17 +1,56 @@
-import { StatusBar, StyleSheet, Text, View, TouchableOpacity, TextInput, } from 'react-native';
-import React, { useState } from 'react';
+import { StatusBar, StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, ActivityIndicator, } from 'react-native';
+import React, { useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/customStyles';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { Lucide } from '@react-native-vector-icons/lucide';
 import SubTabBar from '../components/tab_bars/SubTabBar';
+import CalendarModal from '../components/modals/CalendarModal';
+import { bookingsData } from '../constants/dummyData';
+import NoDataLottie from '../components/lottie/NoDataLottie';
+import MyBookingsCard from '../components/cards/MyBookingsCard';
+import useTabBarScroll from '../hooks/useTabBarScroll';
+import CreateButton from '../components/CreateButton';
 
 const MyBookingsScreen = () => {
   const [activeTab, setActiveTab] = useState('All');
+  const tabs = ['All','Checked In', 'Confirmed', 'Checked Out'];
 
-  const tabs = ['Checked In', 'All', 'Upcoming', 'Completed'];
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const selectedDateRef = useRef(null);
+
+  const { onScroll, insets } = useTabBarScroll();
+
+  // Filter bookings based on active tab
+  const getFilteredBookings = () => {
+    if (activeTab === 'All') {
+      return bookingsData;
+    }
+    
+    return bookingsData.filter(booking => {
+      if (activeTab === 'Checked In') {
+        return booking.status === 'Checked In';
+      }
+      if (activeTab === 'Confirmed') {
+        return booking.status === 'Confirmed';
+      }
+      if (activeTab === 'Checked Out') {
+        return booking.status === 'Checked Out';
+      }
+      return true;
+    });
+  };
+
+  const filteredBookings = getFilteredBookings();
+
+  const handleCreateBooking = () => {
+    // Add your navigation or action here
+    console.log('Create new booking');
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
       <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
       <View style={styles.main_container}>
         <View style={styles.header_container}>
@@ -34,17 +73,72 @@ const MyBookingsScreen = () => {
               placeholderTextColor={Colors.primary}
             />
           </View>
-          <TouchableOpacity activeOpacity={0.8} style={styles.date_button}>
-            <Ionicons name="calendar-outline" size={23} color={Colors.white} />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.date_button}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={27} color={Colors.white} />
           </TouchableOpacity>
         </View>
 
-        <SubTabBar 
-          tabs={tabs} 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+        <SubTabBar
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
+        <View style={styles.booking_card_list}>
+          {filteredBookings.length === 0 ? (
+            <View style={styles.noDataContainer}>
+              <NoDataLottie
+                isDarkMode={false}
+                refreshControl={() => {}}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredBookings}
+              keyExtractor={item => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 280 }}
+              renderItem={({ item }) => (
+                <View style={styles.sectionContainer}>
+                  <MyBookingsCard item={item} />
+                </View>
+              )}
+              refreshing={false}
+              onRefresh={() => {}}
+              onEndReachedThreshold={0.01}
+              onEndReached={() => {
+                // pagination logic here if needed
+              }}
+              ListFooterComponent={
+                false ? (
+                  <View style={{ paddingVertical: 20 }}>
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  </View>
+                ) : null
+              }
+              onScroll={onScroll}
+              scrollEventThrottle={16}
+            />
+          )}
+        </View>
       </View>
+      <CalendarModal
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        selectedDateRef={selectedDateRef}
+        onRangeSelected={newSelection => setShowDatePicker(false)}
+      />
+      <CreateButton
+        onPress={handleCreateBooking}
+        icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
+        bottom={90 + insets.bottom}
+        right={26}
+      />
     </SafeAreaView>
   );
 };
@@ -63,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 28,
+    paddingHorizontal: 26,
     paddingVertical: 20,
     marginTop: 40,
   },
@@ -78,7 +172,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 15,
-    paddingHorizontal: 28,
+    paddingHorizontal: 26,
     backgroundColor: 'transparent',
   },
   search_bar: {
@@ -120,5 +214,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
+  },
+  booking_card_list: {
+    paddingHorizontal: 26,
+  },
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 500,
+    paddingVertical: 50,
   },
 });

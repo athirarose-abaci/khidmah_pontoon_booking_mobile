@@ -45,11 +45,11 @@ export default SubTabBar;
 const styles = StyleSheet.create({
   container: {
     marginTop: 5,
-    marginBottom: 6,
+    marginBottom: 8,
     backgroundColor: 'transparent',
+    paddingHorizontal: 28,
   },
   tabs_container: {
-    paddingHorizontal: 28,
     flexDirection: 'row',
     alignItems: 'center',
   },

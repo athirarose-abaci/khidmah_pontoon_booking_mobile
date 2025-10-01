@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 
-const BackgroundImage = ({ children }) => (
+const BackgroundImage = ({ children, source, resizeMode = 'cover' }) => (
   <View style={styles.container}>
     <Image
-            source={require('../assets/images/login_bg.png')}
-            style={styles.backgroundImage}
-
-      resizeMode="cover"
+      source={source}
+      style={styles.backgroundImage}
+      resizeMode={resizeMode}
     />
     {children}
   </View>

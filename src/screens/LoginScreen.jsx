@@ -34,7 +34,7 @@ export default function LoginScreen() {
         barStyle="light-content"
       />
       <View style={styles.main_container}>
-        <BackgroundImage>
+        <BackgroundImage source={require('../assets/images/login_bg.png')}>
           <View style={[styles.logo_container, currentScreen === 'register' && {marginTop: -25, marginBottom: 35}, currentScreen === 'otp' && {marginTop: -10, marginBottom: 15}]}>
             <Image
               source={require('../assets/images/logo.png')}
