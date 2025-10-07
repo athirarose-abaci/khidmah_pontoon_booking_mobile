@@ -2,51 +2,41 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 
 const BoatDetailsTab = ({ bookingData }) => {
   return (
-    <ScrollView 
-      style={styles.container} 
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 20 }}
-    >
-      {/* Booking Details Section */}
-      <View style={styles.section}>
-        <View style={styles.bookingHeader}>
-          <View style={styles.bookingHeaderLeft}>
-            <Text style={styles.bookingTitle}>Booking Details</Text>
-            <Text style={styles.bookingId}>#{bookingData.bookingId || bookingData.id}</Text>
-          </View>
-          <View style={styles.actionButtons}>
-            <View style={styles.bookingHeaderVerticalDivider} />
-            <TouchableOpacity style={styles.checkInButton}>
-              <Image source={require('../../assets/images/clock_in.png')} style={styles.checkInIcon} />
-              <Text style={styles.checkInText}>Check-in</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.editButton}>
-              <Ionicons name="pencil" size={16} color={Colors.font_gray} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteButton}>
-              <Ionicons name="trash" size={16} color="#FF4444" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
+    <View style={styles.container}>
       {/* Boat Details Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Boat Details</Text>
         <View style={styles.boatCard}>
-          <Image source={bookingData.image} style={styles.boatImage} />
-          <View style={styles.boatInfo}>
-            <Text style={styles.boatName}>{bookingData.title}</Text>
-            <View style={styles.boatDetails}>
-              <View style={styles.capacityContainer}>
-                <Ionicons name="people" size={16} color={Colors.primary} />
-                <Text style={styles.capacityText}>{bookingData.capacity}</Text>
+          <View style={styles.cardHeaderContainer}>
+            <View style={styles.cardHeaderIconContainer}>
+              <View style={styles.cardHeaderIcon}>
+                <Ionicons name="boat" size={23} color={Colors.white} />
               </View>
-              <Text style={styles.boatReg}>Boat Reg.No {bookingData.boatId}</Text>
-              <Text style={styles.boatSize}>Boat Size {bookingData.size}</Text>
+            </View>
+            <Text style={styles.cardHeaderText}>Boat Details</Text>
+          </View>
+          <View style={styles.cardHeaderSeparator} />
+          <View style={styles.boatContent}>
+            <Image source={bookingData.image} style={styles.boatImage} />
+            <View style={styles.boatInfo}>
+              <Text style={styles.boatName}>{bookingData.title}</Text>
+              <View style={styles.boatDetails}>
+                <View style={styles.capacityContainer}>
+                  <Image source={require('../../assets/images/capacity.png')} style={styles.capacityIcon} />
+                  <Text style={styles.capacityText}>{bookingData.capacity}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Boat Reg.No</Text>
+                  <Text style={styles.detailValue}>{bookingData.boatId}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Boat Size</Text>
+                  <Text style={styles.detailValue}>{bookingData.size}</Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -54,42 +44,74 @@ const BoatDetailsTab = ({ bookingData }) => {
 
       {/* Chartered Information Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Chartered Information Details</Text>
         <View style={styles.chartererCard}>
-          <View style={styles.chartererRow}>
-            <Text style={styles.chartererLabel}>Full Name</Text>
-            <Text style={styles.chartererValue}>{bookingData.charterer.name}</Text>
+          <View style={styles.cardHeaderContainer}>
+              <View style={styles.cardHeaderIconContainer}>
+                <View style={styles.cardHeaderIcon}>
+                  <Image source={require('../../assets/images/person_pin.png')} style={styles.cardHeaderImage} />
+                </View>
+              </View>
+            <Text style={styles.cardHeaderText}>Chartered Information Details</Text>
           </View>
-          <View style={styles.chartererRow}>
-            <Text style={styles.chartererLabel}>Phone Number</Text>
-            <Text style={styles.chartererValue}>{bookingData.charterer.phone}</Text>
-          </View>
-          <View style={styles.chartererRow}>
-            <Text style={styles.chartererLabel}>Email</Text>
-            <Text style={styles.chartererValue}>{bookingData.charterer.email}</Text>
+          <View style={styles.cardHeaderSeparator} />
+          <View style={styles.chartererContent}>
+            <View style={styles.chartererRow}>
+              <View style={styles.chartererLeftColumn}>
+                <View style={styles.chartererDetailColumn}>
+                  <Text style={styles.detailLabel}>Full Name</Text>
+                  <Text style={styles.detailValue}>{bookingData.charterer.name}</Text>
+                </View>
+                <View style={styles.chartererDetailColumn}>
+                  <Text style={styles.detailLabel}>Email</Text>
+                  <Text style={styles.detailValue}>{bookingData.charterer.email}</Text>
+                </View>
+              </View>
+              <View style={styles.chartererRightColumn}>
+                <View style={styles.chartererDetailColumn}>
+                  <Text style={styles.detailLabel}>Phone Number</Text>
+                  <Text style={styles.detailValue}>{bookingData.charterer.phone}</Text>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
       </View>
 
       {/* Date and Time Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Date and Time</Text>
         <View style={styles.dateTimeCard}>
-          <View style={styles.dateTimeRow}>
-            <Text style={styles.dateTimeLabel}>Arrival</Text>
-            <Text style={styles.dateTimeValue}>
-              {bookingData.arrivalDate} {bookingData.arrivalTime}
-            </Text>
+          <View style={styles.cardHeaderContainer}>
+              <View style={styles.cardHeaderIconContainer}>
+                <View style={styles.cardHeaderIcon}>
+                  <Ionicons name="calendar-outline" size={20} color={Colors.white} />
+                </View>
+              </View>
+            <Text style={styles.cardHeaderText}>Date and Time</Text>
           </View>
-          <View style={styles.dateTimeRow}>
-            <Text style={styles.dateTimeLabel}>Departure</Text>
-            <Text style={styles.dateTimeValue}>
-              {bookingData.departureDate} {bookingData.departureTime}
-            </Text>
+          <View style={styles.cardHeaderSeparator} />
+          <View style={styles.dateTimeContent}>
+            <View style={styles.dateTimeRow}>
+              <View style={styles.dateTimeLeftColumn}>
+                <View style={styles.dateTimeDetailColumn}>
+                  <Text style={styles.detailLabel}>Arrival</Text>
+                  <Text style={styles.detailValue}>
+                    {bookingData.arrivalDate} {bookingData.arrivalTime}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.dateTimeRightColumn}>
+                <View style={styles.dateTimeDetailColumn}>
+                  <Text style={styles.detailLabel}>Departure</Text>
+                  <Text style={styles.detailValue}>
+                    {bookingData.departureDate} {bookingData.departureTime}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -98,196 +120,166 @@ export default BoatDetailsTab;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
   },
   section: {
     marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: Colors.font_gray,
-    marginBottom: 12,
-  },
-  bookingHeader: {
+  // Card Header Styles
+  cardHeaderContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 0,
+    marginTop: -8,
+  },
+  cardHeaderIconContainer: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  cardHeaderIcon: {
+    width: 35,
+    height: 35,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+  },
+  cardHeaderImage: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+  },
+  cardHeaderText: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: Colors.heading_font,
+  },
+  cardHeaderSeparator: {
+    height: 1,
+    backgroundColor: '#E8EBEC',
+    marginHorizontal: -20,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  boatCard: {
     backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
-  bookingHeaderLeft: {
-    gap: 4,
-  },
-  bookingTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: Colors.font_gray,
-  },
-  bookingId: {
-    fontSize: 25,
-    fontFamily: 'Inter-Bold',
-    color: Colors.primary,
-  },
-  actionButtons: {
+  boatContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  bookingHeaderVerticalDivider: {
-    width: 1,
-    height: 60,
-    backgroundColor: '#E8EBEC',
-    marginLeft: 15,
-  },
-  checkInButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
-    gap: 6,
-  },
-  checkInText: {
-    color: Colors.white,
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-  },
-  checkInIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: 'contain',
-  },
-  editButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  boatCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    paddingTop: 4,
   },
   boatImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: '50%',
+    height: 140,
+    borderRadius: 15,
     marginRight: 16,
+    resizeMode: 'cover',
   },
   boatInfo: {
     flex: 1,
     justifyContent: 'center',
+    paddingLeft: 8,
   },
   boatName: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.black,
-    marginBottom: 8,
+    color: Colors.heading_font,
+    marginBottom: 4,
   },
   boatDetails: {
-    gap: 4,
+    gap: 8,
   },
   capacityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+    alignSelf: 'flex-start',
+  },
+  capacityIcon: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
   },
   capacityText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter-Medium',
     color: Colors.primary,
   },
-  boatReg: {
-    fontSize: 12,
+  detailRow: {
+    gap: 1,
+  },
+  detailLabel: {
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
     color: Colors.font_gray,
   },
-  boatSize: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: Colors.font_gray,
+  detailValue: {
+    fontSize: 15,
+    fontFamily: 'Inter-Medium',
+    color: Colors.heading_font,
   },
   chartererCard: {
     backgroundColor: Colors.white,
-    padding: 16,
+    padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+  },
+  chartererContent: {
+    paddingTop: 4,
+    paddingHorizontal: 8,
   },
   chartererRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    gap: 24,
   },
-  chartererLabel: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: Colors.font_gray,
+  chartererLeftColumn: {
     flex: 1,
+    gap: 12,
   },
-  chartererValue: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: Colors.black,
+  chartererRightColumn: {
     flex: 1,
-    textAlign: 'right',
+    gap: 12,
+  },
+  chartererDetailColumn: {
+    gap: 2,
   },
   dateTimeCard: {
     backgroundColor: Colors.white,
-    padding: 16,
+    padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+  },
+  dateTimeContent: {
+    paddingTop: 4,
   },
   dateTimeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    gap: 24,
   },
-  dateTimeLabel: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: Colors.font_gray,
+  dateTimeLeftColumn: {
+    flex: 1,
+    gap: 12,
   },
-  dateTimeValue: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: Colors.black,
+  dateTimeRightColumn: {
+    flex: 1,
+    gap: 12,
+  },
+  dateTimeDetailColumn: {
+    gap: 2,
   },
 });

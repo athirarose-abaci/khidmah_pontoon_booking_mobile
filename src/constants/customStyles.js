@@ -9,6 +9,7 @@ export const Colors = {
   bg_color: '#F7F7F7',
   tab_inactive: '#C8C8C8',
   sub_heading_font: '#4C4C4C',
+  heading_font: '#494949',
 };
 
 export function getStatusTagColors(status) {
