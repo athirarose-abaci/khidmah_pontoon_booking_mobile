@@ -98,7 +98,6 @@ const MainRouter = () => {
 }
 
 export default MainRouter;
-
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',

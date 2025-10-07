@@ -59,9 +59,12 @@ const EditProfileModal = ({ visible, onClose, onSave }) => {
                 <View style={styles.headerLeft}>
                   <Text style={styles.headerTitle}>Edit Profile</Text>
                 </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Ionicons name="close-circle-outline" size={30} color={Colors.primary} />
-              </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.closeButton}
+                  onPress={onClose}
+                >
+                  <Ionicons name="close" size={20} color="white" />
+                </TouchableOpacity>
             </View>
 
             {/* Profile Picture Section */}
@@ -160,7 +163,15 @@ const styles = StyleSheet.create({
     color: '#00263A',
   },
   closeButton: {
-    padding: 8,
+    position: 'absolute',
+    top: 25,
+    right: 25,
+    width: 20,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: Colors.red,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileSection: {
     flexDirection: 'row',

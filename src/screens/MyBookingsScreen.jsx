@@ -11,6 +11,7 @@ import NoDataLottie from '../components/lottie/NoDataLottie';
 import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import CreateButton from '../components/CreateButton';
+import { useNavigation } from '@react-navigation/native';
 
 const MyBookingsScreen = () => {
   const [activeTab, setActiveTab] = useState('All');
@@ -21,6 +22,8 @@ const MyBookingsScreen = () => {
   const selectedDateRef = useRef(null);
 
   const { onScroll, insets } = useTabBarScroll();
+
+  const navigation = useNavigation();
 
   // Filter bookings based on active tab
   const getFilteredBookings = () => {
@@ -43,11 +46,6 @@ const MyBookingsScreen = () => {
   };
 
   const filteredBookings = getFilteredBookings();
-
-  const handleCreateBooking = () => {
-    // Add your navigation or action here
-    console.log('Create new booking');
-  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
@@ -103,14 +101,17 @@ const MyBookingsScreen = () => {
               contentContainerStyle={{ paddingBottom: insets.bottom + 280 }}
               renderItem={({ item }) => (
                 <View style={styles.sectionContainer}>
-                  <MyBookingsCard item={item} />
+                  <MyBookingsCard 
+                    item={item} 
+                    onPress={() => navigation.navigate('BookingManagement', { booking: item })}
+                  />
                 </View>
               )}
               refreshing={false}
               onRefresh={() => {}}
               onEndReachedThreshold={0.01}
               onEndReached={() => {
-                // pagination logic here if needed
+                // pagination 
               }}
               ListFooterComponent={
                 false ? (
@@ -133,11 +134,12 @@ const MyBookingsScreen = () => {
         selectedDateRef={selectedDateRef}
         onRangeSelected={newSelection => setShowDatePicker(false)}
       />
+
       <CreateButton
-        onPress={handleCreateBooking}
+        onPress={() => navigation.navigate('NewBooking')}
         icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
-        bottom={90 + insets.bottom}
-        right={26}
+        bottom={130 + insets.bottom}
+        right={40}
       />
     </SafeAreaView>
   );

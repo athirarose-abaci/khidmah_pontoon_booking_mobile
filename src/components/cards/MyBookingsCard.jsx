@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { Colors, getStatusTagColors } from '../../constants/customStyles';
 
-const MyBookingCard = ({ item }) => {
+const MyBookingCard = ({ item, onPress }) => {
   const { backgroundColor: statusBg, textColor: statusTextColor } = getStatusTagColors(item?.status);
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       {/* Left side image */}
       <View style={styles.imageWrapper}>
         <Image source={item.image} style={styles.image} />
@@ -47,7 +47,7 @@ const MyBookingCard = ({ item }) => {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

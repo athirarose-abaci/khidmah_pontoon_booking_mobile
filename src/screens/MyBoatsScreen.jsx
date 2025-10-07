@@ -9,16 +9,14 @@ import { boatsData } from "../constants/dummyData";
 import { Colors } from "../constants/customStyles";
 import CreateButton from "../components/CreateButton";
 import useTabBarScroll from "../hooks/useTabBarScroll";
+import { useNavigation } from "@react-navigation/native";
 
 const MyBoatsScreen = () => {
   const data = boatsData; 
 
   const { onScroll, insets } = useTabBarScroll();
 
-  const handleCreateBooking = () => {
-    // Add your navigation or action here
-    console.log('Create new booking');
-  };
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
@@ -71,10 +69,10 @@ const MyBoatsScreen = () => {
         </View>
       </View>
       <CreateButton
-        onPress={handleCreateBooking}
+        onPress={() => navigation.navigate('NewBooking')}
         icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
-        bottom={90 + insets.bottom}
-        right={26}
+        bottom={130 + insets.bottom}
+        right={40}
       />
     </SafeAreaView>
   );

@@ -10,6 +10,13 @@ export const bookingsData = [
       departureDate: '11.05.25',
       departureTime: '2:00pm',
       status: 'Confirmed',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '2',
@@ -22,6 +29,13 @@ export const bookingsData = [
       departureDate: '12.05.25',
       departureTime: '12:30pm',
       status: 'Checked In',
+      size: '18.5ft x 12.3ft',
+      capacity: 20,
+      charterer: {
+        name: 'Sarah Johnson',
+        phone: '+971 50 123 4567',
+        email: 'sarah.johnson@email.com'
+      }
     },
     {
       id: '3',
@@ -34,6 +48,13 @@ export const bookingsData = [
       departureDate: '13.05.25',
       departureTime: '11:00am',
       status: 'Checked Out',
+      size: '22.1ft x 16.8ft',
+      capacity: 30,
+      charterer: {
+        name: 'Ahmed Al-Rashid',
+        phone: '+971 55 987 6543',
+        email: 'ahmed.rashid@company.ae'
+      }
     },
     {
       id: '4',
@@ -46,6 +67,13 @@ export const bookingsData = [
       departureDate: '14.05.25',
       departureTime: '3:00pm',
       status: 'Confirmed',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '5',
@@ -58,6 +86,13 @@ export const bookingsData = [
       departureDate: '15.05.25',
       departureTime: '10:00am',
       status: 'Checked Out',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '6',
@@ -70,6 +105,13 @@ export const bookingsData = [
       departureDate: '16.05.25',
       departureTime: '9:00am',
       status: 'Confirmed',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '7',
@@ -82,6 +124,13 @@ export const bookingsData = [
       departureDate: '17.05.25',
       departureTime: '1:30pm',
       status: 'Checked In',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '8',
@@ -94,6 +143,13 @@ export const bookingsData = [
       departureDate: '18.05.25',
       departureTime: '4:00pm',
       status: 'Checked Out',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '9',
@@ -106,6 +162,13 @@ export const bookingsData = [
       departureDate: '19.05.25',
       departureTime: '11:30am',
       status: 'Confirmed',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '10',
@@ -118,6 +181,13 @@ export const bookingsData = [
       departureDate: '20.05.25',
       departureTime: '7:00pm',
       status: 'Checked Out',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '11',
@@ -130,6 +200,13 @@ export const bookingsData = [
       departureDate: '21.05.25',
       departureTime: '8:00am',
       status: 'Confirmed',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
     {
       id: '12',
@@ -142,6 +219,13 @@ export const bookingsData = [
       departureDate: '22.05.25',
       departureTime: '5:00pm',
       status: 'Checked In',
+      size: '19.2ft x 14.5ft',
+      capacity: 24,
+      charterer: {
+        name: 'Nikolai Dragomir',
+        phone: '+971 05 325 1256',
+        email: 'Nikolai@abc.com'
+      }
     },
   ];
   
