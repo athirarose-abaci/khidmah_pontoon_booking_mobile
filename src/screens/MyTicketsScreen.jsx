@@ -7,7 +7,7 @@ import SubTabBar from '../components/tab_bars/SubTabBar';
 import NoDataLottie from '../components/lottie/NoDataLottie';
 import MyTicketsCard from '../components/cards/MyTicketsCard';
 import { ticketsData } from '../constants/dummyData';
-import CreateButton from '../components/CreateButton';
+import CreateButton from '../components/newBooking/CreateButton';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import { useNavigation } from '@react-navigation/native';

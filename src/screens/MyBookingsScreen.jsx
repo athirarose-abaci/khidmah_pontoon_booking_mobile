@@ -10,7 +10,7 @@ import { bookingsData } from '../constants/dummyData';
 import NoDataLottie from '../components/lottie/NoDataLottie';
 import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
-import CreateButton from '../components/CreateButton';
+import CreateButton from '../components/newBooking/CreateButton';
 import { useNavigation } from '@react-navigation/native';
 
 const MyBookingsScreen = () => {

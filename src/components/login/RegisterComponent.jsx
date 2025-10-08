@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
+import { register } from '../../apis/auth';
+import { useContext } from 'react';
+import { ToastContext } from '../../context/ToastContext';
+import Error from '../../helpers/Error';
+import { storeData } from '../../helpers/asyncStorageHelper';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,6 +17,58 @@ const RegisterComponent = ({ setCurrentScreen }) => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  
+  const toastContext = useContext(ToastContext);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    
+    if (!phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (phone.length < 10) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const response = await register(firstName, lastName, email, phone);
+      console.log(response, 'res[register]');
+      if (response?.status === 201) {
+        toastContext.showToast(response?.data?.message, 'long', 'success');
+        setCurrentScreen('otp');
+        await storeData('registeredEmail', email.trim());
+      }
+    } catch (error) {
+      console.log(error);
+      let err_msg = Error(error);
+      console.log(err_msg);
+      toastContext.showToast(err_msg, 'long', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -31,10 +88,16 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="First Name"
             placeholderTextColor={Colors.font_gray}
             value={firstName}
-            onChangeText={setFirstName}
-            style={styles.input}
+            onChangeText={(text) => {
+              setFirstName(text);
+              if (errors.firstName) {
+                setErrors(prev => ({ ...prev, firstName: '' }));
+              }
+            }}
+            style={[styles.input, errors.firstName && styles.inputError]}
           />
         </View>
+        {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
 
         {/* Last Name Input */}
         <View style={styles.inputRow}>
@@ -43,10 +106,16 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="Last Name"
             placeholderTextColor={Colors.font_gray}
             value={lastName}
-            onChangeText={setLastName}
-            style={styles.input}
+            onChangeText={(text) => {
+              setLastName(text);
+              if (errors.lastName) {
+                setErrors(prev => ({ ...prev, lastName: '' }));
+              }
+            }}
+            style={[styles.input, errors.lastName && styles.inputError]}
           />
         </View>
+        {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
 
         {/* Email Input */}
         <View style={styles.inputRow}>
@@ -55,12 +124,18 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="Email"
             placeholderTextColor={Colors.font_gray}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) {
+                setErrors(prev => ({ ...prev, email: '' }));
+              }
+            }}
             autoCapitalize="none"
             keyboardType="email-address"
-            style={styles.input}
+            style={[styles.input, errors.email && styles.inputError]}
           />
         </View>
+        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
         {/* Phone Number Input */}
         <View style={styles.inputRow}>
@@ -69,16 +144,23 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="Phone Number"
             placeholderTextColor={Colors.font_gray}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(text) => {
+              setPhone(text);
+              if (errors.phone) {
+                setErrors(prev => ({ ...prev, phone: '' }));
+              }
+            }}
             keyboardType="phone-pad"
-            style={styles.input}
+            style={[styles.input, errors.phone && styles.inputError]}
           />
         </View>
+        {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
         <TouchableOpacity
-          onPress={() => setCurrentScreen('otp')}
+          onPress={handleRegister}
           activeOpacity={0.8}
-          style={{ marginTop: 28 }}
+          style={{ marginTop: 20 }}
+          disabled={isLoading}
         >
           <LinearGradient
             colors={['#75C8AD', '#61C8D5']}
@@ -86,7 +168,11 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             end={{ x: 0, y: 1 }}
             style={styles.btnGradient}
           >
-            <Text style={styles.btnText}>Register</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.btnText}>Register</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </LiquidGlassView>
@@ -147,7 +233,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border_line,
     color: Colors.white,
     fontSize: 16,
-    paddingBottom: 5,
+    paddingBottom: 8,
   },
   btnGradient: {
     paddingVertical: 14,
@@ -168,13 +254,12 @@ const styles = StyleSheet.create({
   instuction: {
     color: Colors.font_gray,
     fontFamily: 'Inter-Regular',
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 8,
   },
   newUserContainer: {
-    marginTop: 15,
+    marginTop: 8,
   },
   newUserText: {
     color: Colors.font_gray,
@@ -185,5 +270,18 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Poppins-Medium',
     fontWeight: 'bold',
+  },
+  inputError: {
+    borderColor: Colors.error,
+    borderBottomWidth: 2,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginLeft: 40,
+  },
+  btnDisabled: {
+    opacity: 0.7,
   },
 });

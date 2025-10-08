@@ -7,7 +7,7 @@ import NoDataLottie from "../components/lottie/NoDataLottie";
 import MyBoatsCard from "../components/cards/MyBoatsCard";
 import { boatsData } from "../constants/dummyData";
 import { Colors } from "../constants/customStyles";
-import CreateButton from "../components/CreateButton";
+import CreateButton from "../components/newBooking/CreateButton";
 import useTabBarScroll from "../hooks/useTabBarScroll";
 import { useNavigation } from "@react-navigation/native";
 

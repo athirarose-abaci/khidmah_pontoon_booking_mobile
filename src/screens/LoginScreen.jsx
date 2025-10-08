@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, StatusBar, Image, BackHandler } from 'react-native';
+import { View, StyleSheet, StatusBar, Image, BackHandler, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundImage from '../components/BackgroundImage';
 import { Colors } from '../constants/customStyles';
@@ -7,8 +7,9 @@ import { useSelector } from 'react-redux';
 import LoginComponent from '../components/login/LoginComponent';
 import RegisterComponent from '../components/login/RegisterComponent';
 import OTPComponent from '../components/login/OTPComponent';
+ 
 
-export default function LoginScreen() {
+const LoginScreen = () => {
   const [currentScreen, setCurrentScreen] = useState('login');
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
@@ -34,36 +35,55 @@ export default function LoginScreen() {
         barStyle="light-content"
       />
       <View style={styles.main_container}>
-        <BackgroundImage source={require('../assets/images/login_bg.png')}>
-          <View style={[styles.logo_container, currentScreen === 'register' && {marginTop: -25, marginBottom: 35}, currentScreen === 'otp' && {marginTop: -10, marginBottom: 15}]}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={styles.logo}
-            />
-          </View>
-          <View style={styles.form_container}>
-            {currentScreen === 'login' ? (
-              <LoginComponent
-                key={'login'}
-                setCurrentScreen={setCurrentScreen}
+        <View style={styles.bg_container} pointerEvents="none">
+          <BackgroundImage source={require('../assets/images/login_bg.png')} />
+        </View>
+        <KeyboardAvoidingView
+          style={styles.kb_scroll}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
+          <ScrollView
+            style={{ backgroundColor: 'transparent' }}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: currentScreen === 'register' ? 180 : 0 }}
+            showsVerticalScrollIndicator={false}
+            overScrollMode="never"
+          >
+            <View style={[styles.logo_container, 
+              currentScreen === 'register' && {marginTop: 10}, 
+              currentScreen === 'otp' && {marginTop: -25,}]}>
+              <Image
+                source={require('../assets/images/logo.png')}
+                style={styles.logo}
               />
-            ) : currentScreen === 'register' ? (
-              <RegisterComponent
-                key={'register'}
-                setCurrentScreen={setCurrentScreen}
-              />
-            ) : (
-              <OTPComponent 
-                key={'otp'} 
-                setCurrentScreen={setCurrentScreen} 
-              />
-            )}
-          </View>
-        </BackgroundImage>
+            </View>
+            <View style={styles.form_container}>
+              {currentScreen === 'login' ? (
+                <LoginComponent
+                  key={'login'}
+                  setCurrentScreen={setCurrentScreen}
+                />
+              ) : currentScreen === 'register' ? (
+                <RegisterComponent
+                  key={'register'}
+                  setCurrentScreen={setCurrentScreen}
+                />
+              ) : (
+                <OTPComponent 
+                  key={'otp'} 
+                  setCurrentScreen={setCurrentScreen} 
+                />
+              )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
   );
-}
+};
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -72,6 +92,10 @@ const styles = StyleSheet.create({
   main_container: {
     flex: 1,
     backgroundColor: Colors.black,
+  },
+  bg_container: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
   },
   logo_container: {
     height: '38%',
@@ -86,6 +110,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    marginTop: 15
+    marginTop: 0
+  },
+  kb_scroll: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    position: 'relative',
+    zIndex: 1,
   },
 });
+

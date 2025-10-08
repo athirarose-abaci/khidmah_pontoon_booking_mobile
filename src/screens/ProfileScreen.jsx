@@ -2,7 +2,7 @@ import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView,
 import LinearGradient from 'react-native-linear-gradient';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/customStyles';
 import BackgroundImage from '../components/BackgroundImage';
@@ -10,10 +10,42 @@ import { boatsData } from '../constants/dummyData';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import EditProfileModal from '../components/modals/EditProfileModal';
+import AbaciLoader from '../components/AbaciLoader';
+import { logout } from '../apis/auth';
+import { setAuthState } from '../../store/authSlice';
+import { clearCookies } from '../helpers/clearCookieHelper';
+import { removeData } from '../helpers/asyncStorageHelper';
+import { ToastContext } from '../context/ToastContext';
+import { useDispatch } from 'react-redux';
+import ConfirmationModal from '../components/modals/ConfirmationModal';
+import Error from '../helpers/Error';
 
 const ProfileScreen = () => {
   const { onScroll, insets } = useTabBarScroll();
+
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const toastContext = useContext(ToastContext);
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    setIsLogoutConfirmVisible(false);
+    setIsLoading(true);
+    try {
+      await logout();
+      dispatch(setAuthState({}));
+      clearCookies();
+      await removeData('data');
+      setIsLoading(false);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }finally{
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
@@ -132,13 +164,13 @@ const ProfileScreen = () => {
                 <Lucide name="chevron-right" size={25} color='#B6C7D9' />
               </View>
               
-              <View style={styles.option_item}>
+              <TouchableOpacity style={styles.option_item} onPress={() => setIsLogoutConfirmVisible(true)}>
                 <View style={styles.option_left}>
                   <AntDesign name="logout" size={25} color="#FF5722" />
                   <Text style={[styles.option_text, { color: '#FF5722' }]}>Logout</Text>
                 </View>
                 <Lucide name="chevron-right" size={25} color="#FF5722" />
-              </View>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </BackgroundImage>
@@ -152,6 +184,16 @@ const ProfileScreen = () => {
           // Handle profile update logic here
         }}
       />
+      <ConfirmationModal
+        isVisible={isLogoutConfirmVisible}
+        onRequestClose={() => setIsLogoutConfirmVisible(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        cancelText="Cancel"
+      />
+      <AbaciLoader visible={isLoading} />
     </SafeAreaView>
   );
 };

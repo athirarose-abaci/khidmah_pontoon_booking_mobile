@@ -1,14 +1,48 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Colors } from '../../constants/customStyles';
+import { userLogin } from '../../apis/auth';
+import Error from '../../helpers/Error';
+import { storeData } from '../../helpers/asyncStorageHelper';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginComponent = ({ setCurrentScreen }) => {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const handleLogin = async () => {
+    const newErrors = {};
+    if (!email || email.trim().length === 0) {
+      newErrors.email = 'Please enter a valid email address';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    try {
+      const response = await userLogin(email.trim());
+      if (response?.status === 200) {
+        await storeData('registeredEmail', email.trim());
+        setCurrentScreen('otp');
+      }
+    } catch (error) {
+      const errMsg = Error(error);
+      setErrors({ email: errMsg || 'Login failed, please try again' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -27,17 +61,24 @@ const LoginComponent = ({ setCurrentScreen }) => {
             placeholder="Email Address"
             placeholderTextColor={Colors.font_gray}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) {
+                setErrors(prev => ({ ...prev, email: '' }));
+              }
+            }}
             autoCapitalize="none"
             keyboardType="email-address"
-            style={styles.input}
+            style={[styles.input, errors.email && styles.inputError]}
           />
         </View>
+        {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
         <TouchableOpacity
-          onPress={() => setCurrentScreen('otp')}
+          onPress={handleLogin}
           activeOpacity={0.8}
           style={{ marginTop: 28 }}
+          disabled={isLoading}
         >
           <LinearGradient
             colors={['#75C8AD', '#61C8D5']}
@@ -45,7 +86,11 @@ const LoginComponent = ({ setCurrentScreen }) => {
             end={{ x: 0, y: 1 }}
             style={styles.btnGradient}
           >
-            <Text style={styles.btnText}>Login with OTP</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.btnText}>Login with OTP</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </LiquidGlassView>
@@ -87,9 +132,8 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   subTitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.primary,
-    marginTop: 4,
     marginBottom: 34,
   },
   inputRow: {
@@ -103,6 +147,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: Colors.border_line,
     paddingBottom: 8,
+  },
+  inputError: {
+    borderColor: Colors.error,
+    borderBottomWidth: 2,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginLeft: 40,
+    marginTop: 6,
   },
   btnGradient: {
     paddingVertical: 14,

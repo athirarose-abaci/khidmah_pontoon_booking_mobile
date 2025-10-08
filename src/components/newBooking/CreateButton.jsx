@@ -1,6 +1,6 @@
 import React from 'react';
 import {TouchableOpacity, StyleSheet} from 'react-native';
-import {Colors} from '../constants/customStyles';
+import { Colors } from '../../constants/customStyles';
 
 const CreateButton = ({
   onPress,

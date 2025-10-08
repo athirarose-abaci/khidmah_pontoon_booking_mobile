@@ -1,19 +1,95 @@
-import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Colors } from '../../constants/customStyles';
+import { verifyOTP } from '../../apis/auth';
+import { ToastContext } from '../../context/ToastContext';
+import { getData, storeData } from '../../helpers/asyncStorageHelper';
+import Error from '../../helpers/Error';
+import { useNavigation } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { setAuthState } from '../../../store/authSlice';
 
 const { width, height } = Dimensions.get('window');
+const OTP_LENGTH = 4;
 
 const OTPComponent = ({ setCurrentScreen }) => {
-  const [otp, setOtp] = useState(['', '', '', '']);
+	const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(""));
+	const inputRefs = useMemo(() => Array.from({ length: OTP_LENGTH }, () => React.createRef()), []);
+  
+  const [isConfirmingOTP, setIsConfirmingOTP] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const toastContext = useContext(ToastContext);
+
+  useEffect(() => {
+    (async () => {
+      const email = await getData('registeredEmail');
+      if (email) setRegisteredEmail(email);
+    })();
+  }, []);
+
+  
 
   const handleChange = (text, index) => {
-    const newOtp = [...otp];
-    newOtp[index] = text.slice(-1); 
-    setOtp(newOtp);
+		const sanitized = text.replace(/\D/g, "").slice(0, 1);
+		const nextDigits = [...otpDigits];
+		nextDigits[index] = sanitized;
+		setOtpDigits(nextDigits);
+		if (sanitized && index < OTP_LENGTH - 1) {
+			inputRefs[index + 1]?.current?.focus();
+		}  
   };
+
+	const handleKeyPress = (e, index) => {
+		if (e.nativeEvent.key !== "Backspace") return;
+		if (otpDigits[index]) {
+			const next = [...otpDigits];
+			next[index] = "";
+			setOtpDigits(next);
+			return;
+		}
+		if (index > 0) {
+			const next = [...otpDigits];
+			next[index - 1] = "";
+			setOtpDigits(next);
+			inputRefs[index - 1]?.current?.focus();
+		}
+	};
+
+  const composedOtp = otpDigits.join('');
+
+  const handleConfirmOTP = async () => {
+    if (composedOtp.length !== OTP_LENGTH) {
+			toastContext.showToast('Please enter all 4 digits', 'short', 'error');
+			return;
+		}
+
+    const userEmail = await getData('registeredEmail');
+    if (!userEmail) {
+			toastContext.showToast('User information not found', 'short', 'error');
+			return;
+		}
+
+    setIsConfirmingOTP(true);
+    try {
+      const response = await verifyOTP(userEmail, composedOtp);
+      console.log(response, 'res[verifyOTP]');
+      if(response?.status === 200) {
+        dispatch(setAuthState({...response.data, authenticated: true }));
+        await storeData('data', JSON.stringify({...response.data, authenticated: true }));
+      }
+    } catch (error) {
+      console.log(error);
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsConfirmingOTP(false);
+    }
+  }
 
   return (
     <View style={styles.screen}>
@@ -26,12 +102,12 @@ const OTPComponent = ({ setCurrentScreen }) => {
         <View style={styles.headerContainer}>
           <Text style={styles.title}>OTP{'\n'}Verification</Text>
           <Text style={styles.subGray}>We’ve sent OTP to</Text>
-          <Text style={styles.subPrimary}>john***@email.com</Text>
+          <Text style={styles.subPrimary}>{registeredEmail || ''}</Text>
           <Text style={styles.subGray}>Enter the OTP below to verify</Text>
         </View>
 
         <View style={styles.otpRow}>
-          {otp.map((digit, index) => (
+          {otpDigits.map((digit, index) => (
             <LiquidGlassView
               key={index}
               blurAmount={15}
@@ -45,13 +121,17 @@ const OTPComponent = ({ setCurrentScreen }) => {
                 keyboardType="numeric"
                 maxLength={1}
                 style={styles.otpInput}
+                ref={inputRefs[index]}
+                autoFocus={index === 0}
+                onKeyPress={(e) => handleKeyPress(e, index)}
               />
             </LiquidGlassView>
           ))}
         </View>
 
         <TouchableOpacity
-          onPress={() => setCurrentScreen('login')}
+          onPress={handleConfirmOTP}
+          disabled={isConfirmingOTP}
           activeOpacity={0.8}
           style={{ marginTop: 5 }}
         >
@@ -59,9 +139,13 @@ const OTPComponent = ({ setCurrentScreen }) => {
             colors={['#75C8AD', '#61C8D5']}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
-            style={styles.btnGradient}  
+            style={styles.btnGradient}
           >
-            <Text style={styles.btnText}>Proceed</Text>
+            {isConfirmingOTP ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.btnText}>Proceed</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </LiquidGlassView>

@@ -10,6 +10,7 @@ export const Colors = {
   tab_inactive: '#C8C8C8',
   sub_heading_font: '#4C4C4C',
   heading_font: '#494949',
+  error: '#ff6b6b',
 };
 
 export function getStatusTagColors(status) {
