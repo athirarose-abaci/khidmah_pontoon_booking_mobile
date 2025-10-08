@@ -18,7 +18,7 @@ const MainRouter = () => {
 
   return (
     <NavigationContainer>
-      {authState?.authenticated ? (
+      {!authState?.authenticated ? (
       <Stack.Navigator>
         {publicRoutes.map((route, idx) => (
           <Stack.Screen 

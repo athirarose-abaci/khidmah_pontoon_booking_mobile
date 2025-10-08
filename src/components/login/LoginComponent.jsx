@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -7,6 +7,7 @@ import { Colors } from '../../constants/customStyles';
 import { userLogin } from '../../apis/auth';
 import Error from '../../helpers/Error';
 import { storeData } from '../../helpers/asyncStorageHelper';
+import { ToastContext } from '../../context/ToastContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,6 +15,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const toastContext = useContext(ToastContext);
 
   const handleLogin = async () => {
     const newErrors = {};
@@ -38,7 +40,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
       }
     } catch (error) {
       const errMsg = Error(error);
-      setErrors({ email: errMsg || 'Login failed, please try again' });
+      toastContext.showToast(errMsg || 'Login failed, please try again', 'long', 'error');
     } finally {
       setIsLoading(false);
     }

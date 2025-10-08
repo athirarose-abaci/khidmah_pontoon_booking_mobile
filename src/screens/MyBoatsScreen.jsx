@@ -1,5 +1,5 @@
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, } from "react-native";
-import React from "react";
+import React, { useState, useContext } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { Lucide } from '@react-native-vector-icons/lucide';
@@ -10,13 +10,32 @@ import { Colors } from "../constants/customStyles";
 import CreateButton from "../components/newBooking/CreateButton";
 import useTabBarScroll from "../hooks/useTabBarScroll";
 import { useNavigation } from "@react-navigation/native";
+import AddBoatModal from "../components/modals/AddBoatModal";
+import { ToastContext } from "../context/ToastContext";
 
 const MyBoatsScreen = () => {
   const data = boatsData; 
+  const [isAddBoatModalVisible, setIsAddBoatModalVisible] = useState(false);
+  const toastContext = useContext(ToastContext);
 
   const { onScroll, insets } = useTabBarScroll();
 
   const navigation = useNavigation();
+
+  const handleAddBoat = async (boatData) => {
+    try {
+      console.log("New boat data:", boatData);
+      toastContext.showToast('Boat added successfully!', 'short', 'success');
+      setIsAddBoatModalVisible(false);
+    } catch (error) {
+      console.error('Error adding boat:', error);
+      toastContext.showToast('Failed to add boat. Please try again.', 'long', 'error');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsAddBoatModalVisible(false);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
@@ -29,13 +48,9 @@ const MyBoatsScreen = () => {
           <TouchableOpacity
             activeOpacity={0.7}
             style={styles.addBoatButton}
-            onPress={() => console.log("Add new boat")}
+            onPress={() => setIsAddBoatModalVisible(true)}
           >
-            <Ionicons
-              name="add-circle-outline"
-              size={24}
-              color={Colors.primary}
-            />
+            <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
             <Text style={styles.addBoatText}>Add new boat</Text>
           </TouchableOpacity>
         </View>
@@ -73,6 +88,13 @@ const MyBoatsScreen = () => {
         icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
         bottom={130 + insets.bottom}
         right={40}
+      />
+      
+      {/* Add Boat Modal */}
+      <AddBoatModal
+        visible={isAddBoatModalVisible}
+        onClose={handleCloseModal}
+        onSave={handleAddBoat}
       />
     </SafeAreaView>
   );

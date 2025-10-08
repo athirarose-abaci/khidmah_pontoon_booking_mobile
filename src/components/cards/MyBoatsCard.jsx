@@ -1,10 +1,17 @@
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../constants/customStyles";
 
 const MyBoatsCard = ({ item }) => {
+  const navigation = useNavigation();
+
+  const handlePress = () => {
+    navigation.navigate('BoatDetail', { boat: item });
+  };
+
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.7}>
       <Image source={item.image} style={styles.image} />
 
       <View style={[styles.statusTag, { backgroundColor: item.status === 'INACTIVE' ? '#BE2222' : Colors.primary }]}>
@@ -14,7 +21,7 @@ const MyBoatsCard = ({ item }) => {
       <Text style={styles.boatName}>{item.name}</Text>
       <Text style={styles.boatId}>{item.boatId}</Text>
       <Text style={styles.boatSize}>Size: {item.size}</Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 

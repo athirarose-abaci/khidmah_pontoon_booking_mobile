@@ -9,6 +9,8 @@ import BackgroundImage from '../components/BackgroundImage';
 import { boatsData } from '../constants/dummyData';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import EditProfileModal from '../components/modals/EditProfileModal';
 import AbaciLoader from '../components/AbaciLoader';
 import { logout } from '../apis/auth';
@@ -192,6 +194,12 @@ const ProfileScreen = () => {
         message="Are you sure you want to logout?"
         confirmText="Logout"
         cancelText="Cancel"
+        warningIconComponent={
+          <MaterialIcons name="logout" size={24} color="#FF6B6B" />
+        }
+        confirmIconComponent={
+          <Ionicons name="exit-outline" size={20} color="white" />
+        }
       />
       <AbaciLoader visible={isLoading} />
     </SafeAreaView>
