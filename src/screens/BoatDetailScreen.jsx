@@ -1,17 +1,29 @@
-import React, { useLayoutEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions, } from 'react-native';
+import React, { useLayoutEffect, useState, useEffect, useContext } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { Feather } from '@react-native-vector-icons/feather';
 import { Colors } from '../constants/customStyles';
+import { fetchBoatById } from '../apis/boat';
+import AbaciLoader from '../components/AbaciLoader';
+import { ToastContext } from '../context/ToastContext';
+import ImageView from 'react-native-image-viewing';
+import Error from '../helpers/Error';
 
 const { width, height } = Dimensions.get('window');
 
 const BoatDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { boat } = route.params;
+  const { boatId } = route.params;
   const insets = useSafeAreaInsets();
+  const toastContext = useContext(ToastContext);
+  
+  const [boat, setBoat] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageViewerIndex, setImageViewerIndex] = useState(0);
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -19,17 +31,46 @@ const BoatDetailScreen = () => {
     });
   }, [navigation]);
 
+  useEffect(() => {
+    const loadBoatDetails = async () => {
+      setIsLoading(true);
+      try {
+        const boatData = await fetchBoatById(boatId);
+        setBoat(boatData);
+      } catch (err) {
+        let err_msg = Error(err);
+        toastContext.showToast(err_msg, 'short', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (boatId) {
+      loadBoatDetails();
+    }
+  }, [boatId, toastContext, navigation]);
+
   const handleEdit = () => {
-    console.log('Edit boat:', boat.id);
+    console.log('Edit boat:', boat?.id);
   };
 
   const handleDelete = () => {
-    console.log('Delete boat:', boat.id);
+    console.log('Delete boat:', boat?.id);
   };
 
   const handleRemove = () => {
-    console.log('Remove boat:', boat.id);
+    console.log('Remove boat:', boat?.id);
   };
+
+  const handleImagePress = (index) => {
+    setImageViewerIndex(index);
+    setImageViewerVisible(true);
+  };
+
+  // Get the main image from the boat data
+  const mainImage = boat?.images?.length > 0 
+    ? { uri: boat.images[0].image }
+    : require('../assets/images/no_image.jpg');
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -54,15 +95,15 @@ const BoatDetailScreen = () => {
       >
         {/* Main boat image */}
         <View style={styles.mainImageContainer}>
-          <Image source={boat.image} style={styles.mainImage} resizeMode="cover" />
+          <Image source={mainImage} style={styles.mainImage} resizeMode="cover" />
         </View>
 
         {/* Boat details card */}
         <View style={styles.detailsCard}>
           <View style={styles.detailsHeader}>
             <View style={styles.boatInfo}>
-              <Text style={styles.boatId}>{boat.boatId || 'DXB-1121'}</Text>
-              <Text style={styles.boatName}>{boat.name}</Text>
+              <Text style={styles.boatId}>{boat?.registration_number || 'N/A'}</Text>
+              <Text style={styles.boatName}>{boat?.name}</Text>
             </View>
             
             <View style={styles.actionButtons}>
@@ -71,7 +112,7 @@ const BoatDetailScreen = () => {
                 onPress={handleEdit}
                 activeOpacity={0.7}
               >
-                <Ionicons name="pencil" size={16} color="#fff" />
+                <Feather name="edit" size={18} color={Colors.primary} />
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -79,7 +120,7 @@ const BoatDetailScreen = () => {
                 onPress={handleRemove}
                 activeOpacity={0.7}
               >
-                <Ionicons name="remove" size={16} color="#fff" />
+                <Ionicons name="remove-circle-outline" size={18} color="#C0082C" />
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -87,43 +128,72 @@ const BoatDetailScreen = () => {
                 onPress={handleDelete}
                 activeOpacity={0.7}
               >
-                <Ionicons name="trash" size={16} color="#fff" />
+                <Ionicons name="trash" size={18} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={styles.description}>
-            {boat.description || "Lazzara 80 Skylounge, boasting a spacious wide-body salon, an enclosed flybridge, and a versatile five-stateroom, six-head layout. With elegant Euro-inspired styling and the largest interior volume in its class."}
-          </Text>
+          {boat?.description ? (
+            <Text style={styles.description}>
+              {boat.description}
+            </Text>
+          ) : (
+            <View style={styles.noDescriptionContainer}>
+              <Text style={styles.noDescriptionText}>
+                Add a few words about the yacht's standout features…
+              </Text>
+            </View>
+          )}
 
           <View style={styles.sizeContainer}>
-            <Text style={styles.sizeText}>Size: {boat.size}</Text>
+            <Text style={styles.sizeText}>Size: {boat?.length} x {boat?.width}</Text>
           </View>
         </View>
 
         {/* Boat images section */}
         <View style={styles.imagesSection}>
+          <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Boat Images</Text>
-          <View style={styles.imagesGrid}>
-            {boat.additionalImages?.map((image, index) => (
-              <Image
-                key={index}
-                source={image}
-                style={styles.gridImage}
-                resizeMode="cover"
+          {boat?.images?.length > 0 ? (
+            <View style={styles.imagesGrid}>
+              {boat?.images.map((image, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handleImagePress(index)}
+                  activeOpacity={0.8}
+                >
+                  <Image
+                    source={{ uri: image?.image }}
+                    style={styles.gridImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.noImagesContainer}>
+              <Image 
+                source={require('../assets/images/image_not_found.png')} 
+                style={styles.noImagesIcon} 
+                resizeMode="contain" 
               />
-            )) || (
-              // Fallback to main image repeated 4 times if no additional images
-              <>
-                <Image source={boat.image} style={styles.gridImage} resizeMode="cover" />
-                <Image source={boat.image} style={styles.gridImage} resizeMode="cover" />
-                <Image source={boat.image} style={styles.gridImage} resizeMode="cover" />
-                <Image source={boat.image} style={styles.gridImage} resizeMode="cover" />
-              </>
-            )}
-          </View>
+              <Text style={styles.noImagesText}>No boat images found</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
+      
+      <AbaciLoader visible={isLoading} />
+      
+      {/* Full Screen Image Viewer */}
+      <ImageView
+        images={boat?.images?.map(img => ({ uri: img.image })) || []}
+        imageIndex={imageViewerIndex}
+        visible={imageViewerVisible}
+        onRequestClose={() => setImageViewerVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+      />
     </SafeAreaView>
   );
 };
@@ -131,7 +201,7 @@ const BoatDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
+    backgroundColor: Colors.white,
   },
   header: {
     position: 'absolute',
@@ -146,10 +216,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: '#fff',
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     marginLeft: 8,
+    color: Colors.white,
   },
   scrollView: {
     flex: 1,
@@ -163,11 +233,11 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   detailsCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginTop: -20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
     paddingTop: 20,
     paddingBottom: 30,
     minHeight: 200,
@@ -199,18 +269,20 @@ const styles = StyleSheet.create({
   actionButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   editButton: {
-    backgroundColor: '#4CAF50',
+    borderColor: Colors.primary,
   },
   removeButton: {
-    backgroundColor: '#F44336',
+    borderColor: '#C0082C',
   },
   deleteButton: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: '#C0082C',
+    borderColor: '#C0082C',
   },
   description: {
     fontSize: 16,
@@ -218,6 +290,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     lineHeight: 24,
     marginBottom: 20,
+  },
+  noDescriptionContainer: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+  },
+  noDescriptionText: {
+    fontSize: 14,
+    color: '#6C757D',
+    fontFamily: 'Inter-Medium',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   sizeContainer: {
     alignItems: 'flex-end',
@@ -228,8 +318,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
   imagesSection: {
-    paddingHorizontal: 20,
+    backgroundColor: Colors.white,
+    paddingHorizontal: 30,
     paddingBottom: 30,
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E9ECEF',
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -241,12 +338,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 10,
   },
   gridImage: {
-    width: (width - 60) / 2,
-    height: (width - 60) / 2,
+    width: (width - 80) / 2,
+    height: (width - 80) / 2,
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: 15,
+  },
+  noImagesContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  noImagesIcon: {
+    width: 120,
+    height: 120,
+  },
+  noImagesText: {
+    fontSize: 12,
+    color: Colors.font_gray,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
   },
 });
 

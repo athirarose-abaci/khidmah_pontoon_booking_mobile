@@ -5,6 +5,7 @@ import NewBookingScreen from '../src/screens/NewBookingScreen';
 import BookingManagementScreen from '../src/screens/BookingManagementScreen';
 import MyBoatsScreen from '../src/screens/MyBoatsScreen';
 import BoatDetailScreen from '../src/screens/BoatDetailScreen';
+import AddBoatScreen from '../src/screens/AddBoatScreen';
 import MyTicketsScreen from '../src/screens/MyTicketsScreen';
 import ProfileScreen from '../src/screens/ProfileScreen';
 
@@ -28,6 +29,7 @@ const MyBoatsTabs = () => {
         <Stack.Navigator initialRouteName="MyBoats">
             <Stack.Screen name="MyBoats" component={MyBoatsScreen} options={{headerShown: false}}/>
             <Stack.Screen name="BoatDetail" component={BoatDetailScreen} options={{headerShown: false}}/>
+            <Stack.Screen name="AddBoat" component={AddBoatScreen} options={{headerShown: false}}/>
             <Stack.Screen name="NewBooking" component={NewBookingScreen} options={{headerShown: false}}/>
         </Stack.Navigator>
     )

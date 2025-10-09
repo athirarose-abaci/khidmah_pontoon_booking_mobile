@@ -1,40 +1,117 @@
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, } from "react-native";
-import React, { useState, useContext } from "react";
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, RefreshControl, ActivityIndicator, TextInput } from "react-native";
+import React, { useState, useContext, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { Lucide } from '@react-native-vector-icons/lucide';
 import NoDataLottie from "../components/lottie/NoDataLottie"; 
 import MyBoatsCard from "../components/cards/MyBoatsCard";
-import { boatsData } from "../constants/dummyData";
+import AbaciLoader from "../components/AbaciLoader";
 import { Colors } from "../constants/customStyles";
 import CreateButton from "../components/newBooking/CreateButton";
 import useTabBarScroll from "../hooks/useTabBarScroll";
-import { useNavigation } from "@react-navigation/native";
-import AddBoatModal from "../components/modals/AddBoatModal";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { ToastContext } from "../context/ToastContext";
+import Error from "../helpers/Error";
+import { fetchBoats } from "../apis/boat";
+import { useDispatch } from "react-redux";
+import { setBoats, clearBoats } from "../../store/boatSlice";
 
 const MyBoatsScreen = () => {
-  const data = boatsData; 
-  const [isAddBoatModalVisible, setIsAddBoatModalVisible] = useState(false);
   const toastContext = useContext(ToastContext);
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const dispatch = useDispatch();
+
+  const [boatsData, setBoatsData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const limit = 10;
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('null');
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasMorePages, setHasMorePages] = useState(true);
 
   const { onScroll, insets } = useTabBarScroll();
 
-  const navigation = useNavigation();
+  useEffect(() => {
+    if(isFocused) {
+      dispatch(clearBoats());
+      setPage(1);
+      setHasMorePages(true);
+      fetchBoatsData(1, limit, false, searchQuery);
+    }
+  }, [isFocused]);
 
-  const handleAddBoat = async (boatData) => {
+  const fetchBoatsData = async (pageNumber, limit, isRefresh = false, searchQuery) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    
     try {
-      console.log("New boat data:", boatData);
-      toastContext.showToast('Boat added successfully!', 'short', 'success');
-      setIsAddBoatModalVisible(false);
+      const response = await fetchBoats(pageNumber, limit, searchQuery);
+      console.log(response, "response from fetchBoats");
+      
+      if (isRefresh || pageNumber === 1) {
+        // For refresh or first page, replace the data
+        setBoatsData(response?.results || []);
+        dispatch(setBoats(response?.results || []));
+      } else {
+        // For pagination, append the data
+        setBoatsData(prevData => [...prevData, ...(response?.results || [])]);
+        dispatch(setBoats(prevData => [...prevData, ...(response?.results || [])]));
+      }
+      
+      // Update pagination state
+      setHasMorePages(!!response?.next);
+      if(response?.next) {
+        setPage(prevPage => prevPage + 1);
+      }
     } catch (error) {
-      console.error('Error adding boat:', error);
-      toastContext.showToast('Failed to add boat. Please try again.', 'long', 'error');
+      console.log(error, "error from fetchBoats");
+      let err_msg = Error(error);
+      console.log(err_msg, "error from fetchBoats");
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleCloseModal = () => {
-    setIsAddBoatModalVisible(false);
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if(isFocused && searchQuery !== 'null') {
+        setIsSearching(true);
+        (async () => {
+          dispatch(clearBoats());
+          setPage(1);
+          setHasMorePages(true);
+          await fetchBoatsData(1, limit, true, searchQuery);
+          setIsSearching(false);
+        })();
+      }
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
+
+  const refreshControl = () => {
+    const defaultSearch = 'null';
+    if(searchQuery !== defaultSearch) {
+      setSearchQuery(defaultSearch);
+    }
+    dispatch(clearBoats());
+    setPage(1);
+    setHasMorePages(true);
+    fetchBoatsData(1, limit, true, defaultSearch);
+  };
+
+  const handleAddBoat = () => {
+    navigation.navigate('AddBoat');
   };
 
   return (
@@ -48,37 +125,77 @@ const MyBoatsScreen = () => {
           <TouchableOpacity
             activeOpacity={0.7}
             style={styles.addBoatButton}
-            onPress={() => setIsAddBoatModalVisible(true)}
+            onPress={handleAddBoat}
           >
             <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
             <Text style={styles.addBoatText}>Add new boat</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Search */}
+        <View style={styles.filter_container}>
+          <View style={styles.search_bar}>
+            <Ionicons
+              name="search-outline"
+              size={22}
+              color="#EFEFEF"
+              style={{ marginHorizontal: 12 }}
+            />
+            <TextInput
+              style={styles.search_input}
+              placeholder="Search boats"
+              placeholderTextColor={Colors.primary}
+              value={searchQuery!=='null' ? searchQuery : ''}
+              onChangeText={text => setSearchQuery(text)}
+            />
+          </View>
+        </View>
+
+        {isSearching && (
+          <View style={{ alignSelf: 'center', marginVertical: 10 }}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
+
         {/* List */}
         <View style={styles.boat_list_conatiner}>
-          {data.length === 0 ? (
+          {boatsData.length === 0 ? (
             <View style={styles.noDataContainer}>
-              <NoDataLottie isDarkMode={false} refreshControl={() => {}} />
+              <NoDataLottie isDarkMode={false} refreshControl={refreshControl} />
             </View>
           ) : (
             <FlatList
-              data={data}
-              keyExtractor={(item) => item.id}
+              data={boatsData}
+              keyExtractor={(item) => item.id.toString()}
               numColumns={2}
-              columnWrapperStyle={{ justifyContent: "space-between" }}
+              columnWrapperStyle={boatsData.length % 2 === 1 ? { justifyContent: "flex-start" } : { justifyContent: "space-between" }}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 50, paddingHorizontal: 16 }}
-              renderItem={({ item }) => <MyBoatsCard item={item} />}
-              ListFooterComponent={
-                false ? (
-                  <View style={{ paddingVertical: 20 }}>
-                    <ActivityIndicator size="small" color={Colors.primary} />
-                  </View>
-                ) : null
-              }
+              contentContainerStyle={{
+                paddingBottom: insets.bottom + 50,
+                paddingHorizontal: 16,
+              }}
+              renderItem={({ item, index }) => (
+                <MyBoatsCard 
+                  item={item} 
+                  isLastItem={index === boatsData.length - 1 && boatsData.length % 2 === 1}
+                />
+              )}
               onScroll={onScroll}
               scrollEventThrottle={16}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={refreshControl}
+                  colors={[Colors.primary]}
+                  tintColor={Colors.primary}
+                />
+              }
+              onEndReachedThreshold={0.01}
+              onEndReached={() => {
+                if(hasMorePages && !isLoading) {
+                  fetchBoatsData(page, limit, false, searchQuery);
+                }
+              }}
             />
           )}
         </View>
@@ -89,13 +206,7 @@ const MyBoatsScreen = () => {
         bottom={130 + insets.bottom}
         right={40}
       />
-      
-      {/* Add Boat Modal */}
-      <AddBoatModal
-        visible={isAddBoatModalVisible}
-        onClose={handleCloseModal}
-        onSave={handleAddBoat}
-      />
+      <AbaciLoader visible={isLoading} />
     </SafeAreaView>
   );
 };
@@ -122,6 +233,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: Colors.font_gray,
     fontFamily: "Inter-SemiBold",
+  },
+  filter_container: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    marginBottom: 15,
+    paddingHorizontal: 26,
+    backgroundColor: 'transparent',
+  },
+  search_bar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    height: 52,
+    borderRadius: 26,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+    marginRight: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 0,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+  },
+  search_input: {
+    flex: 1,
+    paddingVertical: 0,
+    paddingRight: 12,
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: Colors.black,
   },
   addBoatButton: {
     flexDirection: "row",
