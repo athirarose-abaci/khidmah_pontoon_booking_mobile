@@ -67,7 +67,6 @@ const OTPComponent = ({ setCurrentScreen }) => {
 			toastContext.showToast('Please enter all 4 digits', 'short', 'error');
 			return;
 		}
-
     const userEmail = await getData('registeredEmail');
     if (!userEmail) {
 			toastContext.showToast('User information not found', 'short', 'error');
@@ -78,9 +77,10 @@ const OTPComponent = ({ setCurrentScreen }) => {
     try {
       const response = await verifyOTP(userEmail, composedOtp);
       console.log(response, 'res[verifyOTP]');
+      console.log(response?.data?.user, 'response?.data?.user');
       if(response?.status === 200) {
-        dispatch(setAuthState({...response.data, authenticated: true }));
-        await storeData('data', JSON.stringify({...response.data, authenticated: true }));
+        dispatch(setAuthState({...response?.data?.user, authenticated: true }));
+        await storeData('data', JSON.stringify({...response?.data?.user, authenticated: true }));
       }
     } catch (error) {
       console.log(error);

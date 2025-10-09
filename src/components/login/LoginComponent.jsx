@@ -39,8 +39,8 @@ const LoginComponent = ({ setCurrentScreen }) => {
         setCurrentScreen('otp');
       }
     } catch (error) {
-      const errMsg = Error(error);
-      toastContext.showToast(errMsg || 'Login failed, please try again', 'long', 'error');
+      const err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsLoading(false);
     }

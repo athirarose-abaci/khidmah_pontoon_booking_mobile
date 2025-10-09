@@ -9,15 +9,19 @@ import { Provider } from 'react-redux';
 import store from './store';
 import { ToastProvider } from './src/context/ToastContext';
 import { AxiosProvider } from './src/context/AxiosContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Root = () => {
     return (
+
         <Provider store = {store}>
-            <ToastProvider>
-                <AxiosProvider>
-                    <App />
-                </AxiosProvider>
-            </ToastProvider>
+            <SafeAreaProvider>
+                <ToastProvider>
+                    <AxiosProvider>
+                        <App />
+                    </AxiosProvider>
+                </ToastProvider>
+            </SafeAreaProvider>
         </Provider>
     )
 }

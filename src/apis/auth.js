@@ -31,10 +31,28 @@ export const register = async (firstName, lastName, email, phone) => {
         first_name : firstName,
         last_name : lastName,
         email : email,
-        phone : phone
+        mobile_number : phone
     }
     try {
         const response = await publicAxios.post('users/register/', payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const fetchProfile = async () => {
+    try {
+        const response = await authAxios.get('users/profile/');
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const updateProfile = async ( payload ) => {
+    try {
+        const response = await authAxios.patch('users/profile/', payload);
         return response;
     } catch (error) {
         throw error;

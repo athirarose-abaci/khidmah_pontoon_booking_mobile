@@ -1,8 +1,8 @@
-import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/customStyles';
 import BackgroundImage from '../components/BackgroundImage';
@@ -13,14 +13,16 @@ import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import EditProfileModal from '../components/modals/EditProfileModal';
 import AbaciLoader from '../components/AbaciLoader';
-import { logout } from '../apis/auth';
+import { fetchProfile, logout } from '../apis/auth';
 import { setAuthState } from '../../store/authSlice';
 import { clearCookies } from '../helpers/clearCookieHelper';
-import { removeData } from '../helpers/asyncStorageHelper';
+import { getData, removeData } from '../helpers/asyncStorageHelper';
 import { ToastContext } from '../context/ToastContext';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import Error from '../helpers/Error';
+import { useIsFocused } from '@react-navigation/native';
+import { BASE_URL_IMAGE } from '../constants/baseUrl';
 
 const ProfileScreen = () => {
   const { onScroll, insets } = useTabBarScroll();
@@ -28,9 +30,43 @@ const ProfileScreen = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
+  const isFocused = useIsFocused();
 
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
+  const currentAuthState = useSelector(state => state.authSlice.authState);
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchProfileData();
+    }
+  }, [isFocused]);
+
+  const fetchProfileData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchProfile();
+      setProfileData(response);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const transformImage = (imageUrl) => {
+    if (!imageUrl) return null;
+
+    // Check if it's a string and doesn't already start with http or https
+    if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
+      return BASE_URL_IMAGE + imageUrl;
+    }
+
+    return imageUrl;
+  };
 
   const handleLogout = async () => {
     setIsLogoutConfirmVisible(false);
@@ -44,7 +80,7 @@ const ProfileScreen = () => {
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
-    }finally{
+    } finally {
       setIsLoading(false);
     }
   };
@@ -63,26 +99,35 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.image_container}>
             <View style={styles.circle_background}>
-              <Image source={require('../assets/images/profile_image.png')} style={styles.image} />
+            <Image
+                source={
+                  currentAuthState?.avatar 
+                    ? currentAuthState.avatar.startsWith('file://') || currentAuthState.avatar.startsWith('content://')
+                      ? { uri: currentAuthState.avatar }
+                      : { uri: transformImage(currentAuthState.avatar) }
+                    : require('../assets/images/profile_image.png')
+                }
+                style={styles.image}
+              />
             </View>
           </View>
           <View style={styles.info_container}>
             <View style={styles.title_row}>
-              <Text style={styles.info_title}>Casey Blake</Text>
-              <TouchableOpacity 
+              <Text style={styles.info_title}>{currentAuthState?.full_name}</Text>
+              <TouchableOpacity
                 style={styles.edit_icon_container}
                 onPress={() => setIsEditModalVisible(true)}
               >
-                <Image 
-                  source={require('../assets/images/edit_pencil.png')} 
+                <Image
+                  source={require('../assets/images/edit_pencil.png')}
                   style={styles.edit_icon}
                 />
               </TouchableOpacity>
             </View>
             <Text style={styles.info_subtitle_id}>Yatch Owner ID</Text>
-            <Text style={styles.info_subtitle_email}>caseyblake007@gmail.com</Text>
+            <Text style={styles.info_subtitle_email}> {currentAuthState?.email} </Text>
           </View>
-          <ScrollView 
+          <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollable_content}
             onScroll={onScroll}
@@ -96,20 +141,28 @@ const ProfileScreen = () => {
             <View style={styles.boat_container}>
               <View style={styles.boat_title_row}>
                 <Text style={styles.boat_title}>My Boats</Text>
-                <Text style={styles.boat_count}>{boatsData.length}{' '}boats</Text>
+                <Text style={styles.boat_count}>{boatsData.length} boats</Text>
               </View>
-              <ScrollView 
-                horizontal 
+              <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.boats_scroll}
                 nestedScrollEnabled={true}
                 scrollEventThrottle={1}
               >
-                {boatsData.map((boat) => (
+                {boatsData.map(boat => (
                   <View key={boat.id} style={styles.boat_card}>
                     <View style={styles.boat_image_container}>
                       <Image source={boat.image} style={styles.boat_image} />
-                      <View style={[styles.status_badge, { backgroundColor: boat.status === 'ACTIVE' ? '#4CAF50' : '#FF5722' }]}>
+                      <View
+                        style={[
+                          styles.status_badge,
+                          {
+                            backgroundColor:
+                              boat.status === 'ACTIVE' ? '#4CAF50' : '#FF5722',
+                          },
+                        ]}
+                      >
                         <Text style={styles.status_text}>{boat.status}</Text>
                       </View>
                       <LinearGradient
@@ -120,7 +173,9 @@ const ProfileScreen = () => {
                         <Text style={styles.boat_name}>{boat.name}</Text>
                         <Text style={styles.boat_id}>{boat.boatId}</Text>
                         <View style={styles.size_container}>
-                          <Text style={styles.size_text}>Size: {boat.size}</Text>
+                          <Text style={styles.size_text}>
+                            Size: {boat.size}
+                          </Text>
                         </View>
                       </LinearGradient>
                     </View>
@@ -138,7 +193,11 @@ const ProfileScreen = () => {
                   <Text style={styles.support_number}>+971 50 123 4567</Text>
                 </View>
                 <TouchableOpacity style={styles.copy_icon}>
-                  <MaterialDesignIcons name="content-copy" size={25} color="#373737" />
+                  <MaterialDesignIcons
+                    name="content-copy"
+                    size={25}
+                    color="#373737"
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -157,19 +216,24 @@ const ProfileScreen = () => {
                   ios_backgroundColor="#E4E4E4"
                 />
               </View>
-              
+
               <View style={styles.option_item}>
                 <View style={styles.option_left}>
                   <Lucide name="lock" size={25} color={Colors.primary} />
                   <Text style={styles.option_text}>Change Password</Text>
                 </View>
-                <Lucide name="chevron-right" size={25} color='#B6C7D9' />
+                <Lucide name="chevron-right" size={25} color="#B6C7D9" />
               </View>
-              
-              <TouchableOpacity style={styles.option_item} onPress={() => setIsLogoutConfirmVisible(true)}>
+
+              <TouchableOpacity
+                style={styles.option_item}
+                onPress={() => setIsLogoutConfirmVisible(true)}
+              >
                 <View style={styles.option_left}>
                   <AntDesign name="logout" size={25} color="#FF5722" />
-                  <Text style={[styles.option_text, { color: '#FF5722' }]}>Logout</Text>
+                  <Text style={[styles.option_text, { color: '#FF5722' }]}>
+                    Logout
+                  </Text>
                 </View>
                 <Lucide name="chevron-right" size={25} color="#FF5722" />
               </TouchableOpacity>
@@ -177,13 +241,14 @@ const ProfileScreen = () => {
           </ScrollView>
         </BackgroundImage>
       </View>
-      
+
       <EditProfileModal
         visible={isEditModalVisible}
-        onClose={() => setIsEditModalVisible(false)}
-        onSave={(data) => {
-          console.log('Profile updated:', data);
-          // Handle profile update logic here
+        onRequestClose={() => setIsEditModalVisible(false)}
+        profileInfo={profileData?.user}
+        onProfileUpdate={updateProfileData => {
+          setProfileData(updateProfileData);
+          setIsEditModalVisible(false);
         }}
       />
       <ConfirmationModal

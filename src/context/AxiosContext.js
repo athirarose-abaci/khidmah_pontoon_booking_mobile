@@ -76,7 +76,7 @@ authAxios.interceptors.request.use(
         // } else {
         // const new_token = response?.headers['set-cookie']?.[0]?.split(';')[0]?.split('token=')?.[1];
         const updatedUser = {
-          ...response.data,
+          ...response?.data?.user,
           authenticated: true,
           // accessToken: new_token,
         };
