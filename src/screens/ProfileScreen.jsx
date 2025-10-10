@@ -307,13 +307,12 @@ const styles = StyleSheet.create({
     height: 125,
     borderRadius: 65,
     backgroundColor: '#FFF09E',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
   image: {
-    width: 125,
-    height: 125,
-    borderRadius: 65,
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   info_container: {
     paddingHorizontal: 26,

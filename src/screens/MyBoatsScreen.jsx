@@ -3,7 +3,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { Lucide } from '@react-native-vector-icons/lucide';
-import NoDataLottie from "../components/lottie/NoDataLottie"; 
+import NoDataImage from "../components/NoDataImage"; 
 import MyBoatsCard from "../components/cards/MyBoatsCard";
 import AbaciLoader from "../components/AbaciLoader";
 import { Colors } from "../constants/customStyles";
@@ -59,8 +59,9 @@ const MyBoatsScreen = () => {
         dispatch(setBoats(response?.results || []));
       } else {
         // For pagination, append the data
-        setBoatsData(prevData => [...prevData, ...(response?.results || [])]);
-        dispatch(setBoats(prevData => [...prevData, ...(response?.results || [])]));
+        const newData = [...boatsData, ...(response?.results || [])];
+        setBoatsData(newData);
+        dispatch(setBoats(newData));
       }
       
       // Update pagination state
@@ -161,7 +162,13 @@ const MyBoatsScreen = () => {
         <View style={styles.boat_list_conatiner}>
           {boatsData.length === 0 ? (
             <View style={styles.noDataContainer}>
-              <NoDataLottie isDarkMode={false} refreshControl={refreshControl} />
+              <NoDataImage 
+                imageSource={require('../assets/images/no_boats.png')}
+                title="No boats Added"
+                subtitle="You haven't added any boat"
+                onRefresh={refreshControl}
+                isDarkMode={false}
+              />
             </View>
           ) : (
             <FlatList

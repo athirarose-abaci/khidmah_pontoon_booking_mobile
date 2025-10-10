@@ -229,6 +229,7 @@ export const bookingsData = [
     },
   ];
   
+  // export const bookingsData = [];
   export const boatsData = [
     {
       id: "1",

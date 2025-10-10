@@ -31,7 +31,7 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
       <Text style={styles.boatName}>{item.name}</Text>
       <Text style={styles.boatId}>{item.registration_number}</Text>
       <Text style={styles.boatSize}>
-        Size: {item.length} x {item.width}
+        Size: {item.length} x {item.width} ft
       </Text>
     </TouchableOpacity>
   );

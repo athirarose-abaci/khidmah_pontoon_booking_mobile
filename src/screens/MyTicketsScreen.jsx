@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import SubTabBar from '../components/tab_bars/SubTabBar';
-import NoDataLottie from '../components/lottie/NoDataLottie';
+import NoDataImage from '../components/NoDataImage';
 import MyTicketsCard from '../components/cards/MyTicketsCard';
 import { ticketsData } from '../constants/dummyData';
 import CreateButton from '../components/newBooking/CreateButton';
@@ -50,7 +50,13 @@ const MyTicketsScreen = () => {
           {
             (ticketsData.filter(t => activeTab === 'Open' ? t.status === 'Open' : activeTab === 'In Progress' ? t.status === 'In Progress' : t.status === 'Closed')).length === 0 ? (
               <View style={styles.noDataContainer}>
-                <NoDataLottie isDarkMode={false} refreshControl={() => {}} />
+                <NoDataImage
+                  imageSource={require('../assets/images/no_ticket.png')}
+                  title="No tickets Added"
+                  subtitle="You haven't added any ticket"
+                  onRefresh={() => {}}
+                  isDarkMode={false}
+                />
               </View>
             ) : (
               <FlatList

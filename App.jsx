@@ -8,7 +8,7 @@ import { Appearance, Platform } from 'react-native';
 import CookieManager from '@react-native-cookies/cookies';
 import { setAuthState } from './store/authSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { removeData } from './src/helpers/asyncStorageHelper';
+import { removeData, storeData } from './src/helpers/asyncStorageHelper';
 import { clearCookies } from './src/helpers/clearCookieHelper';
 import { useEffect, useState } from 'react';
 import { fetchProfile } from './src/apis/auth';
@@ -55,7 +55,7 @@ const App = () => {
             return;
           }
 
-          const authData = { ...profile, authenticated: isPermitted };
+          const authData = { ...profile?.user, authenticated: isPermitted };
           dispatch(setAuthState(authData));
           await storeData('data', JSON.stringify(authData));
           setProfileStatus('success');
@@ -69,7 +69,6 @@ const App = () => {
         setProfileStatus('success');
       }
     } catch (err) {
-      console.log(err);
       setProfileStatus('error');
     }
   };

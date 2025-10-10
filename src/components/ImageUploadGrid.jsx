@@ -1,5 +1,5 @@
 import React, {useContext, useState} from 'react';
-import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, } from 'react-native';
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, Vibration, } from 'react-native';
 import { launchImageLibrary, launchCamera, requestCameraPermission, requestMediaLibraryPermission, } from 'react-native-image-picker';
 import ImageView from 'react-native-image-viewing';
 import {BlurView} from '@react-native-community/blur';
@@ -123,7 +123,7 @@ const ImageUploadGrid = ({
 
   const handleImagePress = index => {
     if (images[index]) {
-      setImagesToShow(images.map(img => ({uri: img.url})));
+      setImagesToShow(images.map(img => ({uri: img.url || img.image})));
       setImageViewerIndex(index);
       setImageViewerVisible(true);
     } else {
@@ -135,6 +135,7 @@ const ImageUploadGrid = ({
 
   const handleImageLongPress = index => {
     if (images[index] && allowDelete) {
+      Vibration.vibrate(60); 
       setImageToDelete({index, image: images[index]});
       setDeleteModalVisible(true);
     }
@@ -197,7 +198,7 @@ const ImageUploadGrid = ({
             )}
           </View>
         ) : (
-          <Image source={{uri: image.url}} style={styles.imageThumbnail} />
+          <Image source={{uri: image.url || image.image}} style={styles.imageThumbnail} />
         )}
       </TouchableOpacity>
     );
@@ -252,7 +253,7 @@ const ImageUploadGrid = ({
             </Text>
             {imageToDelete && (
               <Image
-                source={{uri: imageToDelete.image.url}}
+                source={{uri: imageToDelete.image.url || imageToDelete.image.image}}
                 style={styles.deletePreviewImage}
               />
             )}

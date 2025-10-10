@@ -7,21 +7,19 @@ import { verifyOTP } from '../../apis/auth';
 import { ToastContext } from '../../context/ToastContext';
 import { getData, storeData } from '../../helpers/asyncStorageHelper';
 import Error from '../../helpers/Error';
-import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { setAuthState } from '../../../store/authSlice';
 
 const { width, height } = Dimensions.get('window');
 const OTP_LENGTH = 4;
 
-const OTPComponent = ({ setCurrentScreen }) => {
+const OTPComponent = () => {
 	const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(""));
 	const inputRefs = useMemo(() => Array.from({ length: OTP_LENGTH }, () => React.createRef()), []);
   
   const [isConfirmingOTP, setIsConfirmingOTP] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   
-  const navigation = useNavigation();
   const dispatch = useDispatch();
   const toastContext = useContext(ToastContext);
 
@@ -31,8 +29,6 @@ const OTPComponent = ({ setCurrentScreen }) => {
       if (email) setRegisteredEmail(email);
     })();
   }, []);
-
-  
 
   const handleChange = (text, index) => {
 		const sanitized = text.replace(/\D/g, "").slice(0, 1);
@@ -76,14 +72,12 @@ const OTPComponent = ({ setCurrentScreen }) => {
     setIsConfirmingOTP(true);
     try {
       const response = await verifyOTP(userEmail, composedOtp);
-      console.log(response, 'res[verifyOTP]');
-      console.log(response?.data?.user, 'response?.data?.user');
+
       if(response?.status === 200) {
         dispatch(setAuthState({...response?.data?.user, authenticated: true }));
         await storeData('data', JSON.stringify({...response?.data?.user, authenticated: true }));
       }
     } catch (error) {
-      console.log(error);
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {

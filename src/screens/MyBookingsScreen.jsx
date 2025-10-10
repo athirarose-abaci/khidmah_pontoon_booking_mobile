@@ -7,7 +7,7 @@ import { Lucide } from '@react-native-vector-icons/lucide';
 import SubTabBar from '../components/tab_bars/SubTabBar';
 import CalendarModal from '../components/modals/CalendarModal';
 import { bookingsData } from '../constants/dummyData';
-import NoDataLottie from '../components/lottie/NoDataLottie';
+import NoDataImage from '../components/NoDataImage';
 import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import CreateButton from '../components/newBooking/CreateButton';
@@ -88,9 +88,12 @@ const MyBookingsScreen = () => {
         <View style={styles.booking_card_list}>
           {filteredBookings.length === 0 ? (
             <View style={styles.noDataContainer}>
-              <NoDataLottie
+              <NoDataImage
+                imageSource={require('../assets/images/no_booking.png')}
+                title="No bookings yet"
+                subtitle="You haven't made any bookings."
+                onRefresh={() => {}}
                 isDarkMode={false}
-                refreshControl={() => {}}
               />
             </View>
           ) : (

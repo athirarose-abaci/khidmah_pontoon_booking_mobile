@@ -6,12 +6,13 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { ToastContext } from '../context/ToastContext';
 import ImageUploadGrid from '../components/ImageUploadGrid';
-import { createBoat } from '../apis/boat';
+import { createBoat, fetchBoatById, deleteBoatImage, updateBoatDetails } from '../apis/boat';
 import Error from '../helpers/Error';
-import { useDispatch } from 'react-redux';
-import { setBoats } from '../../store/boatSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { setBoats, updateBoat } from '../../store/boatSlice';
 import AbaciLoader from '../components/AbaciLoader';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Feather } from '@react-native-vector-icons/feather';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -20,6 +21,12 @@ const AddBoatScreen = () => {
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const route = useRoute();
+  const authState = useSelector(state => state.authSlice.authState);
+  
+  const isEditMode = route.params?.isEditMode || false;
+  const boatId = route.params?.boatId;
+  const existingBoat = route.params?.boatData;
   
   const [boatName, setBoatName] = useState('');
   const [boatRegNo, setBoatRegNo] = useState('');
@@ -29,6 +36,7 @@ const AddBoatScreen = () => {
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -44,7 +52,59 @@ const AddBoatScreen = () => {
       duration: 400,
       useNativeDriver: true,
     }).start();
-  }, []);
+    
+    if (isEditMode && boatId) {
+      loadBoatData();
+    }
+  }, [isEditMode, boatId]);
+  
+  const loadBoatData = async () => {
+    setIsInitialLoading(true);
+    try {
+      const boatData = await fetchBoatById(boatId);
+      console.log(boatData, "boatData from loadBoatData");
+      setBoatName(boatData?.name || '');
+      setBoatRegNo(boatData?.registration_number || '');
+      setBoatLength(boatData?.length ? boatData.length.toString() : '');
+      setBoatWidth(boatData?.width ? boatData.width.toString() : '');
+      setDescription(boatData?.description || '');
+      
+      if (boatData?.images && boatData?.images.length > 0) {
+        const formattedImages = boatData?.images.map(img => ({
+          ...img, 
+          isExisting: true 
+        }));
+        setImages(formattedImages);
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  const handleImagesChange = async (newImages) => {
+    // Check if any existing images were removed
+    const currentExistingImages = images.filter(img => img.isExisting);
+    const newExistingImages = newImages.filter(img => img.isExisting);
+    
+    const deletedImages = currentExistingImages.filter(currentImg => 
+      !newExistingImages.find(newImg => newImg.id === currentImg.id)
+    );
+    
+    if (deletedImages.length > 0) {
+      try {
+        await deleteBoatImage(deletedImages[0].id);
+        toastContext.showToast('Image deleted successfully!', 'short', 'success');
+      } catch (error) {
+        let err_msg = Error(error);
+        toastContext.showToast(err_msg, 'short', 'error');
+      }
+    }
+    
+    setImages(newImages);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -93,13 +153,27 @@ const AddBoatScreen = () => {
     };
 
     try {
-      const response = await createBoat(boatData, images);
-      dispatch(setBoats(response));
-      toastContext.showToast('Boat added successfully!','short', 'success');
+      let response;
+      const customerId = authState?.id;
+      console.log('Customer ID:', customerId, 'AuthState:', authState);
+      
+      if (isEditMode) {
+        const newImages = images.filter(img => !img.isExisting);
+        response = await updateBoatDetails(boatId, boatData, newImages, customerId);
+        console.log(response, "response from updateBoat");
+        dispatch(updateBoat(response));
+        toastContext.showToast('Boat updated successfully!', 'short', 'success');
+      } else {
+        response = await createBoat(boatData, images, customerId);
+        dispatch(setBoats(response));
+        toastContext.showToast('Boat added successfully!', 'short', 'success');
+      }
       handleGoBack();
     } catch (error) {
+      console.log(error, "error from updateBoat");
       let err_msg = Error(error);
-      toastContext.showToast(err_msg,'short', 'error');
+      console.log(err_msg, "err_msg from updateBoat");
+      toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -125,9 +199,13 @@ const AddBoatScreen = () => {
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIcon}>
-                <Ionicons name="add-circle-outline" size={25} color={Colors.primary} />
+                {isEditMode ? (
+                    <Feather name="edit" size={18} color={Colors.primary} />
+                  ) : (
+                    <Ionicons name="add-circle-outline" size={25} color={Colors.primary} />
+                )}
               </View>
-              <Text style={styles.headerTitle}>Add New Boat</Text>
+              <Text style={styles.headerTitle}>{isEditMode ? 'Edit Boat Details' : 'Add New Boat'}</Text>
             </View>
             <TouchableOpacity 
               style={styles.closeButton}
@@ -245,7 +323,7 @@ const AddBoatScreen = () => {
               <View style={styles.inputGroup}>
                 <ImageUploadGrid
                   images={images}
-                  onImagesChange={setImages}
+                  onImagesChange={handleImagesChange}
                   maxImages={4}
                   label="Boat Images*"
                   disabled={isLoading}
@@ -271,7 +349,7 @@ const AddBoatScreen = () => {
               ) : (
                 <>
                   <AntDesign name="save" size={20} color="white" />
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={styles.saveButtonText}>{isEditMode ? 'Update' : 'Save'}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -279,8 +357,7 @@ const AddBoatScreen = () => {
         </SafeAreaView>
       </Animated.View>
       
-      {/* Loading Overlay */}
-      <AbaciLoader visible={isLoading} />
+      <AbaciLoader visible={isLoading || isInitialLoading} />
     </View>
   );
 };
@@ -357,7 +434,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 150,
+    paddingBottom: 180,
   },
   formContainer: {
     paddingHorizontal: 20,

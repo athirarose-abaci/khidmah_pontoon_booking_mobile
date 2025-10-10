@@ -1,15 +1,18 @@
-import React, { useLayoutEffect, useState, useEffect, useContext } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions } from 'react-native';
+import React, { useLayoutEffect, useState, useEffect, useContext, useCallback } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Feather } from '@react-native-vector-icons/feather';
 import { Colors } from '../constants/customStyles';
-import { fetchBoatById } from '../apis/boat';
+import { fetchBoatById, disableBoat, deleteBoat } from '../apis/boat';
 import AbaciLoader from '../components/AbaciLoader';
 import { ToastContext } from '../context/ToastContext';
 import ImageView from 'react-native-image-viewing';
 import Error from '../helpers/Error';
+import ConfirmationModal from '../components/modals/ConfirmationModal';
+import { useDispatch } from 'react-redux';
+import { updateBoatStatus, removeBoat } from '../../store/boatSlice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,11 +22,16 @@ const BoatDetailScreen = () => {
   const { boatId } = route.params;
   const insets = useSafeAreaInsets();
   const toastContext = useContext(ToastContext);
+  const dispatch = useDispatch();
   
   const [boat, setBoat] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
+  const [disableModalVisible, setDisableModalVisible] = useState(false);
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -31,35 +39,74 @@ const BoatDetailScreen = () => {
     });
   }, [navigation]);
 
-  useEffect(() => {
-    const loadBoatDetails = async () => {
-      setIsLoading(true);
-      try {
-        const boatData = await fetchBoatById(boatId);
-        setBoat(boatData);
-      } catch (err) {
-        let err_msg = Error(err);
-        toastContext.showToast(err_msg, 'short', 'error');
-      } finally {
-        setIsLoading(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (boatId) {
+        loadBoatDetails();
       }
-    };
+    }, [boatId])
+  );
 
-    if (boatId) {
-      loadBoatDetails();
+  const loadBoatDetails = async () => {
+    setIsLoading(true);
+    try {
+      const boatData = await fetchBoatById(boatId);
+      setBoat(boatData);
+    } catch (err) {
+      let err_msg = Error(err);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
     }
-  }, [boatId, toastContext, navigation]);
+  };
 
   const handleEdit = () => {
-    console.log('Edit boat:', boat?.id);
+    navigation.navigate('AddBoat', {
+      isEditMode: true,
+      boatId: boat?.id,
+      boatData: boat
+    });
   };
 
-  const handleDelete = () => {
-    console.log('Delete boat:', boat?.id);
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteBoat(boat?.id);
+      
+      dispatch(removeBoat(boat?.id));
+      
+      toastContext.showToast('Boat deleted successfully!', 'short', 'success');
+      navigation.goBack();
+    } catch (error) {
+      console.log(error, "error from deleteBoat");
+      let err_msg = Error(error);
+      console.log(err_msg, "err_msg from deleteBoat");
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsDeleting(false);
+      setDeleteModalVisible(false);
+    }
   };
 
-  const handleRemove = () => {
-    console.log('Remove boat:', boat?.id);
+  const handleDisableConfirm = async () => {
+    setIsDisabling(true);
+    try {
+      const newStatus = boat?.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      
+      await disableBoat(boat?.id, newStatus);
+ 
+      dispatch(updateBoatStatus({ boatId: boat?.id, status: newStatus }));
+      setBoat(prevBoat => ({ ...prevBoat, status: newStatus }));
+      const actionText = newStatus === 'INACTIVE' ? 'disabled' : 'enabled';
+      
+      toastContext.showToast(`Boat ${actionText} successfully!`, 'short', 'success');
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsDisabling(false);
+      setDisableModalVisible(false);
+    }
   };
 
   const handleImagePress = (index) => {
@@ -67,7 +114,6 @@ const BoatDetailScreen = () => {
     setImageViewerVisible(true);
   };
 
-  // Get the main image from the boat data
   const mainImage = boat?.images?.length > 0 
     ? { uri: boat.images[0].image }
     : require('../assets/images/no_image.jpg');
@@ -116,16 +162,24 @@ const BoatDetailScreen = () => {
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.actionButton, styles.removeButton]}
-                onPress={handleRemove}
+                style={[
+                  styles.actionButton, 
+                  boat?.status === 'INACTIVE' && { borderColor: Colors.primary },
+                  boat?.status === 'ACTIVE' && { borderColor: '#C0082C' }
+                ]}
+                onPress={() => setDisableModalVisible(true)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="remove-circle-outline" size={18} color="#C0082C" />
+                <Ionicons 
+                  name={boat?.status === 'ACTIVE' ? "remove-circle-outline" : "checkmark-circle-outline"} 
+                  size={18} 
+                  color={boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50"} 
+                />
               </TouchableOpacity>
               
               <TouchableOpacity
                 style={[styles.actionButton, styles.deleteButton]}
-                onPress={handleDelete}
+                onPress={() => setDeleteModalVisible(true)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="trash" size={18} color="#fff" />
@@ -146,7 +200,7 @@ const BoatDetailScreen = () => {
           )}
 
           <View style={styles.sizeContainer}>
-            <Text style={styles.sizeText}>Size: {boat?.length} x {boat?.width}</Text>
+            <Text style={styles.sizeText}>Size: {boat?.length} x {boat?.width} ft</Text>
           </View>
         </View>
 
@@ -183,7 +237,7 @@ const BoatDetailScreen = () => {
         </View>
       </ScrollView>
       
-      <AbaciLoader visible={isLoading} />
+      <AbaciLoader visible={isLoading || isDisabling || isDeleting} />
       
       {/* Full Screen Image Viewer */}
       <ImageView
@@ -193,6 +247,52 @@ const BoatDetailScreen = () => {
         onRequestClose={() => setImageViewerVisible(false)}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
+      />
+
+      {/* Disable Boat Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={disableModalVisible}
+        onRequestClose={() => setDisableModalVisible(false)}
+        onConfirm={handleDisableConfirm}
+        title="Are you sure?"
+        message={boat?.status === 'ACTIVE' 
+          ? "The boat will be marked as inactive and won't be available for bookings."
+          : "The boat will be marked as active and will be available for bookings."
+        }
+        confirmText={isDisabling 
+          ? ""
+          : (boat?.status === 'ACTIVE' ? "Disable" : "Enable")
+        }
+        cancelText="Cancel"
+        warningIconName={boat?.status === 'ACTIVE' ? "remove-circle" : "check-circle"}
+        warningIconColor={boat?.status === 'ACTIVE' ? "#FF6B6B" : "#4CAF50"}
+        warningIconSize={50}
+        confirmIconName={boat?.status === 'ACTIVE' ? "block" : "check"}
+        confirmIconColor="white"
+        confirmIconSize={18}
+        confirmIconComponent={isDisabling ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : null}
+      />
+
+      {/* Delete Boat Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Boat"
+        message="Are you sure you want to delete this boat? This action cannot be undone and all associated data will be permanently removed."
+        confirmText={isDeleting ? "" : "Delete"}
+        cancelText="Cancel"
+        warningIconName="delete-forever"
+        warningIconColor="#FF4444"
+        warningIconSize={50}
+        confirmIconName="delete"
+        confirmIconColor="white"
+        confirmIconSize={18}
+        confirmIconComponent={isDeleting ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : null}
       />
     </SafeAreaView>
   );
@@ -276,9 +376,6 @@ const styles = StyleSheet.create({
   },
   editButton: {
     borderColor: Colors.primary,
-  },
-  removeButton: {
-    borderColor: '#C0082C',
   },
   deleteButton: {
     backgroundColor: '#C0082C',
