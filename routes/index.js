@@ -20,6 +20,7 @@ const MyBookingTabs = () => {
         <Stack.Navigator initialRouteName="MyBookings">
             <Stack.Screen name="MyBookings" component={MyBookingsScreen} options={{headerShown: false}}/>
             <Stack.Screen name="NewBooking" component={NewBookingScreen} options={{headerShown: false}}/>
+            <Stack.Screen name="AddBoat" component={AddBoatScreen} options={{headerShown: false}}/>
             <Stack.Screen name="BookingManagement" component={BookingManagementScreen} options={{headerShown: false}}/>
         </Stack.Navigator>
     )

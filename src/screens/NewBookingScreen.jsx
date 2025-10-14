@@ -1,12 +1,24 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useCallback, useContext, useLayoutEffect, useState, useEffect } from 'react';
 import { StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
-import { Colors } from '../constants/customStyles';
 import { Octicons } from '@react-native-vector-icons/octicons';
+import { useFocusEffect } from '@react-navigation/native';
+import { Colors } from '../constants/customStyles';
 import BookingSuccessModal from '../components/modals/BookingSuccessModal';
-import { PontoonDetailsTab, BoatDetailsTab, BookingDetailsTab } from '../components/newBooking';
+import { PontoonDetailsTab, BoatDetailsTab, BookingDetailsTab } from '../components/newBooking/index';
+import AbaciLoader from '../components/AbaciLoader';
+import { fetchPontoons } from '../apis/pontoon';
+import { fetchBerths } from '../apis/berth';
+import { fetchBoatsList } from '../apis/boat';
+import { createBooking, updateBooking } from '../apis/booking';
+import { useDispatch, useSelector } from 'react-redux';
+import { setPontoons } from '../../store/pontoonSlice';
+import { setBerths } from '../../store/berthSlice';
+import Error from '../helpers/Error';
+import { ToastContext } from '../context/ToastContext';
+import moment from 'moment';
 
 const STEPS = {
   PONTOON_DETAILS: 'pontoon_details',
@@ -14,25 +26,48 @@ const STEPS = {
   BOOKING_DETAILS: 'booking_details'
 };
 
-const NewBookingScreen = ({ navigation }) => {
+const NewBookingScreen = ({ navigation, route }) => {
   const [currentStep, setCurrentStep] = useState(STEPS.PONTOON_DETAILS); 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Edit mode states
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingBookingId, setEditingBookingId] = useState(null);
+  const [editingBookingData, setEditingBookingData] = useState(null);
+
+  const dispatch = useDispatch();
+  const toastContext = useContext(ToastContext);
+  const currentAuthState = useSelector(state => state.authSlice.authState);
   
   const [pontoonName, setPontoonName] = useState('');
   const [berthName, setBerthName] = useState('');
+  const [pontoonsData, setPontoonsData] = useState([]);
+  const [berthsData, setBerthsData] = useState([]);
+  const [boatsData, setBoatsData] = useState([]);
   
-  const [arrivalDate, setArrivalDate] = useState('');
-  const [arrivalTime, setArrivalTime] = useState('');
-  const [departureDate, setDepartureDate] = useState('');
-  const [departureTime, setDepartureTime] = useState('');
-  const [hours, setHours] = useState('');
-  const [minutes, setMinutes] = useState('');
+  const [bookingDetails, setBookingDetails] = useState({
+    arrivalDate: '',
+    arrivalTime: '',
+    hours: '',
+    minutes: '',
+    departureDate: '',
+    departureTime: ''
+  });
+
+  const handleBookingDetailsChange = (field, value) => {
+    setBookingDetails(prev => {
+      const updated = {
+        ...prev,
+        [field]: value
+      };
+      return updated;
+    });
+  };
   
   const [selectedBoat, setSelectedBoat] = useState('');
-  const [boatRegNo, setBoatRegNo] = useState('');
   const [noOfPassengers, setNoOfPassengers] = useState('');
-  const [boatWidth, setBoatWidth] = useState('');
-  const [boatLength, setBoatLength] = useState('');
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -40,13 +75,198 @@ const NewBookingScreen = ({ navigation }) => {
     });
   }, [navigation]);
 
-  const handleNext = () => {
-    if (currentStep === STEPS.PONTOON_DETAILS) {
-      setCurrentStep(STEPS.BOAT_DETAILS);
-    } else if (currentStep === STEPS.BOAT_DETAILS) {
+  // Handle edit mode initialization
+  useEffect(() => {
+    if (route?.params?.editMode) {
+      setIsEditMode(true);
+      setEditingBookingId(route?.params?.bookingId);
+      setEditingBookingData(route?.params?.bookingData);
+      
+      if (route?.params?.bookingData) {
+        const bookingData = route?.params?.bookingData;
+        
+        // Set pontoon and berth data
+        if (bookingData?.pontoon) {
+          setPontoonName(bookingData?.pontoon?.name || '');
+        }
+        if (bookingData?.berth) {
+          setBerthName(bookingData?.berth?.name || '');
+        }
+        
+        // Set boat data
+        if (bookingData?.boat) {
+          setSelectedBoat(bookingData?.boat?.id || '');
+        }
+        if (bookingData?.passengers) {
+          setNoOfPassengers(bookingData?.passengers?.toString());
+        }
+        
+        // Set booking details
+        if (bookingData.start_date) {
+          const startDate = moment(bookingData?.start_date).format('DD/MM/YYYY');
+          const startTime = moment(bookingData?.start_date).format('HH:mm');
+          const endDate = bookingData?.end_date ? moment(bookingData?.end_date).format('DD/MM/YYYY') : '';
+          const endTime = bookingData?.end_date ? moment(bookingData?.end_date).format('HH:mm') : '';
+          
+          let hours = '';
+          let minutes = '';
+          if (bookingData?.start_date && bookingData?.end_date) {
+            const startMoment = moment(bookingData?.start_date);
+            const endMoment = moment(bookingData?.end_date);
+            const duration = moment.duration(endMoment.diff(startMoment));
+            hours = Math.floor(duration.asHours()).toString();
+            minutes = duration.minutes().toString();
+          }
+          
+          setBookingDetails(prev => ({
+            ...prev,
+            arrivalDate: startDate,
+            arrivalTime: startTime,
+            departureDate: endDate,
+            departureTime: endTime,
+            hours: hours,
+            minutes: minutes
+          }));
+        }
+      }
+      
       setCurrentStep(STEPS.BOOKING_DETAILS);
+    }
+  }, [route?.params]);
+
+  const validatePontoonDetails = () => {
+    return pontoonName.trim() !== '' && berthName.trim() !== '';
+  };
+
+  const validateBoatDetails = () => {
+    return selectedBoat && selectedBoat !== '' && noOfPassengers.trim() !== '' && !isNaN(noOfPassengers) && parseInt(noOfPassengers) > 0;
+  };
+
+  const validateBookingDetails = () => {
+    return true; 
+  };
+
+  const isCurrentStepValid = () => {
+    if (currentStep === STEPS.PONTOON_DETAILS) {
+      return validatePontoonDetails();
+    } else if (currentStep === STEPS.BOAT_DETAILS) {
+      return validateBoatDetails();
     } else {
+      return validateBookingDetails();
+    }
+  };
+
+  const handleNext = async () => {
+    let canProceed = false;
+
+    if (currentStep === STEPS.PONTOON_DETAILS) {
+      canProceed = validatePontoonDetails();
+      if (canProceed) {
+        setIsLoading(true);
+        setTimeout(() => {
+          setCurrentStep(STEPS.BOAT_DETAILS);
+          setIsLoading(false);
+        }, 500);
+      } else {
+        toastContext.showToast("Please fill in both Pontoon Name and Berth Name", "short", "error");
+      }
+    } else if (currentStep === STEPS.BOAT_DETAILS) {
+      canProceed = validateBoatDetails();
+      if (canProceed) {
+        setIsLoading(true);
+        setTimeout(() => {
+          setCurrentStep(STEPS.BOOKING_DETAILS);
+          setIsLoading(false);
+        }, 500);
+      } else {
+        toastContext.showToast("Please fill in all required boat details", "short", "error");
+      }
+    } else {
+      canProceed = validateBookingDetails();
+      if (canProceed) {
+        if (isEditMode) {
+          await handleUpdateBooking();
+        } else {
+          await handleCreateBooking();
+        }
+      } else {
+        toastContext.showToast("Please fill in all required booking details", "short", "error");
+      }
+    }
+  };
+
+  const handleCreateBooking = async () => {
+    setIsLoading(true);
+    try {
+      const selectedBoatObj = boatsData.find(boat => boat?.id === selectedBoat);
+      if (!selectedBoatObj) {
+        toastContext.showToast("Selected boat not found", "short", "error");
+        return;
+      }
+
+      const selectedBerthObj = berthsData.find(berth => berth?.name === berthName);
+      if (!selectedBerthObj) {
+        toastContext.showToast("Selected berth not found", "short", "error");
+        return;
+      }
+
+      const formatDateTimeForAPI = (dateString, timeString) => {
+        if (!dateString || !timeString) return '';
+        
+        const momentDate = moment(`${dateString} ${timeString}`, 'DD/MM/YYYY HH:mm');
+        
+        return momentDate.toISOString();
+      };
+
+      const bookingPayload = {
+        boat: selectedBoatObj?.id,
+        customer: currentAuthState?.id,
+        berth: selectedBerthObj?.id,
+        start_date: formatDateTimeForAPI(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
+        end_date: formatDateTimeForAPI(bookingDetails?.departureDate, bookingDetails?.departureTime),
+        passengers: parseInt(noOfPassengers)
+      };
+
+      const response = await createBooking(bookingPayload);
       setShowSuccessModal(true);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateBooking = async () => {
+    setIsLoading(true);
+    try {
+      const formatDateTimeForAPI = (dateString, timeString) => {
+        if (!dateString || !timeString) return '';
+        
+        const momentDate = moment(`${dateString} ${timeString}`, 'DD/MM/YYYY HH:mm');
+        
+        return momentDate.toISOString();
+      };
+
+      const bookingPayload = {
+        boat: editingBookingData?.boat?.id,
+        customer: currentAuthState?.id,
+        berth: editingBookingData?.berth?.id,
+        start_date: formatDateTimeForAPI(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
+        end_date: formatDateTimeForAPI(bookingDetails?.departureDate, bookingDetails?.departureTime),
+        passengers: parseInt(noOfPassengers)
+      };
+
+      const response = await updateBooking(editingBookingId, bookingPayload);
+      dispatch(updateBooking(response));
+      setShowSuccessModal(true);
+      toastContext.showToast("Booking updated successfully!", "short", "success");
+      navigation.goBack();
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -60,8 +280,93 @@ const NewBookingScreen = ({ navigation }) => {
   };
 
   const handleStepClick = (step) => {
+    if (isEditMode && step !== STEPS.BOOKING_DETAILS) {
+      return;
+    }
     setCurrentStep(step);
   };
+
+  const handleBackNavigation = () => {
+    if (isEditMode) {
+      navigation.goBack();
+      return;
+    }
+    
+    if (currentStep === STEPS.PONTOON_DETAILS) {
+      navigation.goBack();
+    } else if (currentStep === STEPS.BOAT_DETAILS) {
+      setCurrentStep(STEPS.PONTOON_DETAILS);
+    } else if (currentStep === STEPS.BOOKING_DETAILS) {
+      setCurrentStep(STEPS.BOAT_DETAILS);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isEditMode) {
+        fetchPontoonsData();
+        fetchBerthsData();
+        fetchBoatsData();
+      }
+    }, [isEditMode])
+  );
+
+   const fetchBerthsData = async (pontoonId) => {
+    setIsLoading(true);
+    try {
+      const response = await fetchBerths(pontoonId);
+      setBerthsData(response || []);
+      dispatch(setBerths(response || []));
+      
+      if (response && response?.length === 1) {
+        setBerthName(response?.[0]?.name);
+      } else {
+        setBerthName('');
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const fetchPontoonsData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchPontoons();
+      const pontoons = response || [];
+      setPontoonsData(pontoons);
+      dispatch(setPontoons(pontoons));
+      
+      if(response?.length === 1) {
+        const singlePontoon = pontoons[0];
+        setPontoonName(singlePontoon?.name);
+        await fetchBerthsData(singlePontoon?.id);
+      } else {
+        setBerthsData([]);
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const fetchBoatsData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchBoatsList();
+      setBoatsData(response || []);
+    }
+    catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
@@ -74,14 +379,14 @@ const NewBookingScreen = ({ navigation }) => {
             size={30}
             color={Colors.font_gray}
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={handleBackNavigation}
           />
-          <Text style={styles.headerTitle}>New Booking</Text>
+          <Text style={styles.headerTitle}>{isEditMode ? "Edit Booking" : "New Booking"}</Text>
           {currentStep === STEPS.BOAT_DETAILS && (
             <TouchableOpacity
               activeOpacity={0.7}
               style={styles.headerAddBoatActionButton}
-              onPress={() => console.log("Add new boat")}
+              onPress={() => navigation.navigate('AddBoat')}
             >
               <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
               <Text style={styles.headerAddBoatActionText}>Add new boat</Text>
@@ -104,8 +409,13 @@ const NewBookingScreen = ({ navigation }) => {
         {/* Progress Indicators */}
         <View style={styles.stepProgressContainer}>
           <TouchableOpacity 
-            style={[styles.stepIconContainer, currentStep === STEPS.PONTOON_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer]}
-            onPress={() => handleStepClick(STEPS.PONTOON_DETAILS)}
+            style={[
+              styles.stepIconContainer, 
+              currentStep === STEPS.PONTOON_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer,
+              isEditMode && styles.disabledStepContainer
+            ]}
+            onPress={() => !isEditMode && handleStepClick(STEPS.PONTOON_DETAILS)}
+            disabled={isEditMode}
           >
             <View style={[styles.stepIcon, currentStep === STEPS.PONTOON_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
               <Ionicons name="location" size={22} color={currentStep === STEPS.PONTOON_DETAILS ? Colors.white : "#6F6F6F"} />
@@ -113,8 +423,13 @@ const NewBookingScreen = ({ navigation }) => {
           </TouchableOpacity>
           <View style={styles.stepConnectorLine} />
           <TouchableOpacity 
-            style={[styles.stepIconContainer, currentStep === STEPS.BOAT_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer]}
-            onPress={() => handleStepClick(STEPS.BOAT_DETAILS)}
+            style={[
+              styles.stepIconContainer, 
+              currentStep === STEPS.BOAT_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer,
+              isEditMode && styles.disabledStepContainer
+            ]}
+            onPress={() => !isEditMode && handleStepClick(STEPS.BOAT_DETAILS)}
+            disabled={isEditMode}
           >
             <View style={[styles.stepIcon, currentStep === STEPS.BOAT_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
               <Ionicons name="boat-outline" size={22} color={currentStep === STEPS.BOAT_DETAILS ? Colors.white : "#6F6F6F"}/>
@@ -168,45 +483,48 @@ const NewBookingScreen = ({ navigation }) => {
               setPontoonName={setPontoonName}
               berthName={berthName}
               setBerthName={setBerthName}
+              pontoons={pontoonsData}
+              berths={berthsData}
+              onPontoonSelect={(id) => fetchBerths(id)}
             />
           ) : currentStep === STEPS.BOAT_DETAILS ? (
             <BoatDetailsTab
               selectedBoat={selectedBoat}
               setSelectedBoat={setSelectedBoat}
-              boatRegNo={boatRegNo}
-              setBoatRegNo={setBoatRegNo}
               noOfPassengers={noOfPassengers}
               setNoOfPassengers={setNoOfPassengers}
-              boatWidth={boatWidth}
-              setBoatWidth={setBoatWidth}
-              boatLength={boatLength}
-              setBoatLength={setBoatLength}
+              boats={boatsData}
             />
-          ) : (
+          ) : currentStep === STEPS.BOOKING_DETAILS ? (
             <BookingDetailsTab
-              arrivalDate={arrivalDate}
-              setArrivalDate={setArrivalDate}
-              arrivalTime={arrivalTime}
-              setArrivalTime={setArrivalTime}
-              hours={hours}
-              setHours={setHours}
-              minutes={minutes}
-              setMinutes={setMinutes}
-              departureDate={departureDate}
-              setDepartureDate={setDepartureDate}
-              departureTime={departureTime}
-              setDepartureTime={setDepartureTime}
+              bookingDetails={bookingDetails}
+              onBookingDetailsChange={handleBookingDetailsChange}
+              berthsData={berthsData}
+              pontoonName={pontoonName}
+              berthName={berthName}
             />
-          )}
+          ) : null}
           </View>
         </ScrollView>
 
-        <TouchableOpacity style={styles.primaryActionButton} onPress={handleNext}>
-          <Text style={styles.primaryActionButtonText}>
-            {currentStep === STEPS.PONTOON_DETAILS ? "Next" : currentStep === STEPS.BOAT_DETAILS ? "Next" : "Book"}
+        <TouchableOpacity 
+          style={[
+            styles.primaryActionButton, 
+            !isCurrentStepValid() && styles.disabledButton
+          ]} 
+          onPress={handleNext}
+          disabled={!isCurrentStepValid()}
+        >
+          <Text style={[
+            styles.primaryActionButtonText,
+            !isCurrentStepValid() && styles.disabledButtonText
+          ]}>
+            {currentStep === STEPS.PONTOON_DETAILS ? "Next" : currentStep === STEPS.BOAT_DETAILS ? "Next" : (isEditMode ? "Update Booking" : "Book")}
           </Text>
         </TouchableOpacity>
       </View>
+
+      <AbaciLoader visible={isLoading} />
 
       {/* Success Modal */}
       <BookingSuccessModal
@@ -304,6 +622,9 @@ const styles = StyleSheet.create({
   inactiveIconContainer: {
     backgroundColor: 'transparent',
   },
+  disabledStepContainer: {
+    opacity: 0.5,
+  },
   stepIcon: {
     width: 40,
     height: 40,
@@ -386,6 +707,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: Colors.white,
+  },
+  disabledButton: {
+    backgroundColor: '#C8C8C8',
+  },
+  disabledButtonText: {
+    color: '#999999',
   },
   pontoonDetailsCard: {
     height: 300, 

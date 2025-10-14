@@ -1,51 +1,127 @@
-import { StatusBar, StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, ActivityIndicator, } from 'react-native';
-import React, { useRef, useState } from 'react';
+import { StatusBar, StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../constants/customStyles';
+import { Colors, BOOKING_TABS, getBackendStatus } from '../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import SubTabBar from '../components/tab_bars/SubTabBar';
 import CalendarModal from '../components/modals/CalendarModal';
-import { bookingsData } from '../constants/dummyData';
 import NoDataImage from '../components/NoDataImage';
 import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import CreateButton from '../components/newBooking/CreateButton';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import Error from '../helpers/Error';
+import { fetchBookings } from '../apis/booking';
+import { useDispatch } from 'react-redux';
+import { setBookings, clearBookings } from '../../store/bookingSlice';
+import { ToastContext } from '../context/ToastContext';
+import AbaciLoader from '../components/AbaciLoader';
 
 const MyBookingsScreen = () => {
+  const toastContext = useContext(ToastContext);
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const dispatch = useDispatch();
+
   const [activeTab, setActiveTab] = useState('All');
-  const tabs = ['All','Checked In', 'Confirmed', 'Checked Out'];
+  const tabs = BOOKING_TABS;
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const selectedDateRef = useRef(null);
 
+  const [bookingsData, setBookingsData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const limit = 10;
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('null');
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasMorePages, setHasMorePages] = useState(true);
+
   const { onScroll, insets } = useTabBarScroll();
 
-  const navigation = useNavigation();
+  useEffect(() => {
+    if(isFocused) {
+      dispatch(clearBookings());
+      setPage(1);
+      setHasMorePages(true);
+      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
+    }
+  }, [isFocused]);
 
-  // Filter bookings based on active tab
-  const getFilteredBookings = () => {
-    if (activeTab === 'All') {
-      return bookingsData;
+  const fetchBookingsData = async (pageNumber, limit, isRefresh = false, searchQuery, status) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setIsLoading(true);
     }
     
-    return bookingsData.filter(booking => {
-      if (activeTab === 'Checked In') {
-        return booking.status === 'Checked In';
+    try {
+      const response = await fetchBookings(pageNumber, limit, searchQuery, status);
+      console.log(response, "response from fetchBookings");
+      if (isRefresh || pageNumber === 1) {
+        setBookingsData(response?.results || []);
+        dispatch(setBookings(response?.results || []));
+      } else {
+        const newData = [...bookingsData, ...(response?.results || [])];
+        setBookingsData(newData);
+        dispatch(setBookings(newData));
       }
-      if (activeTab === 'Confirmed') {
-        return booking.status === 'Confirmed';
+      
+      setHasMorePages(!!response?.next);
+      if(response?.next) {
+        setPage(prevPage => prevPage + 1);
       }
-      if (activeTab === 'Checked Out') {
-        return booking.status === 'Checked Out';
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setIsLoading(false);
       }
-      return true;
-    });
+    }
   };
 
-  const filteredBookings = getFilteredBookings();
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if(isFocused && searchQuery !== 'null') {
+        setIsSearching(true);
+        (async () => {
+          dispatch(clearBookings());
+          setPage(1);
+          setHasMorePages(true);
+          await fetchBookingsData(1, limit, true, searchQuery, getBackendStatus(activeTab));
+          setIsSearching(false);
+        })();
+      }
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
+  // Handle tab change
+  useEffect(() => {
+    if(isFocused) {
+      dispatch(clearBookings());
+      setPage(1);
+      setHasMorePages(true);
+      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
+    }
+  }, [activeTab]);
+
+  const refreshControl = () => {
+    const defaultSearch = 'null';
+    if(searchQuery !== defaultSearch) {
+      setSearchQuery(defaultSearch);
+    }
+    dispatch(clearBookings());
+    setPage(1);
+    setHasMorePages(true);
+    fetchBookingsData(1, limit, true, defaultSearch, getBackendStatus(activeTab));
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
@@ -69,6 +145,8 @@ const MyBookingsScreen = () => {
               style={styles.search_input}
               placeholder="Search Bookings"
               placeholderTextColor={Colors.primary}
+              value={searchQuery!=='null' ? searchQuery : ''}
+              onChangeText={text => setSearchQuery(text)}
             />
           </View>
           <TouchableOpacity
@@ -80,25 +158,31 @@ const MyBookingsScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {isSearching && (
+          <View style={{ alignSelf: 'center', marginVertical: 10 }}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
+
         <SubTabBar
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
         <View style={styles.booking_card_list}>
-          {filteredBookings.length === 0 ? (
+          {bookingsData.length === 0 ? (
             <View style={styles.noDataContainer}>
               <NoDataImage
                 imageSource={require('../assets/images/no_booking.png')}
                 title="No bookings yet"
                 subtitle="You haven't made any bookings."
-                onRefresh={() => {}}
+                onRefresh={refreshControl}
                 isDarkMode={false}
               />
             </View>
           ) : (
             <FlatList
-              data={filteredBookings}
+              data={bookingsData}
               keyExtractor={item => item.id.toString()}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: insets.bottom + 280 }}
@@ -107,17 +191,32 @@ const MyBookingsScreen = () => {
                   <MyBookingsCard 
                     item={item} 
                     onPress={() => navigation.navigate('BookingManagement', { booking: item })}
+                    isCheckedInTab={activeTab === 'Checked In'}
+                    onCheckoutSuccess={() => {
+                      dispatch(clearBookings());
+                      setPage(1);
+                      setHasMorePages(true);
+                      fetchBookingsData(1, limit, true, searchQuery, getBackendStatus(activeTab));
+                    }}
                   />
                 </View>
               )}
-              refreshing={false}
-              onRefresh={() => {}}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={refreshControl}
+                  colors={[Colors.primary]}
+                  tintColor={Colors.primary}
+                />
+              }
               onEndReachedThreshold={0.01}
               onEndReached={() => {
-                // pagination 
+                if(hasMorePages && !isLoading) {
+                  fetchBookingsData(page, limit, false, searchQuery, getBackendStatus(activeTab));
+                }
               }}
               ListFooterComponent={
-                false ? (
+                isLoading ? (
                   <View style={{ paddingVertical: 20 }}>
                     <ActivityIndicator size="small" color={Colors.primary} />
                   </View>
@@ -144,6 +243,7 @@ const MyBookingsScreen = () => {
         bottom={130 + insets.bottom}
         right={40}
       />
+      <AbaciLoader visible={isLoading} />
     </SafeAreaView>
   );
 };

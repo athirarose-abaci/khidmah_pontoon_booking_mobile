@@ -1,10 +1,45 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from 'react-native';
+import moment from 'moment';
 import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 
 const BoatDetailsTab = ({ bookingData }) => {
+  console.log('bookingData from booking management boat details tab', bookingData);
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return 'N/A';
+    
+    const momentDate = moment(dateTimeString);
+    
+    if (!momentDate.isValid()) {
+      return 'Invalid Date';
+    }
+    
+    const dateStr = momentDate.format('DD/MM/YY');
+    const timeStr = momentDate.format('hh:mm A');
+    
+    return `${dateStr} | ${timeStr}`;
+  };
+
+  const getBoatImage = () => {
+    if (bookingData?.boat?.images && bookingData.boat.images.length > 0) {
+      const firstImage = bookingData.boat.images[0];
+      
+      // Handle both string URLs and image objects
+      if (typeof firstImage === 'string') {
+        return { uri: firstImage };
+      } else if (firstImage && typeof firstImage === 'object') {
+        // If it's an object, try to get the URL from common properties
+        const imageUrl = firstImage.url || firstImage.image || firstImage.src || firstImage.uri;
+        if (imageUrl && typeof imageUrl === 'string') {
+          return { uri: imageUrl };
+        }
+      }
+    }
+    return require('../../assets/images/no_image.jpg');
+  };
+
   return (
     <View style={styles.container}>
       {/* Boat Details Section */}
@@ -20,21 +55,25 @@ const BoatDetailsTab = ({ bookingData }) => {
           </View>
           <View style={styles.cardHeaderSeparator} />
           <View style={styles.boatContent}>
-            <Image source={bookingData.image} style={styles.boatImage} />
+            <Image source={getBoatImage()} style={styles.boatImage} />
             <View style={styles.boatInfo}>
-              <Text style={styles.boatName}>{bookingData.title}</Text>
+              <Text style={styles.boatName}>{bookingData?.boat?.name || 'N/A'}</Text>
               <View style={styles.boatDetails}>
                 <View style={styles.capacityContainer}>
                   <Image source={require('../../assets/images/capacity.png')} style={styles.capacityIcon} />
-                  <Text style={styles.capacityText}>{bookingData.capacity}</Text>
+                  <Text style={styles.capacityText}>{bookingData?.passengers || 'N/A'}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Boat Reg.No</Text>
-                  <Text style={styles.detailValue}>{bookingData.boatId}</Text>
+                  <Text style={styles.detailValue}>{bookingData?.boat?.registration_number || 'N/A'}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Boat Size</Text>
-                  <Text style={styles.detailValue}>{bookingData.size}</Text>
+                  <Text style={styles.detailValue}>
+                    {bookingData?.boat?.length && bookingData?.boat?.width 
+                      ? `${bookingData.boat.length} ft x ${bookingData.boat.width} ft` 
+                      : 'N/A'}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -42,7 +81,7 @@ const BoatDetailsTab = ({ bookingData }) => {
         </View>
       </View>
 
-      {/* Chartered Information Section */}
+      {/* Booking Information Section */}
       <View style={styles.section}>
         <View style={styles.chartererCard}>
           <View style={styles.cardHeaderContainer}>
@@ -59,18 +98,20 @@ const BoatDetailsTab = ({ bookingData }) => {
               <View style={styles.chartererLeftColumn}>
                 <View style={styles.chartererDetailColumn}>
                   <Text style={styles.detailLabel}>Full Name</Text>
-                  <Text style={styles.detailValue}>{bookingData.charterer.name}</Text>
-                </View>
-                <View style={styles.chartererDetailColumn}>
-                  <Text style={styles.detailLabel}>Email</Text>
-                  <Text style={styles.detailValue}>{bookingData.charterer.email}</Text>
+                  <Text style={styles.detailValue}>{bookingData?.customer?.full_name || 'N/A'}</Text>
                 </View>
               </View>
               <View style={styles.chartererRightColumn}>
                 <View style={styles.chartererDetailColumn}>
-                  <Text style={styles.detailLabel}>Phone Number</Text>
-                  <Text style={styles.detailValue}>{bookingData.charterer.phone}</Text>
+                  <Text style={styles.detailLabel}>Mobile Number</Text>
+                  <Text style={styles.detailValue}>{bookingData?.customer?.mobile_number || 'N/A'}</Text>
                 </View>
+              </View>
+            </View>
+            <View style={styles.emailRow}>
+              <View style={styles.emailDetailColumn}>
+                <Text style={styles.detailLabel}>Email</Text>
+                <Text style={styles.detailValue}>{bookingData?.customer?.email || 'N/A'}</Text>
               </View>
             </View>
           </View>
@@ -95,7 +136,7 @@ const BoatDetailsTab = ({ bookingData }) => {
                 <View style={styles.dateTimeDetailColumn}>
                   <Text style={styles.detailLabel}>Arrival</Text>
                   <Text style={styles.detailValue}>
-                    {bookingData.arrivalDate} {bookingData.arrivalTime}
+                    {formatDateTime(bookingData?.start_date)}
                   </Text>
                 </View>
               </View>
@@ -103,7 +144,7 @@ const BoatDetailsTab = ({ bookingData }) => {
                 <View style={styles.dateTimeDetailColumn}>
                   <Text style={styles.detailLabel}>Departure</Text>
                   <Text style={styles.detailValue}>
-                    {bookingData.departureDate} {bookingData.departureTime}
+                    {formatDateTime(bookingData?.end_date)}
                   </Text>
                 </View>
               </View>
@@ -254,6 +295,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   chartererDetailColumn: {
+    gap: 2,
+  },
+  emailRow: {
+    marginTop: 12,
+  },
+  emailDetailColumn: {
     gap: 2,
   },
   dateTimeCard: {

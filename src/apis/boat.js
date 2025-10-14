@@ -3,9 +3,22 @@ import { authAxios} from "../context/AxiosContext";
 export const fetchBoats = async (pageNumer, limit, searchQuery = '') => {
     try {
         const offset = limit * (pageNumer - 1);
-        let url = `users/boat/?limit=${limit}&offset=${offset}&page=${pageNumer}&search=${searchQuery!=='null' ? searchQuery : ''}`;
-        console.log(url, "url from fetchBoats");
+        let url = `users/boat/?limit=${limit}&offset=${offset}&page=${pageNumer}`;
+
+        if (searchQuery && searchQuery !== 'null') {
+            url += `&search=${encodeURIComponent(searchQuery)}`;
+        }
+        
         const response = await authAxios.get(url);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const fetchBoatsList = async () => {
+    try {
+        const response = await authAxios.get('users/boat/?is_pagination=false');
         return response.data;
     } catch (error) {
         throw error;

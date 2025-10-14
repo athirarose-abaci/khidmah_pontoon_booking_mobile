@@ -1,4 +1,4 @@
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator } from 'react-native';
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, TextInput } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/customStyles';
@@ -40,6 +40,23 @@ const MyTicketsScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Search */}
+        <View style={styles.filter_container}>
+          <View style={styles.search_bar}>
+            <Ionicons
+              name="search-outline"
+              size={22}
+              color="#EFEFEF"
+              style={{ marginHorizontal: 12 }}
+            />
+            <TextInput
+              style={styles.search_input}
+              placeholder="Search tickets"
+              placeholderTextColor={Colors.primary}
+            />
+          </View>
+        </View>
+
         <SubTabBar
           tabs={tabs}
           activeTab={activeTab}
@@ -53,7 +70,7 @@ const MyTicketsScreen = () => {
                 <NoDataImage
                   imageSource={require('../assets/images/no_ticket.png')}
                   title="No tickets Added"
-                  subtitle="You haven't added any ticket"
+                  subtitle="You haven't raised any ticket"
                   onRefresh={() => {}}
                   isDarkMode={false}
                 />
@@ -123,6 +140,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primary,
     fontFamily: 'Inter-Medium',
+  },
+  filter_container: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    marginBottom: 15,
+    paddingHorizontal: 26,
+    backgroundColor: 'transparent',
+  },
+  search_bar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    height: 52,
+    borderRadius: 26,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+    marginRight: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 0,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+  },
+  search_input: {
+    flex: 1,
+    paddingVertical: 0,
+    paddingRight: 12,
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: Colors.black,
   },
   list_container: {
     paddingHorizontal: 26,

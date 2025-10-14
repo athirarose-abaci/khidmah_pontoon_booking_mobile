@@ -1,52 +1,183 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { Colors, getStatusTagColors } from '../../constants/customStyles';
+import moment from 'moment';
+import { Colors, getStatusTagColorsWithBg, getDisplayStatus } from '../../constants/customStyles';
+import { checkOutBooking, extendBooking } from '../../apis/booking';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import Error from '../../helpers/Error';
+import { ToastContext } from '../../context/ToastContext';
+import ExtendBookingModal from '../modals/ExtendBookingModal';
+import AbaciLoader from '../AbaciLoader';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateBooking as updateBookingAction } from '../../../store/bookingSlice';
 
-const MyBookingCard = ({ item, onPress }) => {
-  const { backgroundColor: statusBg, textColor: statusTextColor } = getStatusTagColors(item?.status);
+const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSuccess }) => {
+  const dispatch = useDispatch();
+  const bookingFromStore = useSelector(state => state?.bookingSlice?.bookings?.find(b => b.id === item?.id));
+  const booking = bookingFromStore || item;
+
+  const { backgroundColor: statusBg, textColor: statusTextColor } = getStatusTagColorsWithBg(booking?.status);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [extending, setExtending] = useState(false);
+
+  const toastContext = useContext(ToastContext);
+
+  const handleCheckOutPress = async () => {
+    if (checkingOut) return;
+    try {
+      setCheckingOut(true);
+      const updated = await checkOutBooking(booking?.id);
+      console.log('updated from handleCheckOutPress', updated);
+      if (updated) {
+        dispatch(updateBookingAction(updated));
+        if (onCheckoutSuccess) {
+          onCheckoutSuccess();
+        }
+      }
+    } catch (e) {
+      let err_msg = Error(e);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  const handleExtendBooking = async (bookingId, hours, minutes) => {
+    setExtending(true);
+    try {
+      const updated = await extendBooking(bookingId, hours, minutes);
+      if (updated) {
+        dispatch(updateBookingAction(updated));
+      }
+      toastContext.showToast(`Booking extended by ${hours}:${minutes}`, "short", "success");
+    } catch (error) {
+      console.log('error from booking management screen extend booking', error);
+      let err_msg = Error(error);
+      console.log('error from booking management screen extend booking', err_msg);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setExtending(false);
+    }
+  };
+  
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return 'N/A';
+       
+    const momentDate = moment(dateTimeString);
+    
+    if (!momentDate.isValid()) {
+      return 'Invalid Date';
+    }
+    
+    const dateStr = momentDate.format('DD/MM/YY');
+    const timeStr = momentDate.format('hh:mm A');
+    
+    return `${dateStr} | ${timeStr}`;
+  };
+
+  const getBoatImage = () => {
+    if (booking?.boat?.images && booking?.boat?.images?.length > 0) {
+      const firstImage = booking?.boat?.images[0];
+      
+      if (typeof firstImage === 'string') {
+        return { uri: firstImage };
+      } else if (firstImage && typeof firstImage === 'object') {
+        const imageUrl = firstImage.url || firstImage.image || firstImage.src || firstImage.uri;
+        if (imageUrl && typeof imageUrl === 'string') {
+          return { uri: imageUrl };
+        }
+      }
+    }
+    return require('../../assets/images/no_image.jpg');
+  };
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      {/* Left side image */}
-      <View style={styles.imageWrapper}>
-        <Image source={item.image} style={styles.image} />
-        <View style={[styles.statusTag, { backgroundColor: statusBg }]}>
-          <Text style={[styles.statusText, { color: statusTextColor }]}>{item.status}</Text>
+      <View style={styles.topRow}>
+        {/* Left side image */}
+        <View style={styles.imageWrapper}>
+          <Image source={getBoatImage()} style={styles.image} />
+          <View style={[styles.statusTag, { backgroundColor: statusBg }]}>
+            <Text style={[styles.statusText, { color: statusTextColor }]}>{getDisplayStatus(booking?.status)}</Text>
+          </View>
+        </View>
+
+        {/* Right content */}
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title} >
+              {booking?.boat?.name ? (booking?.boat?.name.length > 11 ? booking?.boat?.name.substring(0, 11) + '...' : booking?.boat?.name) : 'N/A'}
+            </Text>
+            <View style={styles.dot} />
+            <Text style={[styles.subTitle, { marginRight: 5 }]} >
+              {booking?.boat?.registration_number ? (booking?.boat?.registration_number.length > 8 ? booking?.boat?.registration_number.substring(0, 8) + '...' : booking?.boat?.registration_number) : 'N/A'}
+            </Text>
+            <Text style={styles.code} >
+              {booking?.booking_number ? (booking?.booking_number.length > 9 ? booking?.booking_number.substring(0, 9) + '...' : booking?.booking_number) : 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.divider} />
+
+          <View style={styles.timeRow}>
+            <View style={styles.timeBlock}>
+              <View style={styles.timeHeaderRow}>
+                <Ionicons name="time-outline" size={16} color={Colors.primary} />
+                <Text style={[styles.label, { marginLeft: 6 }]}>Start</Text>
+              </View>
+              <Text style={styles.timeText}>
+                {formatDateTime(booking?.start_date)}
+              </Text>
+            </View>
+
+            <View style={styles.timeBlock}>
+              <View style={styles.timeHeaderRow}>
+                <Ionicons name="time-outline" size={16} color={Colors.primary} />
+                <Text style={[styles.label, { marginLeft: 6 }]}>End</Text>
+              </View>
+              <Text style={styles.timeText}>
+                {formatDateTime(booking?.end_date)}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Right content */}
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-          <View style={styles.dot} />
-          <Text style={styles.subTitle} numberOfLines={1}>{item.boatId}</Text>
-          <Text style={styles.code} numberOfLines={1}>#{item.bookingId}</Text>
-        </View>
-        <View style={styles.divider} />
-
-        <View style={styles.timeRow}>
-          <View style={styles.timeBlock}>
-            <View style={styles.timeHeaderRow}>
-              <Ionicons name="time-outline" size={16} color={Colors.primary} />
-              <Text style={[styles.label, { marginLeft: 6 }]}>Arrival</Text>
+      {isCheckedInTab && String(booking?.status).toLowerCase() === 'checked_in' && (
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.extendButton}
+            onPress={() => setShowExtendModal(true)}
+          >
+            <View style={styles.btnContent}>
+              <MaterialDesignIcons name="timer-plus-outline" size={18} color={Colors.primary} style={styles.btnIcon} />
+              <Text style={styles.extendButtonText}>Extend stay</Text>
             </View>
-            <Text style={styles.timeText}>
-              {item.arrivalDate} | {item.arrivalTime}
-            </Text>
-          </View>
-
-          <View style={styles.timeBlock}>
-            <View style={styles.timeHeaderRow}>
-              <Ionicons name="time-outline" size={16} color={Colors.primary} />
-              <Text style={[styles.label, { marginLeft: 6 }]}>Departure</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.checkoutButton}
+            disabled={checkingOut}
+            onPress={handleCheckOutPress}
+          >
+            <View style={styles.btnContent}>
+              <Ionicons name="log-out-outline" size={18} color={Colors.white} style={styles.btnIcon} />
+              <Text style={styles.checkoutButtonText}>Check-out</Text>
             </View>
-            <Text style={styles.timeText}>
-              {item.departureDate} | {item.departureTime}
-            </Text>
-          </View>
+          </TouchableOpacity>
         </View>
-      </View>
+      )}
+
+      <ExtendBookingModal
+        visible={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        onExtend={handleExtendBooking}
+        bookingItem={booking}
+        extending={extending}
+      />
+      <AbaciLoader visible={extending || checkingOut} />
     </TouchableOpacity>
   );
 };
@@ -55,7 +186,7 @@ export default MyBookingCard;
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     backgroundColor: Colors.white,
     borderRadius: 12,
     marginBottom: 5,
@@ -67,6 +198,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
     overflow: 'hidden',
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   imageWrapper: {
     position: 'relative',
@@ -101,14 +236,14 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Inter-SemiBold',
     fontSize: 15,
-    flex: 0,
     flexShrink: 1,
+    maxWidth: '40%',
   },
   subTitle: {
     color: Colors.font_gray,
     fontSize: 13,
-    flex: 0.2,
-    textAlign: 'left',
+    flexShrink: 1,
+    maxWidth: '25%',
   },
   code: {
     fontSize: 12,
@@ -118,6 +253,13 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     paddingHorizontal: 7,
     marginRight: 2,
+  },
+  registrationNumber: {
+    color: Colors.font_gray,
+    fontSize: 13,
+    flexShrink: 1,
+    maxWidth: '25%',
+    textAlign: 'right',
   },
   divider: {
     height: 1,
@@ -166,4 +308,54 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     textAlign: 'center',
   },
+  extendButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FFFC',
+    marginRight: 15,
+  },
+  checkoutButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 5,
+    marginBottom: 20,
+    alignSelf: 'stretch',
+    paddingHorizontal: 12,
+  },
+  
+  extendButtonText: {
+    color: Colors.primary,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
+  },
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnIcon: {
+    marginRight: 6,
+  },
+  
+  checkoutButtonText: {
+    color: Colors.white,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
+  },
+  
 });

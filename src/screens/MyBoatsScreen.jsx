@@ -158,11 +158,10 @@ const MyBoatsScreen = () => {
           </View>
         )}
 
-        {/* List */}
         <View style={styles.boat_list_conatiner}>
           {boatsData.length === 0 ? (
             <View style={styles.noDataContainer}>
-              <NoDataImage 
+              <NoDataImage
                 imageSource={require('../assets/images/no_boats.png')}
                 title="No boats Added"
                 subtitle="You haven't added any boat"
@@ -288,7 +287,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Medium",
   },
   boat_list_conatiner: {
-    flex: 1,
     paddingHorizontal: 5,
   },
   noDataContainer: {

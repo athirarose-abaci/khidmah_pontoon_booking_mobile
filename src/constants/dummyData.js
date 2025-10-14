@@ -1,233 +1,235 @@
-export const bookingsData = [
-    {
-      id: '1',
-      image: require('../assets/images/booking1.png'),
-      title: 'Voyager X',
-      boatId: 'DXB-1121',
-      bookingId: 'AZ12365',
-      arrivalDate: '11.05.25',
-      arrivalTime: '12:00pm',
-      departureDate: '11.05.25',
-      departureTime: '2:00pm',
-      status: 'Confirmed',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '2',
-      image: require('../assets/images/booking2.png'),
-      title: 'Ocean Pearl',
-      boatId: 'DXB-2231',
-      bookingId: 'AZ98765',
-      arrivalDate: '12.05.25',
-      arrivalTime: '10:30am',
-      departureDate: '12.05.25',
-      departureTime: '12:30pm',
-      status: 'Checked In',
-      size: '18.5ft x 12.3ft',
-      capacity: 20,
-      charterer: {
-        name: 'Sarah Johnson',
-        phone: '+971 50 123 4567',
-        email: 'sarah.johnson@email.com'
-      }
-    },
-    {
-      id: '3',
-      image: require('../assets/images/booking3.png'),
-      title: 'Sea Queen',
-      boatId: 'DXB-9987',
-      bookingId: 'AZ45678',
-      arrivalDate: '13.05.25',
-      arrivalTime: '09:00am',
-      departureDate: '13.05.25',
-      departureTime: '11:00am',
-      status: 'Checked Out',
-      size: '22.1ft x 16.8ft',
-      capacity: 30,
-      charterer: {
-        name: 'Ahmed Al-Rashid',
-        phone: '+971 55 987 6543',
-        email: 'ahmed.rashid@company.ae'
-      }
-    },
-    {
-      id: '4',
-      image: require('../assets/images/booking4.png'),
-      title: 'Blue Horizon',
-      boatId: 'DXB-5432',
-      bookingId: 'AZ76543',
-      arrivalDate: '14.05.25',
-      arrivalTime: '1:00pm',
-      departureDate: '14.05.25',
-      departureTime: '3:00pm',
-      status: 'Confirmed',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '5',
-      image: require('../assets/images/booking2.png'),
-      title: 'Marine Star',
-      boatId: 'DXB-8745',
-      bookingId: 'AZ11122',
-      arrivalDate: '15.05.25',
-      arrivalTime: '8:00am',
-      departureDate: '15.05.25',
-      departureTime: '10:00am',
-      status: 'Checked Out',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '6',
-      image: require('../assets/images/booking4.png'),
-      title: 'Wave Rider',
-      boatId: 'DXB-3321',
-      bookingId: 'AZ22233',
-      arrivalDate: '16.05.25',
-      arrivalTime: '7:00am',
-      departureDate: '16.05.25',
-      departureTime: '9:00am',
-      status: 'Confirmed',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '7',
-      image: require('../assets/images/booking1.png'),
-      title: 'Coral Cruise',
-      boatId: 'DXB-4444',
-      bookingId: 'AZ33344',
-      arrivalDate: '17.05.25',
-      arrivalTime: '11:30am',
-      departureDate: '17.05.25',
-      departureTime: '1:30pm',
-      status: 'Checked In',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '8',
-      image: require('../assets/images/booking3.png'),
-      title: 'Lagoon Express',
-      boatId: 'DXB-1234',
-      bookingId: 'AZ44455',
-      arrivalDate: '18.05.25',
-      arrivalTime: '2:00pm',
-      departureDate: '18.05.25',
-      departureTime: '4:00pm',
-      status: 'Checked Out',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '9',
-      image: require('../assets/images/booking1.png'),
-      title: 'Island Spirit',
-      boatId: 'DXB-5678',
-      bookingId: 'AZ55566',
-      arrivalDate: '19.05.25',
-      arrivalTime: '9:30am',
-      departureDate: '19.05.25',
-      departureTime: '11:30am',
-      status: 'Confirmed',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '10',
-      image: require('../assets/images/booking2.png'),
-      title: 'Sunset Voyager',
-      boatId: 'DXB-8765',
-      bookingId: 'AZ66677',
-      arrivalDate: '20.05.25',
-      arrivalTime: '5:00pm',
-      departureDate: '20.05.25',
-      departureTime: '7:00pm',
-      status: 'Checked Out',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '11',
-      image: require('../assets/images/booking4.png'),
-      title: 'Harbor Queen',
-      boatId: 'DXB-4321',
-      bookingId: 'AZ77788',
-      arrivalDate: '21.05.25',
-      arrivalTime: '6:00am',
-      departureDate: '21.05.25',
-      departureTime: '8:00am',
-      status: 'Confirmed',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-    {
-      id: '12',
-      image: require('../assets/images/booking3.png'),
-      title: 'Crystal Wave',
-      boatId: 'DXB-2468',
-      bookingId: 'AZ88899',
-      arrivalDate: '22.05.25',
-      arrivalTime: '3:00pm',
-      departureDate: '22.05.25',
-      departureTime: '5:00pm',
-      status: 'Checked In',
-      size: '19.2ft x 14.5ft',
-      capacity: 24,
-      charterer: {
-        name: 'Nikolai Dragomir',
-        phone: '+971 05 325 1256',
-        email: 'Nikolai@abc.com'
-      }
-    },
-  ];
+// export const bookingsData = [
+//     {
+//       id: '1',
+//       image: require('../assets/images/booking1.png'),
+//       title: 'Voyager X',
+//       boatId: 'DXB-1121',
+//       bookingId: 'AZ12365',
+//       arrivalDate: '11.05.25',
+//       arrivalTime: '12:00pm',
+//       departureDate: '11.05.25',
+//       departureTime: '2:00pm',
+//       status: 'Confirmed',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '2',
+//       image: require('../assets/images/booking2.png'),
+//       title: 'Ocean Pearl',
+//       boatId: 'DXB-2231',
+//       bookingId: 'AZ98765',
+//       arrivalDate: '12.05.25',
+//       arrivalTime: '10:30am',
+//       departureDate: '12.05.25',
+//       departureTime: '12:30pm',
+//       status: 'Checked In',
+//       size: '18.5ft x 12.3ft',
+//       capacity: 20,
+//       charterer: {
+//         name: 'Sarah Johnson',
+//         phone: '+971 50 123 4567',
+//         email: 'sarah.johnson@email.com'
+//       }
+//     },
+//     {
+//       id: '3',
+//       image: require('../assets/images/booking3.png'),
+//       title: 'Sea Queen',
+//       boatId: 'DXB-9987',
+//       bookingId: 'AZ45678',
+//       arrivalDate: '13.05.25',
+//       arrivalTime: '09:00am',
+//       departureDate: '13.05.25',
+//       departureTime: '11:00am',
+//       status: 'Checked Out',
+//       size: '22.1ft x 16.8ft',
+//       capacity: 30,
+//       charterer: {
+//         name: 'Ahmed Al-Rashid',
+//         phone: '+971 55 987 6543',
+//         email: 'ahmed.rashid@company.ae'
+//       }
+//     },
+//     {
+//       id: '4',
+//       image: require('../assets/images/booking4.png'),
+//       title: 'Blue Horizon',
+//       boatId: 'DXB-5432',
+//       bookingId: 'AZ76543',
+//       arrivalDate: '14.05.25',
+//       arrivalTime: '1:00pm',
+//       departureDate: '14.05.25',
+//       departureTime: '3:00pm',
+//       status: 'Confirmed',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '5',
+//       image: require('../assets/images/booking2.png'),
+//       title: 'Marine Star',
+//       boatId: 'DXB-8745',
+//       bookingId: 'AZ11122',
+//       arrivalDate: '15.05.25',
+//       arrivalTime: '8:00am',
+//       departureDate: '15.05.25',
+//       departureTime: '10:00am',
+//       status: 'Checked Out',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '6',
+//       image: require('../assets/images/booking4.png'),
+//       title: 'Wave Rider',
+//       boatId: 'DXB-3321',
+//       bookingId: 'AZ22233',
+//       arrivalDate: '16.05.25',
+//       arrivalTime: '7:00am',
+//       departureDate: '16.05.25',
+//       departureTime: '9:00am',
+//       status: 'Confirmed',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '7',
+//       image: require('../assets/images/booking1.png'),
+//       title: 'Coral Cruise',
+//       boatId: 'DXB-4444',
+//       bookingId: 'AZ33344',
+//       arrivalDate: '17.05.25',
+//       arrivalTime: '11:30am',
+//       departureDate: '17.05.25',
+//       departureTime: '1:30pm',
+//       status: 'Checked In',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '8',
+//       image: require('../assets/images/booking3.png'),
+//       title: 'Lagoon Express',
+//       boatId: 'DXB-1234',
+//       bookingId: 'AZ44455',
+//       arrivalDate: '18.05.25',
+//       arrivalTime: '2:00pm',
+//       departureDate: '18.05.25',
+//       departureTime: '4:00pm',
+//       status: 'Checked Out',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '9',
+//       image: require('../assets/images/booking1.png'),
+//       title: 'Island Spirit',
+//       boatId: 'DXB-5678',
+//       bookingId: 'AZ55566',
+//       arrivalDate: '19.05.25',
+//       arrivalTime: '9:30am',
+//       departureDate: '19.05.25',
+//       departureTime: '11:30am',
+//       status: 'Confirmed',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '10',
+//       image: require('../assets/images/booking2.png'),
+//       title: 'Sunset Voyager',
+//       boatId: 'DXB-8765',
+//       bookingId: 'AZ66677',
+//       arrivalDate: '20.05.25',
+//       arrivalTime: '5:00pm',
+//       departureDate: '20.05.25',
+//       departureTime: '7:00pm',
+//       status: 'Checked Out',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '11',
+//       image: require('../assets/images/booking4.png'),
+//       title: 'Harbor Queen',
+//       boatId: 'DXB-4321',
+//       bookingId: 'AZ77788',
+//       arrivalDate: '21.05.25',
+//       arrivalTime: '6:00am',
+//       departureDate: '21.05.25',
+//       departureTime: '8:00am',
+//       status: 'Confirmed',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//     {
+//       id: '12',
+//       image: require('../assets/images/booking3.png'),
+//       title: 'Crystal Wave',
+//       boatId: 'DXB-2468',
+//       bookingId: 'AZ88899',
+//       arrivalDate: '22.05.25',
+//       arrivalTime: '3:00pm',
+//       departureDate: '22.05.25',
+//       departureTime: '5:00pm',
+//       status: 'Checked In',
+//       size: '19.2ft x 14.5ft',
+//       capacity: 24,
+//       charterer: {
+//         name: 'Nikolai Dragomir',
+//         phone: '+971 05 325 1256',
+//         email: 'Nikolai@abc.com'
+//       }
+//     },
+//   ];
+
+ export const bookingsData = [];
   
   // export const bookingsData = [];
   export const boatsData = [
@@ -413,70 +415,72 @@ export const bookingsData = [
     },
   ];
 
-  export const ticketsData = [
-    {
-      id: 't1',
-      title: 'Unable to Book Pontoon on Selected Date',
-      category: 'Booking Issue',
-      status: 'Open',
-      agent: {
-        name: 'Rami Saad',
-        avatar: require('../assets/images/profile.png'),
-        role: 'Assigned Agent',
-      },
-      createdAtDate: '11.05.25',
-      createdAtTime: '11:00AM',
-    },
-    {
-      id: 't2',
-      title: 'Unable to Book Pontoon on Selected Date',
-      category: 'Booking Issue',
-      status: 'Open',
-      agent: {
-        name: 'Rami Saad',
-        avatar: require('../assets/images/profile.png'),
-        role: 'Assigned Agent',
-      },
-      createdAtDate: '11.05.25',
-      createdAtTime: '11:00AM',
-    },
-    {
-      id: 't3',
-      title: 'Unable to Book Pontoon on Selected Date',
-      category: 'Booking Issue',
-      status: 'Open',
-      agent: {
-        name: 'Rami Saad',
-        avatar: require('../assets/images/profile.png'),
-        role: 'Assigned Agent',
-      },
-      createdAtDate: '11.05.25',
-      createdAtTime: '11:00AM',
-    },
-    {
-      id: 't4',
-      title: 'Payment not reflecting in booking',
-      category: 'Payment',
-      status: 'In Progress',
-      agent: {
-        name: 'Hanna Lee',
-        avatar: require('../assets/images/profile.png'),
-        role: 'Assigned Agent',
-      },
-      createdAtDate: '12.05.25',
-      createdAtTime: '02:30PM',
-    },
-      {
-        id: 't5',
-      title: 'Wrong boat assigned to my booking',
-      category: 'Assignment',
-      status: 'Closed',
-      agent: {
-        name: 'Omar N.',
-        avatar: require('../assets/images/profile.png'),
-        role: 'Assigned Agent',
-      },
-      createdAtDate: '10.05.25',
-      createdAtTime: '09:10AM',
-    },
-  ];  
+  // export const ticketsData = [
+  //   {
+  //     id: 't1',
+  //     title: 'Unable to Book Pontoon on Selected Date',
+  //     category: 'Booking Issue',
+  //     status: 'Open',
+  //     agent: {
+  //       name: 'Rami Saad',
+  //       avatar: require('../assets/images/profile.png'),
+  //       role: 'Assigned Agent',
+  //     },
+  //     createdAtDate: '11.05.25',
+  //     createdAtTime: '11:00AM',
+  //   },
+  //   {
+  //     id: 't2',
+  //     title: 'Unable to Book Pontoon on Selected Date',
+  //     category: 'Booking Issue',
+  //     status: 'Open',
+  //     agent: {
+  //       name: 'Rami Saad',
+  //       avatar: require('../assets/images/profile.png'),
+  //       role: 'Assigned Agent',
+  //     },
+  //     createdAtDate: '11.05.25',
+  //     createdAtTime: '11:00AM',
+  //   },
+  //   {
+  //     id: 't3',
+  //     title: 'Unable to Book Pontoon on Selected Date',
+  //     category: 'Booking Issue',
+  //     status: 'Open',
+  //     agent: {
+  //       name: 'Rami Saad',
+  //       avatar: require('../assets/images/profile.png'),
+  //       role: 'Assigned Agent',
+  //     },
+  //     createdAtDate: '11.05.25',
+  //     createdAtTime: '11:00AM',
+  //   },
+  //   {
+  //     id: 't4',
+  //     title: 'Payment not reflecting in booking',
+  //     category: 'Payment',
+  //     status: 'In Progress',
+  //     agent: {
+  //       name: 'Hanna Lee',
+  //       avatar: require('../assets/images/profile.png'),
+  //       role: 'Assigned Agent',
+  //     },
+  //     createdAtDate: '12.05.25',
+  //     createdAtTime: '02:30PM',
+  //   },
+  //     {
+  //       id: 't5',
+  //     title: 'Wrong boat assigned to my booking',
+  //     category: 'Assignment',
+  //     status: 'Closed',
+  //     agent: {
+  //       name: 'Omar N.',
+  //       avatar: require('../assets/images/profile.png'),
+  //       role: 'Assigned Agent',
+  //     },
+  //     createdAtDate: '10.05.25',
+  //     createdAtTime: '09:10AM',
+  //   },
+  // ];  
+
+  export const ticketsData = [];

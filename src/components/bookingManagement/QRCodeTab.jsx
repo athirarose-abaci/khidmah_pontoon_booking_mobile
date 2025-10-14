@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
 import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import QRCode from 'react-native-qrcode-svg';
 
 const QRCodeTab = ({ bookingData }) => {
   return (
@@ -31,11 +32,20 @@ const QRCodeTab = ({ bookingData }) => {
               />
               {/* QR Code Image */}
               <View style={styles.qrPlaceholder}>
-                <Image 
-                  source={require('../../assets/images/qr.png')} 
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
+                {bookingData?.qr_code ? (
+                  <QRCode
+                    value={bookingData?.qr_code}
+                    size={180}
+                    color={Colors.black}
+                    backgroundColor={Colors.white}
+                  />
+                ) : (
+                  <Image 
+                    source={require('../../assets/images/no_image.jpg')} 
+                    style={styles.qrImage}
+                    resizeMode="contain"
+                  />
+                )}
                 {/* Corner markers */}
                 <View style={[styles.qrCorner, styles.qrCornerTopLeft]} />
                 <View style={[styles.qrCorner, styles.qrCornerTopRight]} />
@@ -47,12 +57,12 @@ const QRCodeTab = ({ bookingData }) => {
               <View style={styles.refNoContainer}>
                 <View style={styles.refNoRow}>
                   <Text style={styles.refNoLabel}>Ref No:</Text>
-                  <Text style={styles.refNoValue}>XXXXXXXXXXXXX</Text>
+                  <Text style={styles.refNoValue}>{bookingData?.booking_number || 'N/A'}</Text>
                 </View>
               </View>
                 <View style={styles.nameContainer}>
                   <Text style={styles.nameLabel}>Name:</Text>
-                  <Text style={styles.nameValue}>{bookingData.charterer.name}</Text>
+                  <Text style={styles.nameValue}>{bookingData?.customer?.full_name || 'N/A'}</Text>
                 </View>
                 <View style={styles.dottedLineContainer}>
                   {Array.from({ length: 20 }, (_, index) => (
@@ -131,8 +141,8 @@ const styles = StyleSheet.create({
     height: 60,
   },
   qrPlaceholder: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',

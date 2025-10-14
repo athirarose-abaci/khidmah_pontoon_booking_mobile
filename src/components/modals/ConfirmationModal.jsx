@@ -22,7 +22,9 @@ const ConfirmationModal = ({
   confirmIconColor = 'white',
   confirmIconSize = 18,
   showConfirmIcon = true,
-  confirmIconComponent = null, 
+  confirmIconComponent = null,
+  confirmButtonColor = '#FF4444',
+  warningIconBgColor = '#FFE6E6',
 }) => {
   const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
 
@@ -40,7 +42,7 @@ const ConfirmationModal = ({
           ]}>
           
           {showWarningIcon && (
-            <View style={styles.warningIconContainer}>
+            <View style={[styles.warningIconContainer, { backgroundColor: warningIconBgColor }]}>
               {warningIconComponent ? (
                 warningIconComponent
               ) : (
@@ -64,7 +66,7 @@ const ConfirmationModal = ({
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, styles.deleteButton]}
+              style={[styles.button, { backgroundColor: confirmButtonColor }]}
               onPress={onConfirm}>
               {showConfirmIcon && (
                 confirmIconComponent ? (
@@ -139,7 +141,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#FFE6E6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
