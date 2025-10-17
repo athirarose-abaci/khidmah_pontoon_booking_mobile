@@ -1,10 +1,44 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
+import React, { useContext, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import QRCode from 'react-native-qrcode-svg';
+import Share from 'react-native-share';
+import ViewShot, { captureRef } from 'react-native-view-shot';
+import { ToastContext } from '../../context/ToastContext';
 
 const QRCodeTab = ({ bookingData }) => {
+  const viewShotRef = useRef(null);
+
+  const toastContext = useContext(ToastContext);
+
+  const handleShareQRCode = async () => {
+    try {
+      if (!bookingData?.qr_code) {
+        toastContext.showToast('No QR code available to share', 'short', 'error');
+        return;
+      }
+
+      // 1. Capture the View and get its local URI
+      const uri = await captureRef(viewShotRef, {
+        format: 'png',
+        quality: 0.9,
+      });
+
+      // 2. Share the captured URI
+      await Share.open({ 
+        url: uri,
+        title: 'Booking QR Code'
+      });
+
+    } catch (error) {
+      // Don't show error if user simply cancelled the share
+      if (error.message !== 'User did not share') {
+        toastContext.showToast('Failed to share QR code', 'short', 'error');
+      }
+    }
+  };
+
   return (
     <ScrollView 
       style={styles.container} 
@@ -20,9 +54,20 @@ const QRCodeTab = ({ bookingData }) => {
               </View>
             </View>
             <Text style={styles.cardHeaderText}>Booking QR Code</Text>
+            <TouchableOpacity 
+              style={styles.shareButtonContainer}
+              onPress={handleShareQRCode}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="share-outline" size={24} color={Colors.primary} />
+            </TouchableOpacity>
           </View>
           <View style={styles.cardHeaderSeparator} />
-          <View style={styles.qrContainer}>
+          <ViewShot 
+            ref={viewShotRef} 
+            options={{ format: 'png', quality: 0.9 }}
+            style={styles.qrContainer}
+          >
             <View style={styles.qrCodeContainer}>
               {/* Khidmah Logo */}
               <Image 
@@ -69,9 +114,9 @@ const QRCodeTab = ({ bookingData }) => {
                     <View key={index} style={styles.dottedLineDot} />
                   ))}
                 </View>
-                <Text style={styles.poweredBy}>Powered by</Text>
+                {/* <Text style={styles.poweredBy}>Powered by</Text> */}
             </View>
-          </View>
+          </ViewShot>
         </View>
       </View>
     </ScrollView>
@@ -91,6 +136,7 @@ const styles = StyleSheet.create({
   cardHeaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 0,
     marginTop: -8,
   },
@@ -114,6 +160,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: Colors.heading_font,
+    flex: 1,
+    marginLeft: 12,
+  },
+  shareButtonContainer: {
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardHeaderSeparator: {
     height: 1,

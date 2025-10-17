@@ -29,7 +29,6 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
     try {
       setCheckingOut(true);
       const updated = await checkOutBooking(booking?.id);
-      console.log('updated from handleCheckOutPress', updated);
       if (updated) {
         dispatch(updateBookingAction(updated));
         if (onCheckoutSuccess) {
@@ -53,9 +52,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
       }
       toastContext.showToast(`Booking extended by ${hours}:${minutes}`, "short", "success");
     } catch (error) {
-      console.log('error from booking management screen extend booking', error);
       let err_msg = Error(error);
-      console.log('error from booking management screen extend booking', err_msg);
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       setExtending(false);
@@ -71,8 +68,8 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
       return 'Invalid Date';
     }
     
-    const dateStr = momentDate.format('DD/MM/YY');
-    const timeStr = momentDate.format('hh:mm A');
+    const dateStr = momentDate.format('DD.MM.YY');
+    const timeStr = momentDate.format('hh:mmA');
     
     return `${dateStr} | ${timeStr}`;
   };
@@ -163,7 +160,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
             onPress={handleCheckOutPress}
           >
             <View style={styles.btnContent}>
-              <Ionicons name="log-out-outline" size={18} color={Colors.white} style={styles.btnIcon} />
+              <Image source={require('../../assets/images/clock_out.png')} style={styles.btnIcon} />
               <Text style={styles.checkoutButtonText}>Check-out</Text>
             </View>
           </TouchableOpacity>
@@ -235,13 +232,13 @@ const styles = StyleSheet.create({
   title: {
     color: Colors.primary,
     fontFamily: 'Inter-SemiBold',
-    fontSize: 15,
+    fontSize: 14.5,
     flexShrink: 1,
     maxWidth: '40%',
   },
   subTitle: {
     color: Colors.font_gray,
-    fontSize: 13,
+    fontSize: 11,
     flexShrink: 1,
     maxWidth: '25%',
   },
@@ -287,7 +284,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.black,
     fontFamily: 'Inter-SemiBold',
     marginTop: 4,

@@ -1,57 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { Colors } from '../../constants/customStyles';
 import DatePickerModal from '../modals/DatePickerModal';
 import CustomTimePickerModal from '../modals/CustomTimePickerModal';
 import moment from 'moment';
+import { ToastContext } from '../../context/ToastContext';
+import Error from '../../helpers/Error';
+import { calculateDepartureTime } from '../../helpers/timeHelper';
 
 const BookingDetailsTab = ({ 
   bookingDetails,
   onBookingDetailsChange,
   berthsData = [],
   pontoonName = '',
-  berthName = ''
+  berthName = '',
+  isEditMode = false
 }) => {
   const [showArrivalDatePicker, setShowArrivalDatePicker] = useState(false);
   const [showArrivalTimePicker, setShowArrivalTimePicker] = useState(false);
+
+  const toastContext = useContext(ToastContext);
   
   useEffect(() => {
-    if (berthsData && berthsData.length > 0 && berthName) {
-      
+    // Only set default duration if not in edit mode and duration fields are empty
+    if (berthsData && berthsData.length > 0 && berthName && !isEditMode) {
       const selectedBerth = berthsData.find(berth => berth.name === berthName);
       if (selectedBerth && selectedBerth.default_duration) {
-        
         const durationParts = selectedBerth.default_duration.split(':');
         if (durationParts.length >= 2) {
-          const hours = durationParts[0];
-          const minutes = durationParts[1];
+          const hours = durationParts[0].padStart(2, '0');
+          const minutes = durationParts[1].padStart(2, '0');
           
-          
-          onBookingDetailsChange('hours', hours);
-          onBookingDetailsChange('minutes', minutes);
+          // Only set if current duration fields are empty
+          if (!bookingDetails?.hours && !bookingDetails?.minutes) {
+            onBookingDetailsChange('hours', hours);
+            onBookingDetailsChange('minutes', minutes);
+          }
         }
       }
     }
-  }, [berthName]); 
+  }, [berthName, isEditMode]); 
 
   useEffect(() => {
     const { arrivalDate, arrivalTime, hours, minutes } = bookingDetails || {};
-    if (arrivalDate && arrivalTime && hours && minutes) {
+    if (arrivalDate && arrivalTime && hours !== '' && minutes !== '') {
       try {
-        const arrivalDateObj = moment(arrivalDate, 'DD/MM/YYYY');
+        // Ensure hours and minutes are valid numbers
+        const hoursNum = parseInt(hours) || 0;
+        const minutesNum = parseInt(minutes) || 0;
         
-        const [arrivalHour, arrivalMinute] = arrivalTime.split(':').map(Number);
-        
-        arrivalDateObj.hour(arrivalHour).minute(arrivalMinute);
-        
-        const durationHours = parseInt(hours) || 0;
-        const durationMinutes = parseInt(minutes) || 0;
-        
-        const departureDateObj = arrivalDateObj.clone().add(durationHours, 'hours').add(durationMinutes, 'minutes');
-        
-        const departureDate = departureDateObj.format('DD/MM/YYYY');
-        const departureTime = departureDateObj.format('HH:mm');
+        const { departureDate, departureTime } = calculateDepartureTime(
+          arrivalDate, 
+          arrivalTime, 
+          hoursNum, 
+          minutesNum
+        );
         
         const currentDepartureDate = bookingDetails?.departureDate || '';
         const currentDepartureTime = bookingDetails?.departureTime || '';
@@ -61,35 +65,17 @@ const BookingDetailsTab = ({
           onBookingDetailsChange('departureTime', departureTime);
         }
       } catch (error) {
-        console.log('Error calculating departure date:', error);
+        let err_msg = Error(error);
+        toastContext.showToast(err_msg, 'short', 'error');
       }
     }
   }, [bookingDetails?.arrivalDate, bookingDetails?.arrivalTime, bookingDetails?.hours, bookingDetails?.minutes]);
 
   // Time picker handlers
-  const handleArrivalTimeConfirm = (hours, minutes) => {
-    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  const handleArrivalTimeConfirm = (timeString) => {
     onBookingDetailsChange('arrivalTime', timeString);
     setShowArrivalTimePicker(false);
   };
-
-
-  const generateTimeOptions = () => {
-    const hours = [];
-    const minutes = [];
-    
-    for (let i = 0; i < 24; i++) {
-      hours.push(i);
-    }
-    
-    for (let i = 0; i < 60; i++) {
-      minutes.push(i);
-    }
-    
-    return { hours, minutes };
-  };
-
-  const { hours: hourOptions, minutes: minuteOptions } = generateTimeOptions();
    
   return (
     <>
@@ -147,19 +133,33 @@ const BookingDetailsTab = ({
           <TextInput
             style={styles.bookingDurationInput}
             value={bookingDetails?.hours || ''}
-            onChangeText={(value) => onBookingDetailsChange('hours', value)}
+            onChangeText={(value) => {
+              // Only allow numeric input and limit to 2 digits
+              const numericValue = value.replace(/[^0-9]/g, '');
+              if (numericValue.length <= 2) {
+                onBookingDetailsChange('hours', numericValue);
+              }
+            }}
             placeholder="Hours"
             placeholderTextColor="#C8C8C8"
             keyboardType="numeric"
+            maxLength={2}
           />
           <Text style={styles.bookingDurationSeparator}>:</Text>
           <TextInput
             style={styles.bookingDurationInput}
             value={bookingDetails?.minutes || ''}
-            onChangeText={(value) => onBookingDetailsChange('minutes', value)}
+            onChangeText={(value) => {
+              // Only allow numeric input and limit to 2 digits
+              const numericValue = value.replace(/[^0-9]/g, '');
+              if (numericValue.length <= 2) {
+                onBookingDetailsChange('minutes', numericValue);
+              }
+            }}
             placeholder="Minutes"
             placeholderTextColor="#C8C8C8"
             keyboardType="numeric"
+            maxLength={2}
           />
         </View>
       </View>
@@ -174,7 +174,7 @@ const BookingDetailsTab = ({
           <TextInput
             style={styles.textInput}
             value={bookingDetails?.departureDate || ''}
-            placeholder="Auto-calculated"
+            placeholder="Departure Date"
             placeholderTextColor="#C8C8C8"
             editable={false}
           />
@@ -187,14 +187,13 @@ const BookingDetailsTab = ({
           <TextInput
             style={styles.textInput}
             value={bookingDetails?.departureTime || ''}
-            placeholder="Auto-calculated"
+            placeholder="Departure Time"
             placeholderTextColor="#C8C8C8"
             editable={false}
           />
         </View>
       </View>
 
-      {/* Date Picker Modals */}
       <DatePickerModal
         visible={showArrivalDatePicker}
         onClose={() => setShowArrivalDatePicker(false)}
@@ -205,15 +204,12 @@ const BookingDetailsTab = ({
       />
 
 
-      {/* Custom Time Picker Modals */}
       <CustomTimePickerModal
         visible={showArrivalTimePicker}
         onClose={() => setShowArrivalTimePicker(false)}
         onConfirm={handleArrivalTimeConfirm}
         currentTime={bookingDetails?.arrivalTime || ''}
         title="Select Arrival Time"
-        hourOptions={hourOptions}
-        minuteOptions={minuteOptions}
       />
 
 

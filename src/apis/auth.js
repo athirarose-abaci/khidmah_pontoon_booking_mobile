@@ -1,5 +1,6 @@
 import { authAxios, publicAxios } from "../context/AxiosContext";
 
+
 export const userLogin = async (email, otp) => {
     const payload = {
         email : email,
@@ -22,7 +23,7 @@ export const verifyOTP = async (email, otp) => {
         const response = await publicAxios.post('users/verify-otp/', payload);
         return response;
     } catch (error) {
-        throw error;
+        throw err_msg;
     }
 };
 

@@ -6,7 +6,7 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 
 const BoatDetailsTab = ({ bookingData }) => {
-  console.log('bookingData from booking management boat details tab', bookingData);
+  
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
     
@@ -16,8 +16,8 @@ const BoatDetailsTab = ({ bookingData }) => {
       return 'Invalid Date';
     }
     
-    const dateStr = momentDate.format('DD/MM/YY');
-    const timeStr = momentDate.format('hh:mm A');
+    const dateStr = momentDate.format('DD.MM.YYYY');
+    const timeStr = momentDate.format('hh:mma');
     
     return `${dateStr} | ${timeStr}`;
   };
@@ -57,22 +57,22 @@ const BoatDetailsTab = ({ bookingData }) => {
           <View style={styles.boatContent}>
             <Image source={getBoatImage()} style={styles.boatImage} />
             <View style={styles.boatInfo}>
-              <Text style={styles.boatName}>{bookingData?.boat?.name || 'N/A'}</Text>
+              <Text style={styles.boatName}>{bookingData?.boat?.name || ''}</Text>
               <View style={styles.boatDetails}>
                 <View style={styles.capacityContainer}>
                   <Image source={require('../../assets/images/capacity.png')} style={styles.capacityIcon} />
-                  <Text style={styles.capacityText}>{bookingData?.passengers || 'N/A'}</Text>
+                  <Text style={styles.capacityText}>{bookingData?.passengers !== undefined ? bookingData?.passengers : ''}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Boat Reg.No</Text>
-                  <Text style={styles.detailValue}>{bookingData?.boat?.registration_number || 'N/A'}</Text>
+                  <Text style={styles.detailValue}>{bookingData?.boat?.registration_number || ''}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Boat Size</Text>
                   <Text style={styles.detailValue}>
                     {bookingData?.boat?.length && bookingData?.boat?.width 
-                      ? `${bookingData.boat.length} ft x ${bookingData.boat.width} ft` 
-                      : 'N/A'}
+                      ? `${bookingData?.boat?.length} ft x ${bookingData?.boat?.width} ft` 
+                      : ''}
                   </Text>
                 </View>
               </View>
@@ -98,20 +98,20 @@ const BoatDetailsTab = ({ bookingData }) => {
               <View style={styles.chartererLeftColumn}>
                 <View style={styles.chartererDetailColumn}>
                   <Text style={styles.detailLabel}>Full Name</Text>
-                  <Text style={styles.detailValue}>{bookingData?.customer?.full_name || 'N/A'}</Text>
+                  <Text style={styles.detailValue}>{bookingData?.customer?.full_name || ''}</Text>
                 </View>
               </View>
               <View style={styles.chartererRightColumn}>
                 <View style={styles.chartererDetailColumn}>
                   <Text style={styles.detailLabel}>Mobile Number</Text>
-                  <Text style={styles.detailValue}>{bookingData?.customer?.mobile_number || 'N/A'}</Text>
+                  <Text style={styles.detailValue}>{bookingData?.customer?.mobile_number || ''}</Text>
                 </View>
               </View>
             </View>
             <View style={styles.emailRow}>
               <View style={styles.emailDetailColumn}>
                 <Text style={styles.detailLabel}>Email</Text>
-                <Text style={styles.detailValue}>{bookingData?.customer?.email || 'N/A'}</Text>
+                <Text style={styles.detailValue}>{bookingData?.customer?.email || ''}</Text>
               </View>
             </View>
           </View>
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   cardHeaderText: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: 'Inter-SemiBold',
     color: Colors.heading_font,
   },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
   },
   boatName: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: Colors.heading_font,
     marginBottom: 4,
@@ -243,17 +243,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.primary,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRadius: 18,
     alignSelf: 'flex-start',
   },
   capacityIcon: {
-    width: 16,
-    height: 16,
+    width: 14,
+    height: 14,
     resizeMode: 'contain',
   },
   capacityText: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     color: Colors.primary,
   },
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     color: Colors.font_gray,
   },
   detailValue: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     color: Colors.heading_font,
   },

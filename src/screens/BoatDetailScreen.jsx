@@ -78,9 +78,7 @@ const BoatDetailScreen = () => {
       toastContext.showToast('Boat deleted successfully!', 'short', 'success');
       navigation.goBack();
     } catch (error) {
-      console.log(error, "error from deleteBoat");
       let err_msg = Error(error);
-      console.log(err_msg, "err_msg from deleteBoat");
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsDeleting(false);

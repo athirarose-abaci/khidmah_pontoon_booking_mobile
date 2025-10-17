@@ -8,64 +8,219 @@ const CustomTimePickerModal = ({
   onClose, 
   onConfirm, 
   currentTime, 
-  title, 
-  hourOptions, 
-  minuteOptions 
+  title 
 }) => {
-  const [selectedHour, setSelectedHour] = useState(0);
+  const [selectedHour, setSelectedHour] = useState(1);
   const [selectedMinute, setSelectedMinute] = useState(0);
+  const [selectedPeriod, setSelectedPeriod] = useState('AM');
+  
   const hourScrollRef = useRef(null);
   const minuteScrollRef = useRef(null);
-  const itemHeight = 40;
+  const periodScrollRef = useRef(null);
+  
+  const itemHeight = 50;
+  const visibleItems = 3; 
+
+  const hourOptions = [
+    ...Array.from({ length: 12 }, (_, i) => i + 1), 
+    ...Array.from({ length: 12 }, (_, i) => i + 1),
+    ...Array.from({ length: 12 }, (_, i) => i + 1), 
+  ];
+  
+  const minuteOptions = [
+    ...Array.from({ length: 60 }, (_, i) => i), 
+    ...Array.from({ length: 60 }, (_, i) => i), 
+    ...Array.from({ length: 60 }, (_, i) => i), 
+  ];
+  
+  const periodOptions = ['AM', 'PM'];
 
   useEffect(() => {
     if (currentTime) {
-      const [hours, minutes] = currentTime.split(':').map(Number);
-      setSelectedHour(hours || 0);
-      setSelectedMinute(minutes || 0);
+      const [time, period] = currentTime.split(' ');
+      if (time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        if (hours !== undefined && minutes !== undefined) {
+          let hour12 = hours;
+          let period12 = 'AM';
+          
+          if (hours === 0) {
+            hour12 = 12;
+            period12 = 'AM';
+          } else if (hours === 12) {
+            hour12 = 12;
+            period12 = 'PM';
+          } else if (hours > 12) {
+            hour12 = hours - 12;
+            period12 = 'PM';
+          }
+          
+          setSelectedHour(hour12);
+          setSelectedMinute(minutes);
+          setSelectedPeriod(period12);
+        }
+      }
     } else {
       const now = new Date();
-      setSelectedHour(now.getHours());
+      let hour12 = now.getHours();
+      let period12 = 'AM';
+      
+      if (hour12 === 0) {
+        hour12 = 12;
+        period12 = 'AM';
+      } else if (hour12 === 12) {
+        hour12 = 12;
+        period12 = 'PM';
+      } else if (hour12 > 12) {
+        hour12 = hour12 - 12;
+        period12 = 'PM';
+      }
+      
+      setSelectedHour(hour12);
       setSelectedMinute(now.getMinutes());
+      setSelectedPeriod(period12);
     }
   }, [currentTime, visible]);
 
   useEffect(() => {
-    if (visible && hourScrollRef.current) {
+    if (visible) {
       setTimeout(() => {
         hourScrollRef.current?.scrollTo({
-          y: selectedHour * itemHeight,
+          y: (12 + selectedHour - 1) * itemHeight, 
           animated: true
         });
-      }, 100);
-    }
-  }, [visible, selectedHour]);
-
-  useEffect(() => {
-    if (visible && minuteScrollRef.current) {
-      setTimeout(() => {
         minuteScrollRef.current?.scrollTo({
-          y: selectedMinute * itemHeight,
+          y: (60 + selectedMinute) * itemHeight, 
           animated: true
         });
       }, 100);
     }
-  }, [visible, selectedMinute]);
+  }, [visible, selectedHour, selectedMinute, selectedPeriod]);
 
   const handleConfirm = () => {
-    onConfirm(selectedHour, selectedMinute);
+    // Return time in 12-hour format with AM/PM
+    const timeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} ${selectedPeriod}`;
+    onConfirm(timeString);
   };
 
   const onHourScroll = (event) => {
     const y = event.nativeEvent.contentOffset.y;
     const index = Math.round(y / itemHeight);
-    setSelectedHour(index);
+    const hourValue = hourOptions[index];
+    setSelectedHour(hourValue);
+    
+    // Handle infinite scroll - reset position when reaching boundaries
+    const totalItems = hourOptions.length;
+    const middleStart = 12; // Start of middle set
+    
+    if (index < 6) {
+      // Near the beginning, jump to middle
+      setTimeout(() => {
+        hourScrollRef.current?.scrollTo({
+          y: (middleStart + hourValue - 1) * itemHeight,
+          animated: false
+        });
+      }, 50);
+    } else if (index > totalItems - 6) {
+      // Near the end, jump to middle
+      setTimeout(() => {
+        hourScrollRef.current?.scrollTo({
+          y: (middleStart + hourValue - 1) * itemHeight,
+          animated: false
+        });
+      }, 50);
+    }
   };
 
   const onMinuteScroll = (event) => {
     const y = event.nativeEvent.contentOffset.y;
     const index = Math.round(y / itemHeight);
-    setSelectedMinute(index);
+    const minuteValue = minuteOptions[index];
+    setSelectedMinute(minuteValue);
+    
+    // Handle infinite scroll - reset position when reaching boundaries
+    const totalItems = minuteOptions.length;
+    const middleStart = 60; 
+    const middleEnd = 119;
+    
+    if (index < 30) {
+      // Near the beginning, jump to middle
+      setTimeout(() => {
+        minuteScrollRef.current?.scrollTo({
+          y: (middleStart + minuteValue) * itemHeight,
+          animated: false
+        });
+      }, 50);
+    } else if (index > totalItems - 30) {
+      // Near the end, jump to middle
+      setTimeout(() => {
+        minuteScrollRef.current?.scrollTo({
+          y: (middleStart + minuteValue) * itemHeight,
+          animated: false
+        });
+      }, 50);
+    }
+  };
+
+  const handlePeriodSelect = (period) => {
+    setSelectedPeriod(period);
+  };
+
+  const renderPickerColumn = (items, selectedValue, onScroll, scrollRef) => {
+    return (
+      <View style={styles.pickerColumn}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={itemHeight}
+          decelerationRate="fast"
+          onMomentumScrollEnd={onScroll}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {items.map((item, index) => {
+            const isSelected = item === selectedValue;
+            return (
+              <View key={`${item}-${index}`} style={styles.scrollItem}>
+                <Text style={[
+                  styles.scrollText,
+                  isSelected && styles.scrollTextSelected
+                ]}>
+                  {item.toString().padStart(2, '0')}
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  const renderPeriodButtons = () => {
+    return (
+      <View style={styles.periodColumn}>
+        {periodOptions.map((period) => {
+          const isSelected = period === selectedPeriod;
+          return (
+            <TouchableOpacity
+              key={period}
+              style={[
+                styles.periodButton,
+                isSelected && styles.periodButtonSelected
+              ]}
+              onPress={() => handlePeriodSelect(period)}
+            >
+              <Text style={[
+                styles.periodButtonText,
+                isSelected && styles.periodButtonTextSelected
+              ]}>
+                {period}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
   };
 
   if (!visible) return null;
@@ -87,56 +242,14 @@ const CustomTimePickerModal = ({
           </View>
           
           <View style={styles.timePickerContent}>
-            {/* Hours Section */}
-            <View style={styles.timeSection}>
-              <ScrollView
-                ref={hourScrollRef}
-                style={styles.scrollView}
-                showsVerticalScrollIndicator={false}
-                snapToInterval={itemHeight}
-                decelerationRate="fast"
-                onMomentumScrollEnd={onHourScroll}
-                contentContainerStyle={styles.scrollContent}
-              >
-                {hourOptions.map((hour) => (
-                  <View key={hour} style={styles.scrollItem}>
-                    <Text style={[
-                      styles.scrollText,
-                      selectedHour === hour && styles.scrollTextSelected
-                    ]}>
-                      {hour.toString().padStart(2, '0')}
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Separator */}
-            <Text style={styles.separatorText}>:</Text>
-
-            {/* Minutes Section */}
-            <View style={styles.timeSection}>
-              <ScrollView
-                ref={minuteScrollRef}
-                style={styles.scrollView}
-                showsVerticalScrollIndicator={false}
-                snapToInterval={itemHeight}
-                decelerationRate="fast"
-                onMomentumScrollEnd={onMinuteScroll}
-                contentContainerStyle={styles.scrollContent}
-              >
-                {minuteOptions.map((minute) => (
-                  <View key={minute} style={styles.scrollItem}>
-                    <Text style={[
-                      styles.scrollText,
-                      selectedMinute === minute && styles.scrollTextSelected
-                    ]}>
-                      {minute.toString().padStart(2, '0')}
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
+            {/* Hours Column */}
+            {renderPickerColumn(hourOptions, selectedHour, onHourScroll, hourScrollRef)}
+            
+            {/* Minutes Column */}
+            {renderPickerColumn(minuteOptions, selectedMinute, onMinuteScroll, minuteScrollRef)}
+            
+            {/* AM/PM Buttons */}
+            {renderPeriodButtons()}
           </View>
           
           <View style={styles.timePickerFooter}>
@@ -162,17 +275,17 @@ const styles = StyleSheet.create({
   },
   timePickerModal: {
     backgroundColor: 'white',
-    borderRadius: 8,
-    width: '70%',
-    maxWidth: 300,
+    borderRadius: 12,
+    width: '80%',
+    maxWidth: 320,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   timePickerHeader: {
     flexDirection: 'row',
@@ -180,12 +293,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: Colors.border_line,
   },
   timePickerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#333',
+    color: Colors.heading_font,
   },
   closeButton: {
     padding: 4,
@@ -194,75 +307,101 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
   },
-  timeSection: {
-    alignItems: 'center',
+  pickerColumn: {
     flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  periodColumn: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    justifyContent: 'center',
+  },
+  periodButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  periodButtonSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  periodButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: Colors.sub_heading_font,
+  },
+  periodButtonTextSelected: {
+    color: Colors.white,
+    fontFamily: 'Inter-SemiBold',
   },
   scrollView: {
-    height: 120,
-    width: 60,
+    height: 150,
+    width: 80,
   },
   scrollContent: {
-    paddingVertical: 40,
+    paddingVertical: 50, 
   },
   scrollItem: {
-    height: 40,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollText: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#999',
+    color: Colors.font_gray,
     textAlign: 'center',
   },
   scrollTextSelected: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: Colors.primary,
-  },
-  separatorText: {
-    fontSize: 24,
-    fontFamily: 'Inter-Bold',
-    color: '#666',
-    marginHorizontal: 10,
+    color: Colors.primary, 
   },
   timePickerFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: Colors.border_line,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginRight: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: Colors.border_line,
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: Colors.white,
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#666',
+    color: Colors.sub_heading_font,
   },
   confirmButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginLeft: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: Colors.primary,
     alignItems: 'center',
   },
   confirmButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: 'white',
+    color: Colors.white,
   },
 });
 

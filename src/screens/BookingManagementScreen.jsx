@@ -16,14 +16,12 @@ import AbaciLoader from '../components/AbaciLoader';
 
 const BookingManagementScreen = ({ route, navigation }) => {
   const { booking } = route.params || {};
-  console.log('booking from booking management screen', booking);
   const [activeTab, setActiveTab] = useState('info');
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
   const [bookingData, setBookingData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isTabLoading, setIsTabLoading] = useState(false);
@@ -53,14 +51,10 @@ const BookingManagementScreen = ({ route, navigation }) => {
   const fetchBookingDetails = async () => {
     setIsLoading(true);
     try {
-      console.log('bookingData from booking management screen', booking?.id);
       const response = await bookingDetails(booking?.id);
-      console.log('bookingDetails from booking management screen', bookingDetails);
       setBookingData(response);
     } catch (error) {
-      console.log('error from booking management screen details', error);
       let err_msg = Error(error);
-      console.log('error from booking management screen details', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsLoading(false);
@@ -96,9 +90,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
       toastContext.showToast('Booking checked-in successfully!', 'short', 'success');
       navigation.goBack();
     } catch (error) {
-      console.log('error from booking management screen check in', error);
       let err_msg = Error(error);
-      console.log('error from booking management screen check in', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsCheckingIn(false);
@@ -117,9 +109,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
       toastContext.showToast('Booking checked-out successfully!', 'short', 'success');
       navigation.goBack();
     } catch (error) {
-      console.log('error from booking management screen check out', error);
       let err_msg = Error(error);
-      console.log('error from booking management screen check out', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsCheckingOut(false);
@@ -165,9 +155,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
       toastContext.showToast('Booking cancelled successfully!', 'short', 'success');
       navigation.goBack();
     } catch (error) {
-      console.log('error from booking management screen delete booking', error);
       let err_msg = Error(error);
-      console.log('error from booking management screen delete booking', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setShowDeleteConfirmationModal(false);
@@ -222,7 +210,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
                 {isCheckingOut ? (
                   <ActivityIndicator size="small" color={Colors.white} style={styles.checkInIcon} />
                 ) : (
-                  <Ionicons name="log-out-outline" size={18} color={Colors.white} style={styles.checkInIcon} />
+                  <Image source={require('../assets/images/clock_out.png')} style={styles.checkInIcon} />
                 )}
                 <Text style={styles.checkInText}>
                   {isCheckingOut ? 'Checking out...' : 'Check-out'}
@@ -246,12 +234,12 @@ const BookingManagementScreen = ({ route, navigation }) => {
             ) : null}
             {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CANCELLED' && (
               <TouchableOpacity style={styles.editButton} onPress={handleEditBooking}>
-                <MaterialDesignIcons name="square-edit-outline" size={18} color={Colors.primary} />
+                <MaterialDesignIcons name="square-edit-outline" size={20} color={Colors.primary} />
               </TouchableOpacity>
             )}
             {bookingData?.status !== 'CANCELLED' && (
               <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteBooking}>
-                <MaterialIcons name="cancel" size={18} color={Colors.white} />
+                <MaterialDesignIcons name="close-circle-outline" size={22} color={Colors.white} />
               </TouchableOpacity>
             )}
           </View>
@@ -434,19 +422,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bookingTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.font_gray,
+    color: '#4C4C4C',
   },
   bookingId: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   bookingHeaderVerticalDivider: {
     width: 1,
@@ -458,9 +446,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     gap: 6,
   },
   checkInButtonDisabled: {
@@ -478,8 +466,8 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   editButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.primary,
@@ -487,8 +475,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   deleteButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.red,
@@ -518,7 +506,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter-SemiBold',
     textAlign: 'center',
   },

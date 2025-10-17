@@ -1,4 +1,4 @@
-import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
@@ -6,7 +6,6 @@ import React, { useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/customStyles';
 import BackgroundImage from '../components/BackgroundImage';
-import { boatsData } from '../constants/dummyData';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
@@ -16,13 +15,15 @@ import AbaciLoader from '../components/AbaciLoader';
 import { fetchProfile, logout } from '../apis/auth';
 import { setAuthState } from '../../store/authSlice';
 import { clearCookies } from '../helpers/clearCookieHelper';
-import { getData, removeData } from '../helpers/asyncStorageHelper';
+import { removeData } from '../helpers/asyncStorageHelper';
 import { ToastContext } from '../context/ToastContext';
 import { useDispatch, useSelector } from 'react-redux';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import Error from '../helpers/Error';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { BASE_URL_IMAGE } from '../constants/baseUrl';
+import { fetchBoats } from '../apis/boat';
+import { fetchOrganizationSettings } from '../apis/system';
 
 const ProfileScreen = () => {
   const { onScroll, insets } = useTabBarScroll();
@@ -30,9 +31,14 @@ const ProfileScreen = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const [profileData, setProfileData] = useState(null);
+  const [boatsData, setBoatsData] = useState([]);
+  const [boatsCount, setBoatsCount] = useState(0);
+  const [organizationSettingsData, setOrganizationSettingsData] = useState(null);
 
   const isFocused = useIsFocused();
+  const navigation = useNavigation();
 
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
@@ -41,6 +47,8 @@ const ProfileScreen = () => {
   useEffect(() => {
     if (isFocused) {
       fetchProfileData();
+      fetchBoatsData();
+      fetchOrganizationSettingsData();
     }
   }, [isFocused]);
 
@@ -57,14 +65,39 @@ const ProfileScreen = () => {
     }
   };
 
+  const fetchBoatsData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchBoats(1, 10);
+      setBoatsCount(response?.count || 0);
+      setBoatsData(response?.results || []);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchOrganizationSettingsData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchOrganizationSettings();
+      setOrganizationSettingsData(response);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const transformImage = (imageUrl) => {
     if (!imageUrl) return null;
 
-    // Check if it's a string and doesn't already start with http or https
     if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
       return BASE_URL_IMAGE + imageUrl;
     }
-
     return imageUrl;
   };
 
@@ -83,6 +116,17 @@ const ProfileScreen = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCopyPhoneNumber = () => {
+    if (organizationSettingsData?.phone) {
+      Clipboard.setString(organizationSettingsData?.phone);
+      toastContext.showToast('Phone number copied to clipboard', 'short', 'success');
+    }
+  };
+
+  const handleBoatPress = (boatId) => {
+    navigation.navigate('ProfileBoatDetail', { boatId: boatId });
   };
 
   return (
@@ -141,7 +185,7 @@ const ProfileScreen = () => {
             <View style={styles.boat_container}>
               <View style={styles.boat_title_row}>
                 <Text style={styles.boat_title}>My Boats</Text>
-                <Text style={styles.boat_count}>{boatsData.length} boats</Text>
+                <Text style={styles.boat_count}>{boatsCount} boats</Text>
               </View>
               <ScrollView
                 horizontal
@@ -151,35 +195,47 @@ const ProfileScreen = () => {
                 scrollEventThrottle={1}
               >
                 {boatsData.map(boat => (
-                  <View key={boat.id} style={styles.boat_card}>
+                  <TouchableOpacity 
+                    key={boat?.id} 
+                    style={styles.boat_card}
+                    onPress={() => handleBoatPress(boat?.id)}
+                    activeOpacity={0.8}
+                  >
                     <View style={styles.boat_image_container}>
-                      <Image source={boat.image} style={styles.boat_image} />
+                      <Image 
+                        source={
+                          boat?.images && boat.images.length > 0 
+                            ? { uri: boat.images[0].image } 
+                            : require('../assets/images/no_image.jpg')
+                        } 
+                        style={styles.boat_image} 
+                      />
                       <View
                         style={[
                           styles.status_badge,
                           {
                             backgroundColor:
-                              boat.status === 'ACTIVE' ? '#4CAF50' : '#FF5722',
+                              boat?.status === 'ACTIVE' ? '#4CAF50' : '#FF5722',
                           },
                         ]}
                       >
-                        <Text style={styles.status_text}>{boat.status}</Text>
+                        <Text style={styles.status_text}>{boat?.status}</Text>
                       </View>
                       <LinearGradient
                         colors={['rgba(0, 0, 0, 0.3)', '#144655']}
                         locations={[0, 1]}
                         style={styles.overlay_content}
                       >
-                        <Text style={styles.boat_name}>{boat.name}</Text>
-                        <Text style={styles.boat_id}>{boat.boatId}</Text>
+                        <Text style={styles.boat_name}>{boat?.name}</Text>
+                        <Text style={styles.boat_id}>{boat?.registration_number}</Text>
                         <View style={styles.size_container}>
                           <Text style={styles.size_text}>
-                            Size: {boat.size}
+                            Size: {boat?.length} x {boat?.width} ft
                           </Text>
                         </View>
                       </LinearGradient>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
@@ -190,9 +246,9 @@ const ProfileScreen = () => {
                 </View>
                 <View style={styles.support_content}>
                   <Text style={styles.support_label}>Customer Support</Text>
-                  <Text style={styles.support_number}>+971 50 123 4567</Text>
+                  <Text style={styles.support_number}>{organizationSettingsData?.phone}</Text>
                 </View>
-                <TouchableOpacity style={styles.copy_icon}>
+                <TouchableOpacity style={styles.copy_icon} onPress={handleCopyPhoneNumber}>
                   <MaterialDesignIcons
                     name="content-copy"
                     size={25}
@@ -204,7 +260,7 @@ const ProfileScreen = () => {
             <View style={styles.options_container}>
               <View style={styles.option_item}>
                 <View style={styles.option_left}>
-                  <Lucide name="moon" size={25} color={Colors.primary} />
+                  <Lucide name="moon" size={23} color={Colors.primary} />
                   <Text style={styles.option_text}>Dark Mode</Text>
                 </View>
                 <Switch
@@ -217,25 +273,25 @@ const ProfileScreen = () => {
                 />
               </View>
 
-              <View style={styles.option_item}>
+              {/* <View style={styles.option_item}>
                 <View style={styles.option_left}>
                   <Lucide name="lock" size={25} color={Colors.primary} />
                   <Text style={styles.option_text}>Change Password</Text>
                 </View>
                 <Lucide name="chevron-right" size={25} color="#B6C7D9" />
-              </View>
+              </View> */}
 
               <TouchableOpacity
                 style={styles.option_item}
                 onPress={() => setIsLogoutConfirmVisible(true)}
               >
                 <View style={styles.option_left}>
-                  <AntDesign name="logout" size={25} color="#FF5722" />
+                  <AntDesign name="logout" size={23} color="#FF5722" />
                   <Text style={[styles.option_text, { color: '#FF5722' }]}>
                     Logout
                   </Text>
                 </View>
-                <Lucide name="chevron-right" size={25} color="#FF5722" />
+                <Lucide name="chevron-right" size={23} color="#FF5722" />
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -361,12 +417,12 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   boat_title: {
-    fontSize: 18,
+    fontSize: 15,
     color: Colors.font_gray,
     fontFamily: 'Inter-SemiBold',
   },
   boat_count: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.font_gray,
     fontFamily: 'Inter-Regular',
     paddingRight: 26,
@@ -415,7 +471,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
   },
   boat_name: {
-    fontSize: 16,
+    fontSize: 14,
     color: 'white',
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
@@ -490,7 +546,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   option_text: {
-    fontSize: 16,
+    fontSize: 14.5,
     color: '#373737',
     fontFamily: 'Inter-Regular',
     marginLeft: 25,

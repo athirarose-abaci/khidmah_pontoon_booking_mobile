@@ -1,7 +1,6 @@
 import MainRouter from './routes/MainRouter';
-import { ThemeProvider } from '@react-navigation/native';
 import AbaciToast from './src/components/AbaciToast';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from './src/constants/baseUrl';
 import { Appearance, Platform } from 'react-native';
@@ -11,19 +10,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import { removeData, storeData } from './src/helpers/asyncStorageHelper';
 import { clearCookies } from './src/helpers/clearCookieHelper';
 import { useEffect, useState } from 'react';
-import { fetchProfile } from './src/apis/auth';
 import { setIsDarkMode } from './store/themeSlice';
 import AbaciLoader from './src/components/AbaciLoader';
 import ErrorScreen from './src/components/ErrorScreen';
+import { fetchProfile } from './src/apis/auth';
+import { fetchSystemStatus } from './src/apis/system';
 
 const App = () => {
   const dispatch = useDispatch();
   const [mounted, setMounted] = useState(false);
   const authToggle = useSelector(state => state.authSlice.authToggle);
-  const [profileStatus, setProfileStatus] = useState('loading');
+  const [systemStatus, setSystemStatus] = useState('loading');
 
   const fetchProfileData = async () => {
-    setProfileStatus('loading');
+    setSystemStatus('loading');
     try {
       const response = await AsyncStorage.getItem('data');
       const data = response ? JSON.parse(response) : null;
@@ -52,30 +52,46 @@ const App = () => {
           if (!isPermitted) {
             await removeData('data');
             dispatch(setAuthState({}));
+            setSystemStatus('success');
             return;
           }
 
           const authData = { ...profile?.user, authenticated: isPermitted };
           dispatch(setAuthState(authData));
           await storeData('data', JSON.stringify(authData));
-          setProfileStatus('success');
+          setSystemStatus('success');
         } catch (err) {
           await AsyncStorage.removeItem('data');
           clearCookies();
           dispatch(setAuthState({}));
-          setProfileStatus('error');
+          setSystemStatus('success');
         }
       } else {
-        setProfileStatus('success');
+        setSystemStatus('success');
       }
     } catch (err) {
-      setProfileStatus('error');
+      setSystemStatus('success');
     }
   };
 
+  const fetchSystemStatusData = async () => {
+    setSystemStatus('loading');
+    try {
+      const res = await fetchSystemStatus();
+      if (res?.status !== 'success' && !res?.details?.admin_users_exist) {
+        return setSystemStatus('error');
+      }
+    
+      await fetchProfileData();
+    } catch (error) {
+      clearCookies();
+      setSystemStatus('error');
+    }
+  }
+
   useEffect(() => {
     if (mounted) {
-      fetchProfileData();
+      fetchSystemStatusData();
     }
   }, [mounted, authToggle]);
 
@@ -90,12 +106,12 @@ const App = () => {
 
   return (
     <SafeAreaView style={{ flex: 1}} edges={['left', 'right']}>
-      {profileStatus === 'loading' ? (
-        <AbaciLoader visible={true} />
-      ) : profileStatus === 'success' ? (
+      {systemStatus === 'error' ? (
+        <ErrorScreen />
+      ) : systemStatus === 'success' ? (
         <MainRouter />
       ) : (
-        <ErrorScreen onRefresh={fetchProfileData} />
+        <AbaciLoader visible={true} />
       )}
       <AbaciToast />
     </SafeAreaView>

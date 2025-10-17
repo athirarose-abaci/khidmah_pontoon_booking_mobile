@@ -98,26 +98,26 @@ const BoatDetailsTab = ({
       <View style={styles.formInputRow}>
         <View style={styles.formInputContainer}>
           <View style={styles.formLabelContainer}>
-            <Text style={styles.inputLabel}>Boat Width</Text>
+            <Text style={styles.inputLabel}>Boat Width (ft)</Text>
           </View>
           <TextInput
             style={[styles.textInput, styles.disabledInput]}
             value={selectedBoatDetails?.width || ''}
             editable={false}
-            placeholder="Enter width"
+            placeholder="Enter width (ft)"
             placeholderTextColor="#C8C8C8"
             keyboardType="numeric"
           />
         </View>
         <View style={styles.formInputContainer}>
           <View style={styles.formLabelContainer}>
-            <Text style={styles.inputLabel}>Boat Length</Text>
+            <Text style={styles.inputLabel}>Boat Length (ft)</Text>
           </View>
           <TextInput
             style={[styles.textInput, styles.disabledInput]}
             value={selectedBoatDetails?.length || ''}
             editable={false}
-            placeholder="Enter length"
+            placeholder="Enter length (ft)"
             placeholderTextColor="#C8C8C8"
             keyboardType="numeric"
           />

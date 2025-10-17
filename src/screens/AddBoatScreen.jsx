@@ -62,7 +62,6 @@ const AddBoatScreen = () => {
     setIsInitialLoading(true);
     try {
       const boatData = await fetchBoatById(boatId);
-      console.log(boatData, "boatData from loadBoatData");
       setBoatName(boatData?.name || '');
       setBoatRegNo(boatData?.registration_number || '');
       setBoatLength(boatData?.length ? boatData.length.toString() : '');
@@ -155,12 +154,10 @@ const AddBoatScreen = () => {
     try {
       let response;
       const customerId = authState?.id;
-      console.log('Customer ID:', customerId, 'AuthState:', authState);
       
       if (isEditMode) {
         const newImages = images.filter(img => !img.isExisting);
         response = await updateBoatDetails(boatId, boatData, newImages, customerId);
-        console.log(response, "response from updateBoat");
         dispatch(updateBoat(response));
         toastContext.showToast('Boat updated successfully!', 'short', 'success');
       } else {
@@ -170,9 +167,7 @@ const AddBoatScreen = () => {
       }
       handleGoBack();
     } catch (error) {
-      console.log(error, "error from updateBoat");
       let err_msg = Error(error);
-      console.log(err_msg, "err_msg from updateBoat");
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsLoading(false);
@@ -262,7 +257,7 @@ const AddBoatScreen = () => {
 
               {/* Boat Length */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Boat Length*</Text>
+                <Text style={styles.label}>Boat Length (ft)*</Text>
                 <TextInput
                   style={[styles.input, errors.boatLength && styles.inputError]}
                   value={boatLength}
@@ -272,7 +267,7 @@ const AddBoatScreen = () => {
                       setErrors(prev => ({ ...prev, boatLength: '' }));
                     }
                   }}
-                  placeholder="Enter boat length"
+                  placeholder="Enter boat length (ft)"
                   placeholderTextColor="#C8C8C8"
                   keyboardType="numeric"
                 />
@@ -281,7 +276,7 @@ const AddBoatScreen = () => {
 
               {/* Boat Width */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Boat Width*</Text>
+                <Text style={styles.label}>Boat Width (ft)*</Text>
                 <TextInput
                   style={[styles.input, errors.boatWidth && styles.inputError]}
                   value={boatWidth}
@@ -291,7 +286,7 @@ const AddBoatScreen = () => {
                       setErrors(prev => ({ ...prev, boatWidth: '' }));
                     }
                   }}
-                  placeholder="Enter boat width"
+                  placeholder="Enter boat width (ft)"
                   placeholderTextColor="#C8C8C8"
                   keyboardType="numeric"
                 />

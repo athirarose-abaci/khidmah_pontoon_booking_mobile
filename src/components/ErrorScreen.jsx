@@ -1,16 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Colors } from '../constants/customStyles';
 import BackgroundImage from './BackgroundImage';
+import { setAuthToggle } from '../../store/authSlice';
+import { fetchSystemStatus } from '../apis/auth';
+import AbaciLoader from './AbaciLoader';
 
 const { width, height } = Dimensions.get('window');
 
 const ErrorScreen = ({ onRefresh }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const dispatch = useDispatch();
+  const authToggle = useSelector(state => state.authSlice.authToggle);
+
+
+  const handleRetry = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchSystemStatus();
+      if(response?.status === 'success' && response?.details?.admin_users_exist){
+        dispatch(setAuthToggle(!authToggle))
+      }else {
+        dispatch(setAuthToggle(!authToggle))
+      }
+    } catch (error) {
+      dispatch(setAuthToggle(!authToggle))
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <BackgroundImage source={require('../assets/images/login_bg.png')}>
@@ -25,7 +49,7 @@ const ErrorScreen = ({ onRefresh }) => {
             <View style={styles.iconContainer}>
               <Ionicons 
                 name="warning-outline" 
-                size={80} 
+                size={60} 
                 color={Colors.error} 
               />
             </View>
@@ -39,7 +63,7 @@ const ErrorScreen = ({ onRefresh }) => {
             </Text>
             
             <TouchableOpacity
-              onPress={onRefresh}
+              onPress={handleRetry}
               activeOpacity={0.8}
               style={styles.buttonContainer}
             >
@@ -55,6 +79,7 @@ const ErrorScreen = ({ onRefresh }) => {
             </TouchableOpacity>
           </View>
         </LiquidGlassView>
+        <AbaciLoader visible={isLoading} />
       </View>
     </BackgroundImage>
   );
@@ -89,19 +114,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontFamily: 'Poppins-SemiBold',
     color: Colors.white,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   message: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: Colors.primary,
+    color: Colors.font_gray,
     textAlign: 'center',
     marginBottom: 32,
-    lineHeight: 24,
+    lineHeight: 15,
     paddingHorizontal: 10,
   },
   buttonContainer: {
@@ -110,7 +135,7 @@ const styles = StyleSheet.create({
   },
   btnGradient: {
     flexDirection: 'row',
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 32,
     alignItems: 'center',
     justifyContent: 'center',
@@ -119,7 +144,8 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderTopWidth: 1,
     borderColor: 'rgba(255,255,255,0.95)',
-    minWidth: 160,
+    width: '100%',
+    marginTop: 15,
   },
   btnText: {
     color: Colors.white,

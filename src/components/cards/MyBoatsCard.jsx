@@ -73,23 +73,23 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 10,
     color: Colors.white,
     fontFamily: "Inter-Medium",
   },
   boatName: {
-    fontSize: 16,
+    fontSize: 14.5,
     fontFamily: "Inter-SemiBold",
     color: Colors.black,
     marginTop: 6,
   },
   boatId: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.primary,
     fontFamily: "Inter-Medium",
   },
   boatSize: {
-    fontSize: 13,
+    fontSize: 11,
     color: Colors.font_gray,
     marginTop: 4,
   },

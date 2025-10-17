@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useLayoutEffect, useState, useEffect } from 'react';
-import { StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { Octicons } from '@react-native-vector-icons/octicons';
@@ -12,13 +12,15 @@ import AbaciLoader from '../components/AbaciLoader';
 import { fetchPontoons } from '../apis/pontoon';
 import { fetchBerths } from '../apis/berth';
 import { fetchBoatsList } from '../apis/boat';
-import { createBooking, updateBooking } from '../apis/booking';
+import { createBooking, updateBooking as updateBookingAPI } from '../apis/booking';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPontoons } from '../../store/pontoonSlice';
 import { setBerths } from '../../store/berthSlice';
+import { addBookings, updateBooking } from '../../store/bookingSlice';
 import Error from '../helpers/Error';
 import { ToastContext } from '../context/ToastContext';
 import moment from 'moment';
+import { convertTo24HourFormat, formatTime12Hour } from '../helpers/timeHelper';
 
 const STEPS = {
   PONTOON_DETAILS: 'pontoon_details',
@@ -31,6 +33,8 @@ const NewBookingScreen = ({ navigation, route }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const insets = useSafeAreaInsets();
   
   // Edit mode states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -75,6 +79,14 @@ const NewBookingScreen = ({ navigation, route }) => {
     });
   }, [navigation]);
 
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' }
+      });
+    }, [navigation])
+  );
+
   // Handle edit mode initialization
   useEffect(() => {
     if (route?.params?.editMode) {
@@ -104,9 +116,15 @@ const NewBookingScreen = ({ navigation, route }) => {
         // Set booking details
         if (bookingData.start_date) {
           const startDate = moment(bookingData?.start_date).format('DD/MM/YYYY');
-          const startTime = moment(bookingData?.start_date).format('HH:mm');
+          const startTime24 = moment(bookingData?.start_date).format('HH:mm');
+          const startTime = formatTime12Hour(parseInt(startTime24.split(':')[0]), parseInt(startTime24.split(':')[1]));
+          
           const endDate = bookingData?.end_date ? moment(bookingData?.end_date).format('DD/MM/YYYY') : '';
-          const endTime = bookingData?.end_date ? moment(bookingData?.end_date).format('HH:mm') : '';
+          let endTime = '';
+          if (bookingData?.end_date) {
+            const endTime24 = moment(bookingData?.end_date).format('HH:mm');
+            endTime = formatTime12Hour(parseInt(endTime24.split(':')[0]), parseInt(endTime24.split(':')[1]));
+          }
           
           let hours = '';
           let minutes = '';
@@ -114,8 +132,8 @@ const NewBookingScreen = ({ navigation, route }) => {
             const startMoment = moment(bookingData?.start_date);
             const endMoment = moment(bookingData?.end_date);
             const duration = moment.duration(endMoment.diff(startMoment));
-            hours = Math.floor(duration.asHours()).toString();
-            minutes = duration.minutes().toString();
+            hours = Math.floor(duration.asHours()).toString().padStart(2, '0');
+            minutes = duration.minutes().toString().padStart(2, '0');
           }
           
           setBookingDetails(prev => ({
@@ -143,7 +161,17 @@ const NewBookingScreen = ({ navigation, route }) => {
   };
 
   const validateBookingDetails = () => {
-    return true; 
+    const { arrivalDate, arrivalTime, hours, minutes, departureDate, departureTime } = bookingDetails;
+    
+    // Check if all required fields are filled
+    const isArrivalDateValid = arrivalDate && arrivalDate.trim() !== '';
+    const isArrivalTimeValid = arrivalTime && arrivalTime.trim() !== '';
+    const isHoursValid = hours && hours.trim() !== '' && !isNaN(hours) && parseInt(hours) >= 0;
+    const isMinutesValid = minutes && minutes.trim() !== '' && !isNaN(minutes) && parseInt(minutes) >= 0 && parseInt(minutes) < 60;
+    const isDepartureDateValid = departureDate && departureDate.trim() !== '';
+    const isDepartureTimeValid = departureTime && departureTime.trim() !== '';
+    
+    return isArrivalDateValid && isArrivalTimeValid && isHoursValid && isMinutesValid && isDepartureDateValid && isDepartureTimeValid;
   };
 
   const isCurrentStepValid = () => {
@@ -213,7 +241,8 @@ const NewBookingScreen = ({ navigation, route }) => {
       const formatDateTimeForAPI = (dateString, timeString) => {
         if (!dateString || !timeString) return '';
         
-        const momentDate = moment(`${dateString} ${timeString}`, 'DD/MM/YYYY HH:mm');
+        const time24Hour = convertTo24HourFormat(timeString);
+        const momentDate = moment(`${dateString} ${time24Hour}`, 'DD/MM/YYYY HH:mm');
         
         return momentDate.toISOString();
       };
@@ -228,9 +257,15 @@ const NewBookingScreen = ({ navigation, route }) => {
       };
 
       const response = await createBooking(bookingPayload);
+      console.log("response from handleCreateBooking", response);
+      dispatch(addBookings([response]));
       setShowSuccessModal(true);
+      toastContext.showToast("Booking created successfully!", "short", "success");
+      navigation.goBack();
     } catch (error) {
+      console.log("error from handleCreateBooking", error);
       let err_msg = Error(error);
+      console.log("err_msg from handleCreateBooking", err_msg);
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       setIsLoading(false);
@@ -243,7 +278,8 @@ const NewBookingScreen = ({ navigation, route }) => {
       const formatDateTimeForAPI = (dateString, timeString) => {
         if (!dateString || !timeString) return '';
         
-        const momentDate = moment(`${dateString} ${timeString}`, 'DD/MM/YYYY HH:mm');
+        const time24Hour = convertTo24HourFormat(timeString);
+        const momentDate = moment(`${dateString} ${time24Hour}`, 'DD/MM/YYYY HH:mm');
         
         return momentDate.toISOString();
       };
@@ -257,13 +293,16 @@ const NewBookingScreen = ({ navigation, route }) => {
         passengers: parseInt(noOfPassengers)
       };
 
-      const response = await updateBooking(editingBookingId, bookingPayload);
+      const response = await updateBookingAPI(editingBookingId, bookingPayload);
+      console.log("response from handleUpdateBooking", response);
       dispatch(updateBooking(response));
       setShowSuccessModal(true);
       toastContext.showToast("Booking updated successfully!", "short", "success");
       navigation.goBack();
     } catch (error) {
+      console.log("error from handleUpdateBooking", error);
       let err_msg = Error(error);
+      console.log("err_msg from handleUpdateBooking", err_msg);
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       setIsLoading(false);
@@ -310,6 +349,36 @@ const NewBookingScreen = ({ navigation, route }) => {
       }
     }, [isEditMode])
   );
+
+  // Listen for screen dimension changes
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenData(window);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Calculate responsive bottom margin for the button
+  const getButtonBottomMargin = () => {
+    const { height } = screenData;
+    
+    // Calculate safe bottom area + minimum margin
+    const safeBottomMargin = Math.max(insets.bottom, 20);
+    
+    // For smaller screens (height < 700), use smaller margin
+    if (height < 700) {
+      return safeBottomMargin + 10;
+    }
+    // For medium screens (700-800), use moderate margin
+    else if (height >= 700 && height < 800) {
+      return safeBottomMargin + 15;
+    }
+    // For larger screens (height >= 800), use larger margin
+    else {
+      return safeBottomMargin + 20;
+    }
+  };
 
    const fetchBerthsData = async (pontoonId) => {
     setIsLoading(true);
@@ -369,7 +438,7 @@ const NewBookingScreen = ({ navigation, route }) => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["left", "right", "bottom"]}>
       <StatusBar backgroundColor={Colors.bg_color} barStyle="dark-content" />
       <View style={styles.container}>
         {/* Header */}
@@ -502,26 +571,29 @@ const NewBookingScreen = ({ navigation, route }) => {
               berthsData={berthsData}
               pontoonName={pontoonName}
               berthName={berthName}
+              isEditMode={isEditMode}
             />
           ) : null}
           </View>
         </ScrollView>
 
-        <TouchableOpacity 
-          style={[
-            styles.primaryActionButton, 
-            !isCurrentStepValid() && styles.disabledButton
-          ]} 
-          onPress={handleNext}
-          disabled={!isCurrentStepValid()}
-        >
-          <Text style={[
-            styles.primaryActionButtonText,
-            !isCurrentStepValid() && styles.disabledButtonText
-          ]}>
-            {currentStep === STEPS.PONTOON_DETAILS ? "Next" : currentStep === STEPS.BOAT_DETAILS ? "Next" : (isEditMode ? "Update Booking" : "Book")}
-          </Text>
-        </TouchableOpacity>
+        <View style={[styles.buttonContainer, { marginBottom: getButtonBottomMargin() }]}>
+          <TouchableOpacity 
+            style={[
+              styles.primaryActionButton, 
+              !isCurrentStepValid() && styles.disabledButton
+            ]} 
+            onPress={handleNext}
+            disabled={!isCurrentStepValid()}
+          >
+            <Text style={[
+              styles.primaryActionButtonText,
+              !isCurrentStepValid() && styles.disabledButtonText
+            ]}>
+              {currentStep === STEPS.PONTOON_DETAILS ? "Next" : currentStep === STEPS.BOAT_DETAILS ? "Next" : (isEditMode ? "Update Booking" : "Book")}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <AbaciLoader visible={isLoading} />
@@ -695,13 +767,14 @@ const styles = StyleSheet.create({
     marginHorizontal: -20,
     marginBottom: 20,
   },
+  buttonContainer: {
+    paddingHorizontal: 26,
+  },
   primaryActionButton: {
     backgroundColor: '#75C8AD',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginHorizontal: 26,
-    marginBottom: '36%',
   },
   primaryActionButtonText: {
     fontSize: 16,

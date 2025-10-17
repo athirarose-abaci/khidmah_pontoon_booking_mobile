@@ -66,8 +66,8 @@ export const checkOutBooking = async (bookingId) => {
 }
 
 export const extendBooking = async (bookingId, hours, minutes) => {
-    const extension_duration = `${hours}:${minutes}`;
     try {
+        const extension_duration = `${hours}:${minutes}`;
         const response = await authAxios.post(`bookings/extend/${bookingId}/`, { extension_duration });
         return response.data;
     } catch (error) {

@@ -1,14 +1,11 @@
 import React, {useContext, useState} from 'react';
 import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, Vibration, } from 'react-native';
-import { launchImageLibrary, launchCamera, requestCameraPermission, requestMediaLibraryPermission, } from 'react-native-image-picker';
 import ImageView from 'react-native-image-viewing';
 import {BlurView} from '@react-native-community/blur';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
-import {Platform, PermissionsAndroid} from 'react-native';
 import {Colors} from '../constants/customStyles';
-import moment from 'moment';
 import {ToastContext} from '../context/ToastContext';
-import { PERMISSIONS, request, requestMultiple, RESULTS, } from 'react-native-permissions';
+import ImageSourceModal from './modals/ImageSourceModal';
 
 const {width, height} = Dimensions.get('window');
 
@@ -34,91 +31,18 @@ const ImageUploadGrid = ({
   const [sourceModalVisible, setSourceModalVisible] = useState(false);
   const toastContext = useContext(ToastContext);
 
-  const requestPermissions = async source => {
-    try {
-      if (source === 'camera') {
-        if (Platform.OS === 'android') {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.CAMERA,
-            {
-              title: 'Camera Permission',
-              message: 'This app needs camera access to take photos',
-              buttonNeutral: 'Ask Me Later',
-              buttonNegative: 'Cancel',
-              buttonPositive: 'OK',
-            },
-          );
-          return granted === PermissionsAndroid.RESULTS.GRANTED;
-        } else {
-          // const result = await requestCameraPermission();
-          // return result === 'granted';
-          const result = await request(PERMISSIONS.IOS.CAMERA);
-          const grantedResult = Object.values(result).every( status => status === RESULTS.GRANTED, );
-          return grantedResult;
-        }
-      } else {
-        // For gallery, we don't need to request permissions explicitly on modern Android
-        // The image picker will handle permissions automatically
-        if (Platform.OS === 'android') {
-          // On Android 11+ (API 30+), we don't need READ_EXTERNAL_STORAGE for image picker
-          // The image picker handles permissions automatically
-          return true;
-        } else {
-          // const result = await requestMediaLibraryPermission();
-          // return result === 'granted';
-          const result2 = request(PERMISSIONS.IOS.PHOTO_LIBRARY);
-          const grantedResult2 = Object.values(result2).every(
-            status => status === RESULTS.GRANTED,
-          );
-          return grantedResult2;
-        }
-      }
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const selectImage = async source => {
-    const hasPermission = await requestPermissions(source);
-
-    if (!hasPermission) {
-      toastContext.showToast(`Permission denied for ${source}`, 'error');
-      return;
-    }
-
-    const options = {
-      mediaType: 'photo',
-      quality: 0.5,
-      includeBase64: true,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      saveToPhotos: false,
+  const handleImageSelected = (newFile) => {
+    const newImage = {
+      id: newFile.id,
+      name: newFile.name,
+      url: newFile.uri,
+      image: newFile.uri,
     };
 
-    const launchFunction = source === 'camera' ? launchCamera : launchImageLibrary;
-
-    launchFunction(options, response => {
-      if (response.didCancel) {
-        return;
-      } else if (response.error) {
-        console.log('Image picker error:', response.error);
-      } else if (response.assets && response.assets[0]) {
-        const fileName =
-          moment().unix().toString() + response?.assets[0]?.fileName?.slice(-10) || '.jpg';
-        const uri = response?.assets[0]?.uri;
-        const newImage = {
-          id: fileName,
-          name: fileName,
-          url: uri,
-          image: uri,
-        };
-
-        if (images.length < maxImages) {
-          const updatedImages = [...images, newImage];
-          onImagesChange(updatedImages);
-        }
-      }
-    });
+    if (images.length < maxImages) {
+      const updatedImages = [...images, newImage];
+      onImagesChange(updatedImages);
+    }
   };
 
   const handleImagePress = index => {
@@ -152,13 +76,13 @@ const ImageUploadGrid = ({
     }
   };
 
-  const TouchableImage = ({index, image}) => {
+  const TouchableImage = ({index, image, isLarge = false}) => {
     const isEmpty = !image;
 
     return (
       <TouchableOpacity
         style={[
-          styles.imageContainer,
+          isLarge ? styles.largeImageContainer : styles.imageContainer,
           isEmpty && styles.emptyImageContainer,
           imageContainerStyle,
           {
@@ -179,10 +103,10 @@ const ImageUploadGrid = ({
                 color={isDarkMode ? Colors.font_gray : '#666'}
               />
             ) : !disabled ? (
-              <View style={styles.plusIconContainer}>
+              <View style={isLarge ? styles.largePlusIconContainer : styles.plusIconContainer}>
                 <Ionicons
                   name="add"
-                  size={24}
+                  size={isLarge ? 32 : 24}
                   color={isDarkMode ? Colors.font_gray : '#666'}
                 />
               </View>
@@ -190,8 +114,8 @@ const ImageUploadGrid = ({
               <Image
                 source={require('../assets/images/no_image.jpg')}
                 style={{
-                  width: (width * 0.85 - 48 - 24) / 4,
-                  height: (width * 0.85 - 48 - 24) / 4,
+                  width: isLarge ? (width * 0.90 - 48 - 24) / 2 : (width * 0.85 - 48 - 24) / 4,
+                  height: isLarge ? (width * 0.90 - 48 - 24) / 2 : (width * 0.85 - 48 - 24) / 4,
                 }}
                 resizeMode="contain"
               />
@@ -224,9 +148,35 @@ const ImageUploadGrid = ({
       )}
 
       <View style={[styles.imageGrid, gridStyle]}>
-        {Array.from({length: maxImages}, (_, index) => (
-          <TouchableImage key={index} index={index} image={images[index]} />
-        ))}
+        {images.length === 0 ? (
+          // Show large container with plus button when no images
+          <TouchableImage 
+            key="large-add" 
+            index={0} 
+            image={null} 
+            isLarge={true}
+          />
+        ) : (
+          // Show existing images + small add button
+          <>
+            {images.map((image, index) => (
+              <TouchableImage 
+                key={index} 
+                index={index} 
+                image={image} 
+                isLarge={false}
+              />
+            ))}
+            {images.length < maxImages && (
+              <TouchableImage 
+                key="small-add" 
+                index={images.length} 
+                image={null} 
+                isLarge={false}
+              />
+            )}
+          </>
+        )}
       </View>
 
       {/* Delete Confirmation Modal */}
@@ -274,55 +224,14 @@ const ImageUploadGrid = ({
       </Modal>
 
       {/* Image Source Selection Modal */}
-      <Modal
+      <ImageSourceModal
         visible={sourceModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setSourceModalVisible(false)}>
-        <BlurView
-          style={styles.blurOverlay}
-          blurType={isDarkMode ? 'dark' : 'light'}
-          blurAmount={10}>
-          <View
-            style={[
-              styles.sourceModalContent,
-              {backgroundColor: isDarkMode ? Colors.black : 'white'},
-            ]}>
-            <Text
-              style={[
-                styles.sourceModalTitle,
-                {color: isDarkMode ? Colors.white : '#333'},
-              ]}>
-              Select Image Source
-            </Text>
-            <View style={styles.sourceButtonContainer}>
-              <TouchableOpacity
-                style={styles.sourceButton}
-                onPress={() => {
-                  setSourceModalVisible(false);
-                  selectImage('camera');
-                }}>
-                <Ionicons name="camera" size={24} color={Colors.primary} />
-                <Text style={styles.sourceButtonText}>Take Photo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.sourceButton}
-                onPress={() => {
-                  setSourceModalVisible(false);
-                  selectImage('gallery');
-                }}>
-                <Ionicons name="images" size={24} color={Colors.primary} />
-                <Text style={styles.sourceButtonText}>Choose from Gallery</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={styles.sourceCancelButton}
-              onPress={() => setSourceModalVisible(false)}>
-              <Text style={styles.sourceCancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </BlurView>
-      </Modal>
+        onClose={() => setSourceModalVisible(false)}
+        onImageSelected={handleImageSelected}
+        isDarkMode={isDarkMode}
+        maxFiles={maxImages}
+        currentFileCount={images.length}
+      />
 
       {/* Full Screen Image Viewer */}
       <ImageView
@@ -364,6 +273,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  largeImageContainer: {
+    width: '100%',
+    height: (width * 0.95 - 48 - 24) / 3,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+  },
   emptyImageContainer: {
     borderStyle: 'dashed',
     justifyContent: 'center',
@@ -378,6 +295,16 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  largePlusIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#F5F5F5',
     borderWidth: 1,
     borderColor: '#E5E5E5',
@@ -449,50 +376,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  // Source Selection Modal Styles
-  sourceModalContent: {
-    width: width * 0.8,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-  },
-  sourceModalTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    marginBottom: 20,
-  },
-  sourceButtonContainer: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 20,
-  },
-  sourceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    backgroundColor: '#F9F9F9',
-  },
-  sourceButtonText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#333',
-    marginLeft: 12,
-  },
-  sourceCancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  sourceCancelButtonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#666',
-  },
 });
 
 export default ImageUploadGrid;

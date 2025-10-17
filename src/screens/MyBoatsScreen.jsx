@@ -51,7 +51,6 @@ const MyBoatsScreen = () => {
     
     try {
       const response = await fetchBoats(pageNumber, limit, searchQuery);
-      console.log(response, "response from fetchBoats");
       
       if (isRefresh || pageNumber === 1) {
         // For refresh or first page, replace the data
@@ -70,9 +69,7 @@ const MyBoatsScreen = () => {
         setPage(prevPage => prevPage + 1);
       }
     } catch (error) {
-      console.log(error, "error from fetchBoats");
       let err_msg = Error(error);
-      console.log(err_msg, "error from fetchBoats");
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       if (isRefresh) {
@@ -163,7 +160,7 @@ const MyBoatsScreen = () => {
             <View style={styles.noDataContainer}>
               <NoDataImage
                 imageSource={require('../assets/images/no_boats.png')}
-                title="No boats Added"
+                title="No boats yet"
                 subtitle="You haven't added any boat"
                 onRefresh={refreshControl}
                 isDarkMode={false}

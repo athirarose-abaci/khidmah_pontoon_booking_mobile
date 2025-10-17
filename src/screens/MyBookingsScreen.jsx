@@ -42,15 +42,6 @@ const MyBookingsScreen = () => {
 
   const { onScroll, insets } = useTabBarScroll();
 
-  useEffect(() => {
-    if(isFocused) {
-      dispatch(clearBookings());
-      setPage(1);
-      setHasMorePages(true);
-      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
-    }
-  }, [isFocused]);
-
   const fetchBookingsData = async (pageNumber, limit, isRefresh = false, searchQuery, status) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -60,7 +51,6 @@ const MyBookingsScreen = () => {
     
     try {
       const response = await fetchBookings(pageNumber, limit, searchQuery, status);
-      console.log(response, "response from fetchBookings");
       if (isRefresh || pageNumber === 1) {
         setBookingsData(response?.results || []);
         dispatch(setBookings(response?.results || []));
@@ -102,7 +92,6 @@ const MyBookingsScreen = () => {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  // Handle tab change
   useEffect(() => {
     if(isFocused) {
       dispatch(clearBookings());
@@ -110,7 +99,7 @@ const MyBookingsScreen = () => {
       setHasMorePages(true);
       fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
     }
-  }, [activeTab]);
+  }, [activeTab, isFocused]);
 
   const refreshControl = () => {
     const defaultSearch = 'null';
@@ -129,7 +118,10 @@ const MyBookingsScreen = () => {
       <View style={styles.main_container}>
         <View style={styles.header_container}>
           <Text style={styles.header_title}>My Bookings</Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Notification')}
+          >
             <Ionicons name="notifications" size={30} color="#6F6F6F" />
           </TouchableOpacity>
         </View>
@@ -157,12 +149,6 @@ const MyBookingsScreen = () => {
             <Ionicons name="calendar-outline" size={27} color={Colors.white} />
           </TouchableOpacity>
         </View>
-
-        {isSearching && (
-          <View style={{ alignSelf: 'center', marginVertical: 10 }}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-          </View>
-        )}
 
         <SubTabBar
           tabs={tabs}
@@ -196,7 +182,7 @@ const MyBookingsScreen = () => {
                       dispatch(clearBookings());
                       setPage(1);
                       setHasMorePages(true);
-                      fetchBookingsData(1, limit, true, searchQuery, getBackendStatus(activeTab));
+                      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
                     }}
                   />
                 </View>

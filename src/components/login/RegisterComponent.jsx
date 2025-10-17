@@ -54,16 +54,13 @@ const RegisterComponent = ({ setCurrentScreen }) => {
 
     try {
       const response = await register(firstName, lastName, email, phone);
-      console.log(response, 'res[register]');
       if (response?.status === 201) {
         toastContext.showToast(response?.data?.message, 'long', 'success');
         setCurrentScreen('otp');
         await storeData('registeredEmail', email.trim());
       }
     } catch (error) {
-      console.log(error);
       let err_msg = Error(error);
-      console.log(err_msg);
       toastContext.showToast(err_msg, 'long', 'error');
     } finally {
       setIsLoading(false);
