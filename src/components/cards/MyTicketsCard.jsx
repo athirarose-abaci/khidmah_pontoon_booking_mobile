@@ -13,9 +13,17 @@ const MyTicketsCard = ({ item, onPress }) => {
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.title} numberOfLines={1}>
-            {typeof item?.category === 'object' && item?.category?.name 
-              ? item.category.name 
-              : (typeof item?.category === 'string' ? item.category : '')}
+            {(() => {
+              const categoryName = typeof item?.category === 'object' && item?.category?.name 
+                ? item.category.name 
+                : (typeof item?.category === 'string' ? item.category : '');
+              
+              if (categoryName.toLowerCase() === 'others' && item?.subject) {
+                return `Others: ${item.subject}`;
+              }
+              
+              return categoryName;
+            })()}
           </Text>
           {item?.ticket_id ? (
             <Text style={styles.ticketId} numberOfLines={1}>#{item?.ticket_id}</Text>

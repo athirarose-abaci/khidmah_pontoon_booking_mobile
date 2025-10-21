@@ -32,6 +32,7 @@ const BoatDetailScreen = () => {
   const [isDisabling, setIsDisabling] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -71,7 +72,9 @@ const BoatDetailScreen = () => {
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      await deleteBoat(boat?.id);
+      const response = await deleteBoat(boat?.id);
+      console.log('Delete boat response:', response);
+      setConfirmMessage(response?.message);
       
       dispatch(removeBoat(boat?.id));
       
@@ -79,6 +82,7 @@ const BoatDetailScreen = () => {
       navigation.goBack();
     } catch (error) {
       let err_msg = Error(error);
+      console.log('Delete boat error:', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsDeleting(false);
@@ -279,7 +283,7 @@ const BoatDetailScreen = () => {
         onRequestClose={() => setDeleteModalVisible(false)}
         onConfirm={handleDeleteConfirm}
         title="Delete Boat"
-        message="Are you sure you want to delete this boat? This action cannot be undone and all associated data will be permanently removed."
+        message={confirmMessage}
         confirmText={isDeleting ? "" : "Delete"}
         cancelText="Cancel"
         warningIconName="delete-forever"

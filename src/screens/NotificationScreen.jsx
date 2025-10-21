@@ -99,11 +99,25 @@ const NotificationScreen = ({ navigation }) => {
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
 
-      {/* Scrollable Notifications List */}
-      <ScrollView 
-        style={styles.scrollView}
+      {/* Notifications FlatList */}
+      <FlatList
+        data={notifications}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.sectionContainer}>
+            <NotificationCard 
+              item={item}
+              onExtendStay={handleExtendStay}
+              onCheckout={handleCheckout}
+            />
+          </View>
+        )}
+        style={styles.flatList}
+        contentContainerStyle={[
+          styles.notification_card_list,
+          { paddingBottom: insets.bottom + 100 }
+        ]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -112,38 +126,31 @@ const NotificationScreen = ({ navigation }) => {
             tintColor={Colors.primary}
           />
         }
-      >
-        <View style={styles.notification_card_list}>
-          {notifications.length === 0 ? (
-            <View style={styles.noDataContainer}>
-              <NoDataImage
-                imageSource={require('../assets/images/no_notification.png')}
-                title="No notifications yet"
-                subtitle="You don't have any notifications at the moment."
-                onRefresh={refreshControl}
-                isDarkMode={false}
-              />
+        ListEmptyComponent={
+          <View style={styles.noDataContainer}>
+            <NoDataImage
+              imageSource={require('../assets/images/no_notification.png')}
+              title="No notifications yet"
+              subtitle="You don't have any notifications at the moment."
+              onRefresh={refreshControl}
+              isDarkMode={false}
+            />
+          </View>
+        }
+        ListFooterComponent={
+          isLoading ? (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={Colors.primary} />
             </View>
-          ) : (
-            <View>
-              {notifications.map((item) => (
-                <View key={item.id.toString()} style={styles.sectionContainer}>
-                  <NotificationCard 
-                    item={item}
-                    onExtendStay={handleExtendStay}
-                    onCheckout={handleCheckout}
-                  />
-                </View>
-              ))}
-              {isLoading && (
-                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={Colors.primary} />
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-      </ScrollView>
+          ) : null
+        }
+        onEndReached={() => {
+          if (hasMorePages && !isLoading) {
+            fetchNotificationsData(page, limit, false);
+          }
+        }}
+        onEndReachedThreshold={0.1}
+      />
       <AbaciLoader visible={isLoading} />
     </SafeAreaView>
   )
@@ -172,7 +179,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: Colors.font_gray,
   },
-  scrollView: {
+  flatList: {
     flex: 1,
   },
   notification_card_list: {

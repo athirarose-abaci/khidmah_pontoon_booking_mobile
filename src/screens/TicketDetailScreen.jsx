@@ -183,7 +183,15 @@ const TicketDetailScreen = () => {
           )}
           {!!ticketData?.category && (
             <View style={styles.subjectRow}>
-              <Text style={styles.ticketSubject}>{ticketData?.category?.name}</Text>
+              <Text style={styles.ticketSubject}>
+                {(() => {
+                  const categoryName = ticketData?.category?.name;
+                  if (categoryName?.toLowerCase() === 'others' && ticketData?.subject) {
+                    return `Others: ${ticketData.subject}`;
+                  }
+                  return categoryName;
+                })()}
+              </Text>
               {!!ticketData?.status && (
                 <View style={[styles.statusBadge, { 
                   backgroundColor: getTicketStatusColors(ticketData?.status).backgroundColor,

@@ -229,13 +229,15 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                         style={[styles.input, errors.subject && styles.inputError]}
                         value={subject}
                         onChangeText={(text) => {
-                          setSubject(text);
+                          const limitedText = text.slice(0, 20);
+                          setSubject(limitedText);
                           if (errors.subject) {
                             setErrors(prev => ({ ...prev, subject: '' }));
                           }
                         }}
-                        placeholder="Enter subject"
+                        placeholder="Enter subject (max 20 chars)"
                         placeholderTextColor="#C8C8C8"
+                        maxLength={20}
                       />
                       {errors.subject && <Text style={styles.errorText}>{errors.subject}</Text>}
                     </View>
