@@ -24,6 +24,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { BASE_URL_IMAGE } from '../constants/baseUrl';
 import { fetchBoats } from '../apis/boat';
 import { fetchOrganizationSettings } from '../apis/system';
+import { setIsDarkMode } from '../../store/themeSlice';
 
 const ProfileScreen = () => {
   const { onScroll, insets } = useTabBarScroll();
@@ -43,6 +44,7 @@ const ProfileScreen = () => {
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
   const currentAuthState = useSelector(state => state.authSlice.authState);
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   useEffect(() => {
     if (isFocused) {
@@ -129,6 +131,15 @@ const ProfileScreen = () => {
     navigation.navigate('ProfileBoatDetail', { boatId: boatId });
   };
 
+  const handleThemeToggle = () => {
+    setIsLoading(true);
+    dispatch(setIsDarkMode(!isDarkMode));
+    // Simple timeout to show loader briefly
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <StatusBar
@@ -137,7 +148,9 @@ const ProfileScreen = () => {
         barStyle="dark-content"
       />
       <View style={styles.main_container}>
-        <BackgroundImage source={require('../assets/images/profile_bg.png')}>
+        <BackgroundImage 
+          source={isDarkMode ? require('../assets/images/profile_bg_dark.png') : require('../assets/images/profile_bg.png')}
+        >
           <View style={styles.header_container}>
             <Text style={styles.header_title}>My Profile</Text>
           </View>
@@ -157,19 +170,19 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.info_container}>
             <View style={styles.title_row}>
-              <Text style={styles.info_title}>{currentAuthState?.full_name}</Text>
+              <Text style={[styles.info_title, { color: isDarkMode ? Colors.primary : '#00263A' }]}>{currentAuthState?.full_name}</Text>
               <TouchableOpacity
                 style={styles.edit_icon_container}
                 onPress={() => setIsEditModalVisible(true)}
               >
                 <Image
                   source={require('../assets/images/edit_pencil.png')}
-                  style={styles.edit_icon}
+                  style={[styles.edit_icon, { tintColor: isDarkMode ? Colors.white : '#00263A' }]}
                 />
               </TouchableOpacity>
             </View>
-            <Text style={styles.info_subtitle_id}>Yatch Owner ID</Text>
-            <Text style={styles.info_subtitle_email}> {currentAuthState?.email} </Text>
+            <Text style={[styles.info_subtitle_id, { color: isDarkMode ? Colors.white : '#353535' }]}>Yatch Owner ID</Text>
+            <Text style={[styles.info_subtitle_email, { color: isDarkMode ? Colors.white : Colors.font_gray }]}> {currentAuthState?.email} </Text>
           </View>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -197,7 +210,7 @@ const ProfileScreen = () => {
                 {boatsData.map(boat => (
                   <TouchableOpacity 
                     key={boat?.id} 
-                    style={styles.boat_card}
+                    style={[styles.boat_card, { backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}
                     onPress={() => handleBoatPress(boat?.id)}
                     activeOpacity={0.8}
                   >
@@ -222,14 +235,14 @@ const ProfileScreen = () => {
                         <Text style={styles.status_text}>{boat?.status}</Text>
                       </View>
                       <LinearGradient
-                        colors={['rgba(0, 0, 0, 0.3)', '#144655']}
+                        colors={['rgba(0, 0, 0, 0.3)', '#1C1D20']}
                         locations={[0, 1]}
                         style={styles.overlay_content}
                       >
                         <Text style={styles.boat_name}>{boat?.name}</Text>
                         <Text style={styles.boat_id}>{boat?.registration_number}</Text>
-                        <View style={styles.size_container}>
-                          <Text style={styles.size_text}>
+                        <View style={[styles.size_container, { backgroundColor: isDarkMode ? '#1C1D20' : 'white' }]}>
+                          <Text style={[styles.size_text, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>
                             Size: {boat?.length} x {boat?.width} ft
                           </Text>
                         </View>
@@ -240,28 +253,28 @@ const ProfileScreen = () => {
               </ScrollView>
             </View>
             <View style={styles.support_container}>
-              <View style={styles.support_card}>
+              <View style={[styles.support_card, { backgroundColor: isDarkMode ? Colors.dark_container : 'rgba(127, 224, 196, 0.10)' }]}>
                 <View style={styles.support_icon}>
                   <Lucide name="headset" size={30} color={Colors.primary} />
                 </View>
                 <View style={styles.support_content}>
-                  <Text style={styles.support_label}>Customer Support</Text>
-                  <Text style={styles.support_number}>{organizationSettingsData?.phone}</Text>
+                  <Text style={[styles.support_label, { color: isDarkMode ? Colors.white : '#373737' }]}>Customer Support</Text>
+                  <Text style={[styles.support_number, { color: isDarkMode ? Colors.white : '#373737' }]}>{organizationSettingsData?.phone}</Text>
                 </View>
                 <TouchableOpacity style={styles.copy_icon} onPress={handleCopyPhoneNumber}>
                   <MaterialDesignIcons
                     name="content-copy"
                     size={25}
-                    color="#373737"
+                    color={isDarkMode ? Colors.white : '#373737'}
                   />
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.options_container}>
+            <View style={[styles.options_container, { backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}>
               <View style={styles.option_item}>
                 <View style={styles.option_left}>
                   <Lucide name="moon" size={23} color={Colors.primary} />
-                  <Text style={styles.option_text}>Dark Mode</Text>
+                  <Text style={[styles.option_text, { color: isDarkMode ? Colors.white : '#373737' }]}>Dark Mode</Text>
                 </View>
                 <Switch
                   trackColor={{
@@ -270,6 +283,9 @@ const ProfileScreen = () => {
                   }}
                   thumbColor={Colors.primary}
                   ios_backgroundColor="#E4E4E4"
+                  onValueChange={handleThemeToggle}
+                  value={isDarkMode}
+                  disabled={isLoading}
                 />
               </View>
 
@@ -385,22 +401,19 @@ const styles = StyleSheet.create({
   edit_icon: {
     width: 20,
     height: 20,
-    tintColor: '#00263A',
+    // tintColor: '#00263A',
     resizeMode: 'contain',
   },
   info_title: {
     fontSize: 18,
-    color: '#00263A',
     fontFamily: 'Inter-SemiBold',
   },
   info_subtitle_id: {
     fontSize: 14,
-    color: '#353535',
     fontFamily: 'Inter-Regular',
   },
   info_subtitle_email: {
     fontSize: 14,
-    color: Colors.font_gray,
     fontFamily: 'Inter-Regular',
   },
   scrollable_content: {
@@ -433,7 +446,6 @@ const styles = StyleSheet.create({
   boat_card: {
     width: 195,
     height: 230,
-    backgroundColor: 'white',
     borderRadius: 15,
     marginRight: 10,
     paddingHorizontal: 9,
@@ -483,7 +495,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   size_container: {
-    backgroundColor: Colors.white,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 8,
@@ -491,7 +502,6 @@ const styles = StyleSheet.create({
   },
   size_text: {
     fontSize: 10,
-    color: Colors.font_gray,
     fontFamily: 'Inter-Regular',
   },
   support_container: {
@@ -501,7 +511,6 @@ const styles = StyleSheet.create({
   support_card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(127, 224, 196, 0.10)',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
@@ -516,13 +525,11 @@ const styles = StyleSheet.create({
   },
   support_label: {
     fontSize: 12,
-    color: '#373737',
     fontFamily: 'Inter-Regular',
     marginBottom: 2,
   },
   support_number: {
     fontSize: 16,
-    color: '#373737',
     fontFamily: 'Inter-SemiBold',
   },
   copy_icon: {
@@ -531,8 +538,7 @@ const styles = StyleSheet.create({
   options_container: {
     marginTop: 20,
     marginHorizontal: 26,
-    backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 15,
     padding: 16,
   },
   option_item: {
@@ -547,7 +553,6 @@ const styles = StyleSheet.create({
   },
   option_text: {
     fontSize: 14.5,
-    color: '#373737',
     fontFamily: 'Inter-Regular',
     marginLeft: 25,
   },

@@ -20,6 +20,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
   const authState = useSelector(state => state.authSlice.authState);
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
   
   const [issueCategory, setIssueCategory] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -147,9 +148,9 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
         <StatusBar backgroundColor="rgba(0, 0, 0, 0.09)" barStyle="dark-content" />
         
         {/* Background Overlay */}
-        <View style={styles.overlay} />
+        <View style={[styles.overlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.09)' }]} />
         
-        <Animated.View style={[styles.screenContainer, { transform: [{ translateY: slideAnim }] }]}>
+        <Animated.View style={[styles.screenContainer, { transform: [{ translateY: slideAnim }], backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}>
           <SafeAreaView style={styles.safeArea} edges={['left','right','bottom']}>
             {/* Header */}
             <View style={styles.header}>
@@ -157,7 +158,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                 <View style={styles.headerIcon}>
                   <Ionicons name="add-circle-outline" size={25} color={Colors.primary} />
                 </View>
-                <Text style={styles.headerTitle}>Raise A Ticket</Text>
+                <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : '#4C4C4C' }]}>Raise A Ticket</Text>
               </View>
               <TouchableOpacity 
                 style={styles.closeButton}
@@ -178,12 +179,18 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
               <View style={styles.formContainer}>
               {/* Subject */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Subject*</Text>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>Subject*</Text>
                 <Dropdown
-                  style={[styles.dropdown, errors.issueCategory && styles.inputError]}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
+                  style={[styles.dropdown, errors.issueCategory && styles.inputError, { 
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, 
+                    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light
+                  }]}
+                  placeholderStyle={[styles.placeholderStyle, { color: isDarkMode ? Colors.dark_text_secondary : '#C8C8C8' }]}
+                  selectedTextStyle={[styles.selectedTextStyle, { color: isDarkMode ? Colors.white : '#000', fontWeight: '600' }]}
+                  inputSearchStyle={[styles.inputSearchStyle, { 
+                    color: isDarkMode ? Colors.white : '#333', 
+                    backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light
+                  }]}
                   iconStyle={styles.iconStyle}
                   data={categoryData}
                   search
@@ -208,11 +215,22 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                     }
                   }}
                   renderLeftIcon={() => (
-                    <Ionicons name="list" size={20} color="#C8C8C8" style={styles.dropdownIcon} />
+                    <Ionicons name="list" size={20} color={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"} style={styles.dropdownIcon} />
                   )}
                   renderRightIcon={() => (
-                    <Ionicons name="chevron-down" size={20} color="#C8C8C8" />
+                    <Ionicons name="chevron-down" size={20} color={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"} />
                   )}
+                  itemContainerStyle={{ backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light }}
+                  itemTextStyle={{ color: isDarkMode ? Colors.white : '#333' }}
+                  activeColor={isDarkMode ? Colors.dropdown_selected_dark : Colors.dropdown_selected_light}
+                  containerStyle={{ 
+                    backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light, 
+                    borderRadius: 8, 
+                    elevation: isDarkMode ? 0 : 2, 
+                    shadowOpacity: isDarkMode ? 0 : 0.1, 
+                    borderWidth: 1, 
+                    borderColor: isDarkMode ? Colors.dropdown_border_dark : Colors.dropdown_border_light 
+                  }}
                 />
                 {errors.issueCategory && <Text style={styles.errorText}>{errors.issueCategory}</Text>}
               </View>
@@ -224,9 +242,13 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                   
                   return isOthersCategory ? (
                     <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Specify Subject*</Text>
+                      <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>Specify Subject*</Text>
                       <TextInput
-                        style={[styles.input, errors.subject && styles.inputError]}
+                        style={[styles.input, errors.subject && styles.inputError, { 
+                          backgroundColor: isDarkMode ? Colors.size_bg_dark : '#F5F5F5',
+                          color: isDarkMode ? Colors.white : '#4C4C4C',
+                          borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                        }]}
                         value={subject}
                         onChangeText={(text) => {
                           const limitedText = text.slice(0, 20);
@@ -236,7 +258,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                           }
                         }}
                         placeholder="Enter subject (max 20 chars)"
-                        placeholderTextColor="#C8C8C8"
+                        placeholderTextColor={isDarkMode ? Colors.font_gray : '#C8C8C8'}
                         maxLength={20}
                       />
                       {errors.subject && <Text style={styles.errorText}>{errors.subject}</Text>}
@@ -246,9 +268,13 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
 
                 {/* Description */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Description*</Text>
+                  <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>Description*</Text>
                   <TextInput
-                    style={[styles.input, styles.textArea, errors.description && styles.inputError]}
+                    style={[styles.input, styles.textArea, errors.description && styles.inputError, { 
+                      backgroundColor: isDarkMode ? Colors.size_bg_dark : '#F5F5F5',
+                      color: isDarkMode ? Colors.white : '#4C4C4C',
+                      borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                    }]}
                     value={description}
                     onChangeText={(text) => {
                       setDescription(text);
@@ -257,7 +283,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                       }
                     }}
                     placeholder="Enter description"
-                    placeholderTextColor="#C8C8C8"
+                    placeholderTextColor={isDarkMode ? Colors.font_gray : '#C8C8C8'}
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"

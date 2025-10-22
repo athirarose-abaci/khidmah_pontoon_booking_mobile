@@ -125,9 +125,12 @@ export const disableBoat = async (boatId, status) => {
     }
 }
 
-export const deleteBoat = async (boatId) => {
+export const deleteBoat = async (boatId, isConfirm = false) => {
     try {
-        const response = await authAxios.delete(`users/boat/${boatId}/`);
+        const url = isConfirm 
+            ? `users/boat/${boatId}/?is_confirmed=true`
+            : `users/boat/${boatId}/`;
+        const response = await authAxios.delete(url);
         return response.data;
     } catch (error) {
         throw error;

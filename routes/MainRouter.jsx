@@ -8,13 +8,15 @@ import { StyleSheet } from 'react-native';
 import { Colors } from '../src/constants/customStyles';
 import TabIcon from '../src/components/tab_bars/MainTabIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import WebSocketProvider from '../src/components/WebSocketProvider';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainRouter = () => {
-  const authState = useSelector(state => state.authSlice.authState);
   const insets = useSafeAreaInsets();
+  const authState = useSelector(state => state.authSlice.authState);
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   return (
     <NavigationContainer>
@@ -29,6 +31,7 @@ const MainRouter = () => {
         ))}
       </Stack.Navigator>
       ): (
+        <WebSocketProvider>
         <Tab.Navigator
           screenOptions={{
             tabBarShowLabel: false,
@@ -38,6 +41,8 @@ const MainRouter = () => {
               {
                 height: 70 + insets.bottom,
                 paddingBottom: insets.bottom,
+                backgroundColor: isDarkMode ? Colors.dark_tab_bar : Colors.white,
+                borderColor: isDarkMode ? Colors.dark_tab_bar : Colors.white,
               }
             ],
             tabBarActiveTintColor: Colors.primary,
@@ -92,6 +97,7 @@ const MainRouter = () => {
           })}
         />
       </Tab.Navigator>
+      </WebSocketProvider>
       )}
     </NavigationContainer>
   );
@@ -103,11 +109,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 20,
     right: 20,
-    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
     paddingTop: 15,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderWidth: 1,
   },
 });

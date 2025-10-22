@@ -8,6 +8,7 @@ import moment from 'moment';
 import { ToastContext } from '../../context/ToastContext';
 import Error from '../../helpers/Error';
 import { calculateDepartureTime } from '../../helpers/timeHelper';
+import { useSelector } from 'react-redux';
 
 const BookingDetailsTab = ({ 
   bookingDetails,
@@ -17,6 +18,7 @@ const BookingDetailsTab = ({
   berthName = '',
   isEditMode = false
 }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const [showArrivalDatePicker, setShowArrivalDatePicker] = useState(false);
   const [showArrivalTimePicker, setShowArrivalTimePicker] = useState(false);
 
@@ -83,12 +85,12 @@ const BookingDetailsTab = ({
       <View style={styles.formInputRow}>
         <View style={styles.formInputContainer}>
           <View style={styles.formLabelContainer}>
-            <Text style={styles.inputLabel}>Arrival Date</Text>
-            <Lucide name="asterisk" size={12} color="black" />
+            <Text style={[styles.inputLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Arrival Date</Text>
+            <Lucide name="asterisk" size={12} color={isDarkMode ? Colors.white : 'black'} />
           </View>
           <View style={styles.inputWithIcon}>
             <TextInput
-              style={[styles.textInput, styles.textInputWithIcon]}
+              style={[styles.textInput, styles.textInputWithIcon, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
               value={bookingDetails?.arrivalDate || ''}
               onChangeText={(value) => onBookingDetailsChange('arrivalDate', value)}
               placeholder="Select date"
@@ -105,12 +107,12 @@ const BookingDetailsTab = ({
         </View>
         <View style={styles.formInputContainer}>
           <View style={styles.formLabelContainer}>
-            <Text style={styles.inputLabel}>Arrival Time</Text>
-            <Lucide name="asterisk" size={12} color="black" />
+            <Text style={[styles.inputLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Arrival Time</Text>
+            <Lucide name="asterisk" size={12} color={isDarkMode ? Colors.white : 'black'} />
           </View>
           <View style={styles.inputWithIcon}>
             <TextInput
-              style={[styles.textInput, styles.textInputWithIcon]}
+              style={[styles.textInput, styles.textInputWithIcon, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
               value={bookingDetails?.arrivalTime || ''}
               placeholder="Select time"
               placeholderTextColor="#C8C8C8"
@@ -128,10 +130,10 @@ const BookingDetailsTab = ({
 
       {/* Duration Row */}
       <View style={styles.bookingDurationContainer}>
-        <Text style={styles.durationLabel}>Duration (Hours)</Text>
+        <Text style={[styles.durationLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Duration (Hours)</Text>
         <View style={styles.bookingDurationInputs}>
           <TextInput
-            style={styles.bookingDurationInput}
+            style={[styles.bookingDurationInput, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={bookingDetails?.hours || ''}
             onChangeText={(value) => {
               // Only allow numeric input and limit to 2 digits
@@ -145,9 +147,9 @@ const BookingDetailsTab = ({
             keyboardType="numeric"
             maxLength={2}
           />
-          <Text style={styles.bookingDurationSeparator}>:</Text>
+          <Text style={[styles.bookingDurationSeparator, { color: isDarkMode ? Colors.white : '#333' }]}>:</Text>
           <TextInput
-            style={styles.bookingDurationInput}
+            style={[styles.bookingDurationInput, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={bookingDetails?.minutes || ''}
             onChangeText={(value) => {
               // Only allow numeric input and limit to 2 digits
@@ -168,11 +170,11 @@ const BookingDetailsTab = ({
       <View style={styles.formInputRow}>
         <View style={styles.formInputContainer}>
           <View style={styles.formLabelContainer}>
-            <Text style={styles.inputLabel}>Departure Date</Text>
-            <Lucide name="asterisk" size={12} color="black" />
+            <Text style={[styles.inputLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Departure Date</Text>
+            <Lucide name="asterisk" size={12} color={isDarkMode ? Colors.white : 'black'} />
           </View>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={bookingDetails?.departureDate || ''}
             placeholder="Departure Date"
             placeholderTextColor="#C8C8C8"
@@ -181,11 +183,11 @@ const BookingDetailsTab = ({
         </View>
         <View style={styles.formInputContainer}>
           <View style={styles.formLabelContainer}>
-            <Text style={styles.inputLabel}>Departure time</Text>
-            <Lucide name="asterisk" size={12} color="black" />
+            <Text style={[styles.inputLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Departure time</Text>
+            <Lucide name="asterisk" size={12} color={isDarkMode ? Colors.white : 'black'} />
           </View>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={bookingDetails?.departureTime || ''}
             placeholder="Departure Time"
             placeholderTextColor="#C8C8C8"

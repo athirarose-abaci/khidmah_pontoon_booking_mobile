@@ -28,6 +28,8 @@ const EditProfileModal = ({ visible, onRequestClose, profileInfo, onProfileUpdat
   const toastContext = useContext(ToastContext);
   const currentAuthState = useSelector(state => state.authSlice.authState);
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
+
 
   useEffect(() => {
     if (profileInfo) {
@@ -142,7 +144,7 @@ const EditProfileModal = ({ visible, onRequestClose, profileInfo, onProfileUpdat
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onRequestClose}>
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -152,6 +154,7 @@ const EditProfileModal = ({ visible, onRequestClose, profileInfo, onProfileUpdat
               styles.modalContainer,
               {
                 transform: [{ translateY: slideAnim }],
+                backgroundColor: isDarkMode ? Colors.dark_container : 'white',
               },
             ]}
           >
@@ -159,7 +162,7 @@ const EditProfileModal = ({ visible, onRequestClose, profileInfo, onProfileUpdat
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                  <Text style={styles.headerTitle}>Edit Profile</Text>
+                  <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : '#00263A' }]}>Edit Profile</Text>
                 </View>
                 <TouchableOpacity style={styles.closeButton} onPress={onRequestClose}>
                   <Ionicons name="close" size={20} color="white" />
@@ -196,32 +199,47 @@ const EditProfileModal = ({ visible, onRequestClose, profileInfo, onProfileUpdat
                 {/* Input Fields */}
                 <View style={styles.formContainer}>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>First Name*</Text>
+                    <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>First Name*</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { 
+                        backgroundColor: isDarkMode ? Colors.size_bg_dark : '#F5F5F5',
+                        color: isDarkMode ? Colors.white : '#00263A',
+                        borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                      }]}
                       value={firstName}
                       onChangeText={setFirstName}
                       placeholder="Enter first name"
+                      placeholderTextColor={isDarkMode ? Colors.font_gray : '#999'}
                     />
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Last Name*</Text>
+                    <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>Last Name*</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { 
+                        backgroundColor: isDarkMode ? Colors.size_bg_dark : '#F5F5F5',
+                        color: isDarkMode ? Colors.white : '#00263A',
+                        borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                      }]}
                       value={lastName}
                       onChangeText={setLastName}
                       placeholder="Enter last name"
+                      placeholderTextColor={isDarkMode ? Colors.font_gray : '#999'}
                     />
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Phone Number*</Text>
+                    <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>Phone Number*</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { 
+                        backgroundColor: isDarkMode ? Colors.size_bg_dark : '#F5F5F5',
+                        color: isDarkMode ? Colors.white : '#00263A',
+                        borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                      }]}
                       value={phoneNumber}
                       onChangeText={setPhoneNumber}
                       placeholder="Enter phone number"
+                      placeholderTextColor={isDarkMode ? Colors.font_gray : '#999'}
                       keyboardType="phone-pad"
                     />
                   </View>

@@ -3,6 +3,7 @@ import { Modal, View, TouchableOpacity, Text, StyleSheet, TextInput } from 'reac
 import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import AbaciLoader from '../AbaciLoader';
+import { useSelector } from 'react-redux';
 
 const ExtendBookingModal = ({
   visible,
@@ -14,6 +15,7 @@ const ExtendBookingModal = ({
   const [extensionHours, setExtensionHours] = useState('');
   const [extensionMinutes, setExtensionMinutes] = useState('');
   const [error, setError] = useState(null);
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
 
   const handleSave = () => {
     const h = Math.max(0, parseInt(extensionHours, 10) || 0);
@@ -52,8 +54,8 @@ const ExtendBookingModal = ({
       animationType="fade"
       onRequestClose={handleClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <View style={[styles.modalOverlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0,0,0,0.5)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -61,7 +63,7 @@ const ExtendBookingModal = ({
                 <Ionicons name="boat-outline" size={20} color={Colors.primary} />
                 <Ionicons name="time" size={12} color={Colors.primary} style={styles.timeIcon} />
               </View>
-              <Text style={styles.modalTitle}>Extend Booking</Text>
+              <Text style={[styles.modalTitle, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Extend Booking</Text>
             </View>
             <TouchableOpacity
               style={styles.closeButton}
@@ -76,30 +78,38 @@ const ExtendBookingModal = ({
 
           {/* Content */}
           <View style={styles.content}>
-            <Text style={styles.label}>Extension Time</Text>
+            <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>Extension Time</Text>
             <View style={styles.timeInputsContainer}>
-              <View style={[styles.timeInputWrapper, error && styles.inputError]}>
+              <View style={[styles.timeInputWrapper, error && styles.inputError, { 
+                backgroundColor: isDarkMode ? Colors.size_bg_dark : Colors.bg_color,
+                borderColor: isDarkMode ? Colors.input_border_dark : Colors.border_line
+              }]}>
                 <TextInput
-                  style={styles.timeInput}
+                  style={[styles.timeInput, { color: isDarkMode ? Colors.white : Colors.black }]}
                   value={extensionHours}
                   onChangeText={(text) => { setExtensionHours(text); if (error) setError(null); }}
                   placeholder="00"
+                  placeholderTextColor={isDarkMode ? Colors.font_gray : '#999'}
                   keyboardType="numeric"
                   maxLength={2}
                 />
-                <Text style={styles.timeLabel}>hrs</Text>
+                <Text style={[styles.timeLabel, { color: isDarkMode ? Colors.font_gray : Colors.font_gray }]}>hrs</Text>
               </View>
               
-              <View style={[styles.timeInputWrapper, error && styles.inputError]}>
+              <View style={[styles.timeInputWrapper, error && styles.inputError, { 
+                backgroundColor: isDarkMode ? Colors.size_bg_dark : Colors.bg_color,
+                borderColor: isDarkMode ? Colors.input_border_dark : Colors.border_line
+              }]}>
                 <TextInput
-                  style={styles.timeInput}
+                  style={[styles.timeInput, { color: isDarkMode ? Colors.white : Colors.black }]}
                   value={extensionMinutes}
                   onChangeText={(text) => { setExtensionMinutes(text); if (error) setError(null); }}
                   placeholder="00"
+                  placeholderTextColor={isDarkMode ? Colors.font_gray : '#999'}
                   keyboardType="numeric"
                   maxLength={2}
                 />
-                <Text style={styles.timeLabel}>min</Text>
+                <Text style={[styles.timeLabel, { color: isDarkMode ? Colors.font_gray : Colors.font_gray }]}>min</Text>
               </View>
             </View>
             {error ? (

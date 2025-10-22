@@ -1,11 +1,7 @@
-import React, {useEffect, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import {io} from 'socket.io-client';
 import {useDispatch, useSelector} from 'react-redux';
-import {
-  setConnectionStatus,
-  setLastPing,
-  setError,
-} from '../../store/socketSlice';
+import { setConnectionStatus, setLastPing, setError, } from '../../store/socketSlice';
 import { SOCKET_URL } from '../constants/baseUrl';
 
 const WebSocketProvider = ({children}) => {
@@ -44,24 +40,24 @@ const WebSocketProvider = ({children}) => {
 
       socket.on('connect', () => {
         dispatch(setConnectionStatus(true));
-        // console.log('socket connected')
+        console.log('socket connected')
         dispatch(setError(null));
       });
 
       socket.on('disconnect', reason => {
         dispatch(setConnectionStatus(false));
-        // console.log('soket disconnected',reason)
+        console.log('soket disconnected',reason)
       });
 
       socket.on('connect_error', error => {
         dispatch(setError(error.message));
-        // console.log('soket connect error',error?.name)
-        // console.log('soket connect error name',error?.message)
+        console.log('soket connect error',error?.name)
+        console.log('soket connect error name',error?.message)
       });
 
       socket.on('error', error => {
         dispatch(setError(error.message));
-        // console.log('soket error',error)
+        console.log('soket error',error)
       });
 
       // Handle incoming messages

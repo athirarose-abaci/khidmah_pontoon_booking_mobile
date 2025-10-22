@@ -1,18 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Colors, getTicketStatusColors, getDisplayTicketStatus } from '../../constants/customStyles';
+import { useSelector } from 'react-redux';
 
 const MyTicketsCard = ({ item, onPress }) => {
   const description = typeof item?.description === 'string' ? item?.description : '';
   const displayDescription = description.length > 26 ? `${description.slice(0, 26)}…` : description;
   const statusColors = getTicketStatusColors(item?.status);
   const displayStatus = getDisplayTicketStatus(item?.status);
+
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   
   return (
-    <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.card}>
+    <TouchableOpacity 
+      activeOpacity={0.8} 
+      onPress={onPress} 
+      style={[styles.card, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}
+    >
       <View style={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={[styles.title, { color: isDarkMode ? Colors.white : Colors.black }]} numberOfLines={1}>
             {(() => {
               const categoryName = typeof item?.category === 'object' && item?.category?.name 
                 ? item.category.name 
@@ -51,8 +58,8 @@ const MyTicketsCard = ({ item, onPress }) => {
                   <Image source={item?.agent?.avatar} style={styles.avatar} />
                 ) : null}
                 <View style={styles.agentTextBlock}>
-                  <Text style={styles.agentRole}>Assigned Agent</Text>
-                  <Text style={styles.agentName}>
+                  <Text style={[styles.agentRole, { color: isDarkMode ? Colors.primary : '#00263A' }]}>Assigned Agent</Text>
+                  <Text style={[styles.agentName, { color: isDarkMode ? Colors.white : Colors.black }]}>
                     {item?.agent?.name ? item?.agent?.name : ''}
                   </Text>
                 </View>
@@ -60,9 +67,14 @@ const MyTicketsCard = ({ item, onPress }) => {
             ) : null}
           </View>
 
-          <Text style={styles.timestamp}>
-            {item?.createdAtDate} {item?.createdAtTime}
-          </Text>
+          <View style={styles.rightSection}>
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationCount}>3</Text>
+            </View>
+            <Text style={styles.timestamp}>
+              {item?.createdAtDate} {item?.createdAtTime}
+            </Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -73,7 +85,7 @@ export default MyTicketsCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.white,
+    // backgroundColor: Colors.white,
     borderRadius: 12,
     marginBottom: 5,
     marginTop: 10,
@@ -96,7 +108,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Inter-SemiBold',
-    color: Colors.black,
+    // color: Colors.black,
     fontSize: 14.5,
   },
   statusRow: {
@@ -153,13 +165,17 @@ const styles = StyleSheet.create({
   },
   agentRole: {
     fontSize: 12,
-    color: '#00263A',
+    // color: '#00263A',
     fontFamily: 'Inter-Italic',
   },
   agentName: {
     fontSize: 13,
-    color: Colors.black,
+    // color: Colors.black,
     fontFamily: 'Inter-SemiBold',
+  },
+  rightSection: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
   },
   timestamp: {
     fontSize: 12,
@@ -178,6 +194,21 @@ const styles = StyleSheet.create({
     color: '#C27A00',
     fontFamily: 'Inter-Medium',
     fontSize: 12,
+  },
+  notificationBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginBottom: 4,
+  },
+  notificationCount: {
+    color: Colors.white,
+    fontSize: 10,
+    fontFamily: 'Inter-SemiBold',
   },
 });
 

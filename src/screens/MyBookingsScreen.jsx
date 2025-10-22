@@ -13,7 +13,7 @@ import CreateButton from '../components/newBooking/CreateButton';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Error from '../helpers/Error';
 import { fetchBookings } from '../apis/booking';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setBookings, clearBookings } from '../../store/bookingSlice';
 import { ToastContext } from '../context/ToastContext';
 import AbaciLoader from '../components/AbaciLoader';
@@ -23,6 +23,7 @@ const MyBookingsScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const [activeTab, setActiveTab] = useState('All');
   const tabs = BOOKING_TABS;
@@ -114,29 +115,29 @@ const MyBookingsScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
-      <View style={styles.main_container}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         <View style={styles.header_container}>
-          <Text style={styles.header_title}>My Bookings</Text>
+          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>My Bookings</Text>
           <TouchableOpacity 
             activeOpacity={0.7}
             onPress={() => navigation.navigate('Notification')}
           >
-            <Ionicons name="notifications" size={30} color="#6F6F6F" />
+            <Ionicons name="notifications" size={30} color={isDarkMode ? Colors.white : "#6F6F6F"} />
           </TouchableOpacity>
         </View>
         <View style={styles.filter_container}>
-          <View style={styles.search_bar}>
+          <View style={[styles.search_bar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
             <Ionicons
               name="search-outline"
               size={22}
-              color="#EFEFEF"
+              color={isDarkMode ? Colors.white : "#EFEFEF"}
               style={{ marginHorizontal: 12 }}
             />
             <TextInput
-              style={styles.search_input}
+              style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
               placeholder="Search Bookings"
-              placeholderTextColor={Colors.primary}
+              placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
               value={searchQuery!=='null' ? searchQuery : ''}
               onChangeText={text => setSearchQuery(text)}
             />
@@ -163,7 +164,7 @@ const MyBookingsScreen = () => {
                 title="No bookings yet"
                 subtitle="You haven't made any bookings."
                 onRefresh={refreshControl}
-                isDarkMode={false}
+                isDarkMode={isDarkMode}
               />
             </View>
           ) : (

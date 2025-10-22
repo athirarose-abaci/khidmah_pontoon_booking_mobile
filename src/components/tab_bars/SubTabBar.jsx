@@ -1,10 +1,14 @@
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import React from 'react';
 import { Colors } from '../../constants/customStyles';
+import { useSelector } from 'react-redux';
 
 const SubTabBar = ({ tabs, activeTab, onTabChange }) => {
+
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : 'transparent' }]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -20,14 +24,27 @@ const SubTabBar = ({ tabs, activeTab, onTabChange }) => {
               onPress={() => onTabChange(label)}
               style={[
                 styles.tab_item,
-                isActive && { backgroundColor: Colors.primary },
+                { 
+                  backgroundColor: isActive 
+                    ? Colors.primary 
+                    : isDarkMode 
+                      ? Colors.dark_container 
+                      : '#E7E7E7'
+                },
                 idx !== tabs.length - 1 && { marginRight: 10 },
               ]}
             >
               <Text
                 style={[
                   styles.tab_text,
-                  isActive && { color: Colors.white, fontFamily: 'Inter-SemiBold' },
+                  { 
+                    color: isActive 
+                      ? Colors.white 
+                      : isDarkMode 
+                        ? Colors.white 
+                        : '#6F6F6F'
+                  },
+                  isActive && { fontFamily: 'Inter-SemiBold' },
                 ]}
               >
                 {label}
@@ -46,7 +63,6 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 5,
     marginBottom: 8,
-    backgroundColor: 'transparent',
     paddingHorizontal: 28,
   },
   tabs_container: {
@@ -59,11 +75,9 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E7E7E7',
   },
   tab_text: {
     fontSize: 12,
-    color: '#6F6F6F',
     fontFamily: 'Inter-Regular',
   },
 });

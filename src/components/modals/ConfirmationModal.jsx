@@ -34,11 +34,11 @@ const ConfirmationModal = ({
       transparent={true}
       animationType="fade"
       onRequestClose={onRequestClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
         <View
           style={[
             styles.modalContent,
-            {backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white},
+            {backgroundColor: isDarkMode ? Colors.dark_container : Colors.white},
           ]}>
           
           {showWarningIcon && (
@@ -93,7 +93,7 @@ const ConfirmationModal = ({
                 styles.cancelButton,
                 {
                   backgroundColor: isDarkMode
-                    ? Colors.small_container_dark_bg
+                    ? Colors.size_bg_dark
                     : Colors.white,
                   borderWidth: isDarkMode ? 0 : 1,   
                   borderColor: isDarkMode ? 'transparent' : '#4CAF50',

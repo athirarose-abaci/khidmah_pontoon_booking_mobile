@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { Dropdown } from 'react-native-element-dropdown';
 import { Colors } from '../../constants/customStyles';
+import { useSelector } from 'react-redux';
 
 const PontoonDetailsTab = ({ 
   pontoonName, 
@@ -13,6 +14,7 @@ const PontoonDetailsTab = ({
   berths = [],
   onPontoonSelect
 }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const safePontoons = Array.isArray(pontoons) ? pontoons : [];
   const safeBerths = Array.isArray(berths) ? berths : [];
   
@@ -37,14 +39,14 @@ const PontoonDetailsTab = ({
       {/* Pontoon Name */}
       <View style={styles.formInputContainer}>
         <View style={styles.formLabelContainer}>
-          <Text style={styles.inputLabel}>Pontoon Name</Text>
-          <Lucide name="asterisk" size={12} color="black" />
+          <Text style={[styles.inputLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Pontoon Name</Text>
+          <Lucide name="asterisk" size={12} color={isDarkMode ? Colors.white : 'black'} />
         </View>
         
         {isSinglePontoon ? (
           // Show text input for single pontoon (auto-filled)
           <TextInput
-            style={[styles.textInput, styles.disabledInput]}
+            style={[styles.textInput, styles.disabledInput, { backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5', color: isDarkMode ? Colors.white : '#666', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={pontoonName}
             editable={false}
             placeholder="Pontoon name"
@@ -53,10 +55,10 @@ const PontoonDetailsTab = ({
         ) : isMultiplePontoons ? (
           // Show dropdown for multiple pontoons
           <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
+            style={[styles.dropdown, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
+            placeholderStyle={[styles.placeholderStyle, { color: isDarkMode ? Colors.dark_text_secondary : '#C8C8C8' }]}
+            selectedTextStyle={[styles.selectedTextStyle, { color: isDarkMode ? Colors.white : '#000', fontWeight: '600' }]}
+            inputSearchStyle={[styles.inputSearchStyle, { color: isDarkMode ? Colors.white : '#333', backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light }]}
             iconStyle={styles.iconStyle}
             data={pontoonData}
             search
@@ -71,13 +73,17 @@ const PontoonDetailsTab = ({
               onPontoonSelect && onPontoonSelect(item.id);
             }}
             renderLeftIcon={() => (
-              <Lucide name="map-pin" size={20} color="#C8C8C8" style={styles.icon} />
+              <Lucide name="map-pin" size={20} color={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"} style={styles.icon} />
             )}
+            itemContainerStyle={{ backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light }}
+            itemTextStyle={{ color: isDarkMode ? Colors.white : '#333' }}
+            activeColor={isDarkMode ? Colors.dropdown_selected_dark : Colors.dropdown_selected_light}
+            containerStyle={{ backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light, borderRadius: 8, elevation: isDarkMode ? 0 : 2, shadowOpacity: isDarkMode ? 0 : 0.1, borderWidth: 1, borderColor: isDarkMode ? Colors.dropdown_border_dark : Colors.dropdown_border_light }}
           />
         ) : (
           // Show regular text input when no pontoons loaded yet
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={pontoonName}
             onChangeText={setPontoonName}
             placeholder="Enter pontoon name"
@@ -89,14 +95,14 @@ const PontoonDetailsTab = ({
       {/* Berth Name */}
       <View style={styles.formInputContainer}>
         <View style={styles.formLabelContainer}>
-          <Text style={styles.inputLabel}>Berth Name</Text>
-          <Lucide name="asterisk" size={12} color="black" />
+          <Text style={[styles.inputLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.sub_heading_font }]}>Berth Name</Text>
+          <Lucide name="asterisk" size={12} color={isDarkMode ? Colors.white : 'black'} />
         </View>
         
         {isSingleBerth ? (
           // Show text input for single berth (auto-filled)
           <TextInput
-            style={[styles.textInput, styles.disabledInput]}
+            style={[styles.textInput, styles.disabledInput, { backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5', color: isDarkMode ? Colors.white : '#666', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={berthName}
             editable={false}
             placeholder="Berth name"
@@ -105,10 +111,10 @@ const PontoonDetailsTab = ({
         ) : isMultipleBerths ? (
           // Show dropdown for multiple berths
           <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
+            style={[styles.dropdown, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
+            placeholderStyle={[styles.placeholderStyle, { color: isDarkMode ? Colors.dark_text_secondary : '#C8C8C8' }]}
+            selectedTextStyle={[styles.selectedTextStyle, { color: isDarkMode ? Colors.white : '#000', fontWeight: '600' }]}
+            inputSearchStyle={[styles.inputSearchStyle, { color: isDarkMode ? Colors.white : '#333', backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light }]}
             iconStyle={styles.iconStyle}
             data={berthData}
             search
@@ -122,13 +128,17 @@ const PontoonDetailsTab = ({
               setBerthName(item.value);
             }}
             renderLeftIcon={() => (
-              <Lucide name="anchor" size={20} color="#C8C8C8" style={styles.icon} />
+              <Lucide name="anchor" size={20} color={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"} style={styles.icon} />
             )}
+            itemContainerStyle={{ backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light }}
+            itemTextStyle={{ color: isDarkMode ? Colors.white : '#333' }}
+            activeColor={isDarkMode ? Colors.dropdown_selected_dark : Colors.dropdown_selected_light}
+            containerStyle={{ backgroundColor: isDarkMode ? Colors.dropdown_container_dark : Colors.dropdown_container_light, borderRadius: 8, elevation: isDarkMode ? 0 : 2, shadowOpacity: isDarkMode ? 0 : 0.1, borderWidth: 1, borderColor: isDarkMode ? Colors.dropdown_border_dark : Colors.dropdown_border_light }}
           />
         ) : (
           // Show regular text input when no berths loaded yet
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white, color: isDarkMode ? Colors.white : '#333', borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light }]}
             value={berthName}
             onChangeText={setBerthName}
             placeholder="Enter berth name"
@@ -178,6 +188,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     backgroundColor: Colors.white,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   icon: {
     marginRight: 5,
@@ -200,6 +212,8 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 14,
     fontFamily: 'Inter-Regular',
+    borderRadius: 8,
+    paddingHorizontal: 8,
   },
 });
 

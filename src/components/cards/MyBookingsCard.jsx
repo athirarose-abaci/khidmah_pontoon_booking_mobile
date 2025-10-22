@@ -14,6 +14,7 @@ import { updateBooking as updateBookingAction } from '../../../store/bookingSlic
 
 const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSuccess }) => {
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const bookingFromStore = useSelector(state => state?.bookingSlice?.bookings?.find(b => b.id === item?.id));
   const booking = bookingFromStore || item;
 
@@ -91,7 +92,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.card, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.topRow}>
         {/* Left side image */}
         <View style={styles.imageWrapper}>
@@ -111,8 +112,8 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
             <Text style={[styles.subTitle, { marginRight: 5 }]} >
               {booking?.boat?.registration_number ? (booking?.boat?.registration_number.length > 8 ? booking?.boat?.registration_number.substring(0, 8) + '...' : booking?.boat?.registration_number) : 'N/A'}
             </Text>
-            <Text style={styles.code} >
-              {booking?.booking_number ? (booking?.booking_number.length > 9 ? booking?.booking_number.substring(0, 9) + '...' : booking?.booking_number) : 'N/A'}
+            <Text style={[styles.code, { backgroundColor: isDarkMode ? Colors.size_bg_dark : Colors.size_bg_light }]} >
+              {booking?.booking_number ? (booking?.booking_number.length > 9 ? '#' + booking?.booking_number.substring(0, 9) + '...' : '#' + booking?.booking_number) : 'N/A'}
             </Text>
           </View>
           <View style={styles.divider} />
@@ -120,20 +121,28 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
           <View style={styles.timeRow}>
             <View style={styles.timeBlock}>
               <View style={styles.timeHeaderRow}>
-                <Ionicons name="time-outline" size={16} color={Colors.primary} />
-                <Text style={[styles.label, { marginLeft: 6 }]}>Start</Text>
+                <Image 
+                  source={require('../../assets/images/clock_in.png')} 
+                  style={styles.timeIcon}
+                  resizeMode="contain"
+                />
+                <Text style={[styles.label, { marginLeft: 6 }]}>Arrival</Text>
               </View>
-              <Text style={styles.timeText}>
+              <Text style={[styles.timeText, { color: isDarkMode ? Colors.white : Colors.black }]}>
                 {formatDateTime(booking?.start_date)}
               </Text>
             </View>
 
             <View style={styles.timeBlock}>
               <View style={styles.timeHeaderRow}>
-                <Ionicons name="time-outline" size={16} color={Colors.primary} />
-                <Text style={[styles.label, { marginLeft: 6 }]}>End</Text>
+                <Image 
+                  source={require('../../assets/images/clock_out.png')} 
+                  style={styles.timeIcon}
+                  resizeMode="contain"
+                />
+                <Text style={[styles.label, { marginLeft: 6 }]}>Departure</Text>
               </View>
-              <Text style={styles.timeText}>
+              <Text style={[styles.timeText, { color: isDarkMode ? Colors.white : Colors.black }]}>
                 {formatDateTime(booking?.end_date)}
               </Text>
             </View>
@@ -184,7 +193,6 @@ export default MyBookingCard;
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'column',
-    backgroundColor: Colors.white,
     borderRadius: 12,
     marginBottom: 5,
     marginTop: 10,
@@ -245,7 +253,6 @@ const styles = StyleSheet.create({
   code: {
     fontSize: 12,
     color: Colors.font_gray,
-    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     paddingVertical: 1,
     paddingHorizontal: 7,
@@ -277,6 +284,11 @@ const styles = StyleSheet.create({
   timeHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  timeIcon: {
+    width: 16,
+    height: 16,
+    tintColor: Colors.primary,
   },
   label: {
     fontSize: 13,
@@ -347,6 +359,9 @@ const styles = StyleSheet.create({
   },
   btnIcon: {
     marginRight: 6,
+    width: 18,
+    height: 18,
+    tintColor: Colors.white,
   },
   
   checkoutButtonText: {

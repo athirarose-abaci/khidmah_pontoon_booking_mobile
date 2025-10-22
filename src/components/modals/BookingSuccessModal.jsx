@@ -1,53 +1,55 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
 import SuccessLottie from '../lottie/SuccessLottie';
+import { useSelector } from 'react-redux';
 
 const BookingSuccessModal = ({ visible, onClose, onGoHome }) => {
-  if (!visible) return null;
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
 
   return (
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContainer}>
-        <TouchableOpacity 
-          style={styles.closeButton}
-          onPress={onClose}
-        >
-          <Ionicons name="close" size={20} color="white" />
-        </TouchableOpacity>
-        
-        <View style={styles.successIconContainer}>
-          <SuccessLottie 
-            style={styles.lottieAnimation}
-            autoPlay={true}
-            loop={true}
-          />
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={[styles.modalOverlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
+        <View style={[styles.modalContainer, { backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={onClose}
+          >
+            <Ionicons name="close" size={20} color="white" />
+          </TouchableOpacity>
+          
+          <View style={styles.successIconContainer}>
+            <SuccessLottie 
+              style={styles.lottieAnimation}
+              autoPlay={true}
+              loop={true}
+            />
+          </View>
+          
+          <Text style={[styles.successMessage, { color: isDarkMode ? Colors.white : '#333' }]}>
+            Your booking has been{'\n'}successfully created!
+          </Text>
+          
+          <TouchableOpacity style={[styles.goHomeButton, { backgroundColor: isDarkMode ? Colors.size_bg_dark : 'white', borderColor: isDarkMode ? Colors.input_border_dark : Colors.primary }]} onPress={onGoHome}>
+            <Text style={[styles.goHomeButtonText, { color: isDarkMode ? Colors.white : Colors.primary }]}>Go Home</Text>
+          </TouchableOpacity>
         </View>
-        
-        <Text style={styles.successMessage}>
-          Your booking has been{'\n'}successfully created!
-        </Text>
-        
-        <TouchableOpacity style={styles.goHomeButton} onPress={onGoHome}>
-          <Text style={styles.goHomeButtonText}>Go Home</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
   },
   modalContainer: {
     backgroundColor: 'white',
@@ -81,8 +83,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lottieAnimation: {
-    width: 250,
-    height: 250,
+    width: 200,
+    height: 200,
   },
   successMessage: {
     fontSize: 18,
@@ -100,6 +102,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 35,
     minWidth: 120,
+    marginBottom: 20,
   },
   goHomeButtonText: {
     fontSize: 15,

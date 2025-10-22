@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { Colors } from '../../constants/customStyles';
+import { useSelector } from 'react-redux';
 
 const CustomTimePickerModal = ({ 
   visible, 
@@ -13,6 +14,7 @@ const CustomTimePickerModal = ({
   const [selectedHour, setSelectedHour] = useState(1);
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState('AM');
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
   
   const hourScrollRef = useRef(null);
   const minuteScrollRef = useRef(null);
@@ -232,12 +234,12 @@ const CustomTimePickerModal = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.timePickerModal}>
+      <View style={[styles.modalOverlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
+        <View style={[styles.timePickerModal, { backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}>
           <View style={styles.timePickerHeader}>
-            <Text style={styles.timePickerTitle}>{title}</Text>
+            <Text style={[styles.timePickerTitle, { color: isDarkMode ? Colors.white : Colors.black }]}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Lucide name="x" size={24} color="#666" />
+              <Lucide name="x" size={20} color={Colors.white} />
             </TouchableOpacity>
           </View>
           
@@ -253,9 +255,6 @@ const CustomTimePickerModal = ({
           </View>
           
           <View style={styles.timePickerFooter}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
               <Text style={styles.confirmButtonText}>Confirm</Text>
             </TouchableOpacity>
@@ -289,11 +288,12 @@ const styles = StyleSheet.create({
   },
   timePickerHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border_line,
+    position: 'relative',
   },
   timePickerTitle: {
     fontSize: 18,
@@ -301,7 +301,15 @@ const styles = StyleSheet.create({
     color: Colors.heading_font,
   },
   closeButton: {
-    padding: 4,
+    // padding: 1,
+    borderRadius: 6,
+    backgroundColor: Colors.red,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 20,
+    height: 20,
+    position: 'absolute',
+    right: 20,
   },
   timePickerContent: {
     flexDirection: 'row',
@@ -369,31 +377,13 @@ const styles = StyleSheet.create({
     color: Colors.primary, 
   },
   timePickerFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: Colors.border_line,
   },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    marginRight: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border_line,
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: Colors.sub_heading_font,
-  },
   confirmButton: {
-    flex: 1,
+    width: '100%',
     paddingVertical: 12,
-    marginLeft: 8,
     borderRadius: 8,
     backgroundColor: Colors.primary,
     alignItems: 'center',

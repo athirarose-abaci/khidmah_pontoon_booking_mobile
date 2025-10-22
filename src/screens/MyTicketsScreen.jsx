@@ -31,6 +31,7 @@ const MyTicketsScreen = () => {
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const storedTickets = useSelector(state => state.ticketSlice.tickets);
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const [ticketsData, setTicketsData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -160,10 +161,10 @@ const MyTicketsScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
-      <View style={styles.main_container}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.bg_color : Colors.white} barStyle="dark-content" />
+      <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         <View style={styles.header_container}>
-          <Text style={styles.header_title}>My Tickets</Text>
+          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>My Tickets</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             style={styles.addTicketButton}
@@ -180,17 +181,17 @@ const MyTicketsScreen = () => {
 
         {/* Search */}
         <View style={styles.filter_container}>
-          <View style={styles.search_bar}>
+          <View style={[styles.search_bar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
             <Ionicons
               name="search-outline"
               size={22}
-              color="#EFEFEF"
+              color={isDarkMode ? Colors.white : "#EFEFEF"}
               style={{ marginHorizontal: 12 }}
             />
             <TextInput
-              style={styles.search_input}
+              style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
               placeholder="Search tickets"
-              placeholderTextColor={Colors.primary}
+              placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
               value={searchQuery !== 'null' ? searchQuery : ''}
               onChangeText={(text) => setSearchQuery(text)}
             />
@@ -217,7 +218,7 @@ const MyTicketsScreen = () => {
                 title="No tickets yet"
                 subtitle="You haven't raised any ticket"
                 onRefresh={refreshControl}
-                isDarkMode={false}
+                isDarkMode={isDarkMode}
               />
             </View>
           ) : (

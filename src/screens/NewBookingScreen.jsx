@@ -29,6 +29,7 @@ const STEPS = {
 };
 
 const NewBookingScreen = ({ navigation, route }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const [currentStep, setCurrentStep] = useState(STEPS.PONTOON_DETAILS); 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -260,8 +261,6 @@ const NewBookingScreen = ({ navigation, route }) => {
       console.log("response from handleCreateBooking", response);
       dispatch(addBookings([response]));
       setShowSuccessModal(true);
-      toastContext.showToast("Booking created successfully!", "short", "success");
-      navigation.goBack();
     } catch (error) {
       console.log("error from handleCreateBooking", error);
       let err_msg = Error(error);
@@ -297,8 +296,6 @@ const NewBookingScreen = ({ navigation, route }) => {
       console.log("response from handleUpdateBooking", response);
       dispatch(updateBooking(response));
       setShowSuccessModal(true);
-      toastContext.showToast("Booking updated successfully!", "short", "success");
-      navigation.goBack();
     } catch (error) {
       console.log("error from handleUpdateBooking", error);
       let err_msg = Error(error);
@@ -438,19 +435,19 @@ const NewBookingScreen = ({ navigation, route }) => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["left", "right", "bottom"]}>
-      <StatusBar backgroundColor={Colors.bg_color} barStyle="dark-content" />
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} edges={["left", "right", "bottom"]}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : Colors.bg_color} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <View style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         {/* Header */}
         <View style={styles.header}>
           <MaterialIcons
             name="chevron-left"
             size={30}
-            color={Colors.font_gray}
+            color={isDarkMode ? Colors.white : Colors.font_gray}
             style={styles.backButton}
             onPress={handleBackNavigation}
           />
-          <Text style={styles.headerTitle}>{isEditMode ? "Edit Booking" : "New Booking"}</Text>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>{isEditMode ? "Edit Booking" : "New Booking"}</Text>
           {currentStep === STEPS.BOAT_DETAILS && (
             <TouchableOpacity
               activeOpacity={0.7}
@@ -464,8 +461,8 @@ const NewBookingScreen = ({ navigation, route }) => {
         </View>
 
         {/* Instruction Box */}
-        <View style={styles.instructionContainer}>
-          <Text style={styles.instructionText}>
+        <View style={[styles.instructionContainer, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
+          <Text style={[styles.instructionText, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>
             {currentStep === STEPS.PONTOON_DETAILS 
               ? "Select your preferred pontoon\nto book."
               : currentStep === STEPS.BOAT_DETAILS
@@ -487,10 +484,10 @@ const NewBookingScreen = ({ navigation, route }) => {
             disabled={isEditMode}
           >
             <View style={[styles.stepIcon, currentStep === STEPS.PONTOON_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
-              <Ionicons name="location" size={22} color={currentStep === STEPS.PONTOON_DETAILS ? Colors.white : "#6F6F6F"} />
+              <Ionicons name="location" size={22} color={currentStep === STEPS.PONTOON_DETAILS ? Colors.white : (isDarkMode ? Colors.font_gray : "#6F6F6F")} />
             </View>
           </TouchableOpacity>
-          <View style={styles.stepConnectorLine} />
+          <View style={[styles.stepConnectorLine, { backgroundColor: isDarkMode ? Colors.dark_separator : Colors.input_border_light }]} />
           <TouchableOpacity 
             style={[
               styles.stepIconContainer, 
@@ -501,16 +498,16 @@ const NewBookingScreen = ({ navigation, route }) => {
             disabled={isEditMode}
           >
             <View style={[styles.stepIcon, currentStep === STEPS.BOAT_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
-              <Ionicons name="boat-outline" size={22} color={currentStep === STEPS.BOAT_DETAILS ? Colors.white : "#6F6F6F"}/>
+              <Ionicons name="boat-outline" size={22} color={currentStep === STEPS.BOAT_DETAILS ? Colors.white : (isDarkMode ? Colors.font_gray : "#6F6F6F")}/>
             </View>
           </TouchableOpacity>
-          <View style={styles.stepConnectorLine} />
+          <View style={[styles.stepConnectorLine, { backgroundColor: isDarkMode ? Colors.dark_separator : Colors.input_border_light }]} />
           <TouchableOpacity 
             style={[styles.stepIconContainer, currentStep === STEPS.BOOKING_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer]}
             onPress={() => handleStepClick(STEPS.BOOKING_DETAILS)}
           >
             <View style={[styles.stepIcon, currentStep === STEPS.BOOKING_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
-              <Octicons name="people" size={22} color={currentStep === STEPS.BOOKING_DETAILS ? Colors.white : "#6F6F6F"} />
+              <Octicons name="people" size={22} color={currentStep === STEPS.BOOKING_DETAILS ? Colors.white : (isDarkMode ? Colors.font_gray : "#6F6F6F")} />
             </View>
           </TouchableOpacity>
         </View>
@@ -524,6 +521,7 @@ const NewBookingScreen = ({ navigation, route }) => {
           {/* Content Card */}
           <View style={[
             styles.mainBookingCard,
+            { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white },
             currentStep === STEPS.PONTOON_DETAILS ? styles.pontoonDetailsCard : 
             currentStep === STEPS.BOAT_DETAILS ? styles.boatDetailsCard : 
             styles.bookingDetailsCard
@@ -540,11 +538,11 @@ const NewBookingScreen = ({ navigation, route }) => {
                 )}
               </View>
             </View>
-            <Text style={styles.cardHeaderText}>
+            <Text style={[styles.cardHeaderText, { color: Colors.primary }]}>
               {currentStep === STEPS.PONTOON_DETAILS ? "Pontoon Details" : currentStep === STEPS.BOAT_DETAILS ? "Boat Details" : "Booking Details"}
             </Text>
           </View>
-          <View style={styles.cardHeaderSeparator} />
+          <View style={[styles.cardHeaderSeparator, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
 
           {currentStep === STEPS.PONTOON_DETAILS ? (
             <PontoonDetailsTab

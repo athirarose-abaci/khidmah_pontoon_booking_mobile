@@ -13,7 +13,7 @@ import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { ToastContext } from "../context/ToastContext";
 import Error from "../helpers/Error";
 import { fetchBoats } from "../apis/boat";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setBoats, clearBoats } from "../../store/boatSlice";
 
 const MyBoatsScreen = () => {
@@ -21,6 +21,7 @@ const MyBoatsScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const [boatsData, setBoatsData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,11 +115,11 @@ const MyBoatsScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
-      <View style={styles.main_container}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         {/* Header */}
         <View style={styles.header_container}>
-          <Text style={styles.header_title}>My Boats</Text>
+          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>My Boats</Text>
 
           <TouchableOpacity
             activeOpacity={0.7}
@@ -132,17 +133,17 @@ const MyBoatsScreen = () => {
 
         {/* Search */}
         <View style={styles.filter_container}>
-          <View style={styles.search_bar}>
+          <View style={[styles.search_bar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
             <Ionicons
               name="search-outline"
               size={22}
-              color="#EFEFEF"
+              color={isDarkMode ? Colors.white : "#EFEFEF"}
               style={{ marginHorizontal: 12 }}
             />
             <TextInput
-              style={styles.search_input}
+              style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
               placeholder="Search boats"
-              placeholderTextColor={Colors.primary}
+              placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
               value={searchQuery!=='null' ? searchQuery : ''}
               onChangeText={text => setSearchQuery(text)}
             />
@@ -163,7 +164,7 @@ const MyBoatsScreen = () => {
                 title="No boats yet"
                 subtitle="You haven't added any boat"
                 onRefresh={refreshControl}
-                isDarkMode={false}
+                isDarkMode={isDarkMode}
               />
             </View>
           ) : (

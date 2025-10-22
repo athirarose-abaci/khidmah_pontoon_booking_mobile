@@ -11,6 +11,31 @@ export const Colors = {
   sub_heading_font: '#4C4C4C',
   heading_font: '#494949',
   error: '#ff6b6b',
+
+  dark_container: '#2D2F33',
+  dark_tab_bar: '#25272A',
+  dark_bg_color: '#1C1D20',
+  
+  size_bg_light: '#F5F5F5',
+  size_bg_dark: '#3A3D42',
+  
+  input_border_light: '#E0E0E0',
+  input_border_dark: '#5A5D62',
+  
+  dark_separator: '#3A3D42',
+  dark_text_secondary: '#959595',
+  
+  dropdown_selected_light: '#F0F8FF',
+  dropdown_selected_dark: '#4A4D52',
+  
+  dropdown_container_light: '#FFFFFF',
+  dropdown_container_dark: '#2D2F33',
+  
+  dropdown_border_light: '#E0E0E0',
+  dropdown_border_dark: '#3A3D42',
+  
+  label_light: '#4C4C4C',
+  label_dark: '#959595',
 };
 
 export function getStatusTagColors(status) {
@@ -171,15 +196,6 @@ export const getDisplayTicketStatus = (status) => {
   }
 };
 
-// Notification configuration for different notification types
-// To add a new notification type:
-// 1. Add a new entry to NOTIFICATION_CONFIG with a unique key
-// 2. Set backgroundColor (light background color for the icon container)
-// 3. Set iconColor (color for the icon)
-// 4. Set iconType to either 'image' or 'icon'
-// 5. If iconType is 'image', set iconSource to require() the image file
-// 6. If iconType is 'icon', set iconName to the MaterialDesignIcons name
-// 7. The getNotificationConfig function will automatically handle matching by type or subject
 export const NOTIFICATION_CONFIG = {
   'checked_in': {
     backgroundColor: '#E8F5E8',

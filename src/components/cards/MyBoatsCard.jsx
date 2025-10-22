@@ -2,9 +2,11 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../constants/customStyles";
+import { useSelector } from "react-redux";
 
 const MyBoatsCard = ({ item, isLastItem = false }) => {
   const navigation = useNavigation();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const handlePress = () => {
     navigation.navigate('BoatDetail', { boatId: item.id });
@@ -16,7 +18,7 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
       : require("../../assets/images/no_image.jpg"); 
 
   return (
-    <TouchableOpacity style={[styles.card, isLastItem && styles.lastItemCard]} onPress={handlePress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.card, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }, isLastItem && styles.lastItemCard]} onPress={handlePress} activeOpacity={0.7}>
       <Image source={imageUri} style={styles.image} />
 
       <View
@@ -28,9 +30,9 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
         <Text style={styles.statusText}>{item.status}</Text>
       </View>
 
-      <Text style={styles.boatName}>{item.name}</Text>
-      <Text style={styles.boatId}>{item.registration_number}</Text>
-      <Text style={styles.boatSize}>
+      <Text style={[styles.boatName, { color: isDarkMode ? Colors.white : Colors.black }]}>{item.name}</Text>
+      <Text style={[styles.boatId]}>{item.registration_number}</Text>
+        <Text style={[styles.boatSize, { backgroundColor: isDarkMode ? Colors.size_bg_dark : Colors.size_bg_light }]}>
         Size: {item.length} x {item.width} ft
       </Text>
     </TouchableOpacity>
@@ -42,7 +44,6 @@ export default MyBoatsCard;
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: Colors.white,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 12,
@@ -92,5 +93,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.font_gray,
     marginTop: 4,
+    borderRadius: 12,
+    paddingVertical: 1,
+    paddingHorizontal: 7,
+    alignSelf: 'flex-start',
   },
 });

@@ -24,12 +24,14 @@ const ErrorScreen = ({ onRefresh }) => {
     setIsLoading(true);
     try {
       const response = await fetchSystemStatus();
+      console.log('response', response);
       if(response?.status === 'success' && response?.details?.admin_users_exist){
         dispatch(setAuthToggle(!authToggle))
       }else {
         dispatch(setAuthToggle(!authToggle))
       }
     } catch (error) {
+      console.log('error', error);
       dispatch(setAuthToggle(!authToggle))
     } finally {
       setIsLoading(false);

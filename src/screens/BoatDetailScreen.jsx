@@ -32,7 +32,9 @@ const BoatDetailScreen = () => {
   const [isDisabling, setIsDisabling] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState('');
+  const [deleteErrorModalVisible, setDeleteErrorModalVisible] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -74,10 +76,16 @@ const BoatDetailScreen = () => {
     try {
       const response = await deleteBoat(boat?.id);
       console.log('Delete boat response:', response);
-      setConfirmMessage(response?.message);
+      
+      // Check if response has error property
+      if (response?.error) {
+        setDeleteError(response.error);
+        setDeleteErrorModalVisible(true);
+        setDeleteModalVisible(false);
+        return;
+      }
       
       dispatch(removeBoat(boat?.id));
-      
       toastContext.showToast('Boat deleted successfully!', 'short', 'success');
       navigation.goBack();
     } catch (error) {
@@ -87,6 +95,25 @@ const BoatDetailScreen = () => {
     } finally {
       setIsDeleting(false);
       setDeleteModalVisible(false);
+    }
+  };
+
+  const handleDeleteErrorConfirm = async () => {
+    setIsConfirmingDelete(true);
+    try {
+      const response = await deleteBoat(boat?.id, true); // Pass is_confirm = true
+      console.log('Delete boat with confirmation response:', response);
+      
+      dispatch(removeBoat(boat?.id));
+      toastContext.showToast('Boat deleted successfully!', 'short', 'success');
+      navigation.goBack();
+    } catch (error) {
+      let err_msg = Error(error);
+      console.log('Delete boat with confirmation error:', err_msg);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsConfirmingDelete(false);
+      setDeleteErrorModalVisible(false);
     }
   };
 
@@ -283,7 +310,7 @@ const BoatDetailScreen = () => {
         onRequestClose={() => setDeleteModalVisible(false)}
         onConfirm={handleDeleteConfirm}
         title="Delete Boat"
-        message={confirmMessage}
+        message="Are you sure you want to delete this boat? This action cannot be undone and all associated data will be permanently removed."
         confirmText={isDeleting ? "" : "Delete"}
         cancelText="Cancel"
         warningIconName="delete-forever"
@@ -293,6 +320,26 @@ const BoatDetailScreen = () => {
         confirmIconColor="white"
         confirmIconSize={18}
         confirmIconComponent={isDeleting ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : null}
+      />
+
+      {/* Delete Error Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={deleteErrorModalVisible}
+        onRequestClose={() => setDeleteErrorModalVisible(false)}
+        onConfirm={handleDeleteErrorConfirm}
+        title="Confirm Delete"
+        message={deleteError || "This boat has associated bookings or data. Are you sure you want to proceed with deletion? This action cannot be undone."}
+        confirmText={isConfirmingDelete ? "" : "Confirm Delete"}
+        cancelText="Cancel"
+        warningIconName="warning"
+        warningIconColor="#FF6B35"
+        warningIconSize={50}
+        confirmIconName="delete"
+        confirmIconColor="white"
+        confirmIconSize={18}
+        confirmIconComponent={isConfirmingDelete ? (
           <ActivityIndicator size="small" color="white" />
         ) : null}
       />
