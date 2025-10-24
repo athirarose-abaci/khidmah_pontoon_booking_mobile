@@ -28,6 +28,7 @@ const TicketDetailScreen = () => {
   const dispatch = useDispatch();
   const messages = useSelector(state => state.chatSlice.messages);
   const socket = useSocket();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const ticketId = route?.params?.ticketId;
 
@@ -229,24 +230,24 @@ const TicketDetailScreen = () => {
 
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["left","right","bottom"]}>
-      <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} edges={["left","right","bottom"]}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
        <KeyboardAvoidingView 
          style={{ flex: 1 }} 
          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
          keyboardVerticalOffset={Platform.OS === 'ios' ? -30 : -20}
        >
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         {/* Header like Booking Management */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <MaterialIcons
               name="chevron-left"
               size={30}
-              color={Colors.font_gray}
+              color={isDarkMode ? Colors.white : Colors.font_gray}
               style={styles.backButton}
             />
-            <Text style={styles.headerTitle}>Ticket Details</Text>
+            <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>Ticket Details</Text>
           </TouchableOpacity>
           <View style={styles.placeholder} />
         </View>
@@ -254,11 +255,11 @@ const TicketDetailScreen = () => {
         {/* Ticket ID and Subject */}
         <View style={styles.ticketHeader}>
           {!!ticketData?.ticket_id && (
-            <Text style={styles.ticketId}>Ticket #{ticketData?.ticket_id}</Text>
+            <Text style={[styles.ticketId, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Ticket #{ticketData?.ticket_id}</Text>
           )}
           {!!ticketData?.category && (
             <View style={styles.subjectRow}>
-              <Text style={styles.ticketSubject}>
+              <Text style={[styles.ticketSubject, { color: isDarkMode ? Colors.white : '#5C7E86' }]}>
                 {(() => {
                   const categoryName = ticketData?.category?.name;
                   if (categoryName?.toLowerCase() === 'others' && ticketData?.subject) {
@@ -283,14 +284,14 @@ const TicketDetailScreen = () => {
           )}
         </View>
 
-        <View style={styles.metaContainer}>
+        <View style={[styles.metaContainer, { backgroundColor: isDarkMode ? Colors.dark_container : 'rgba(117, 200, 173, 0.05)' }]}>
           <View style={styles.metaCol}>
-            <Text style={styles.metaLabel}>Date Raised</Text>
-            <Text style={styles.metaValue}>{formatDate(createdAt)}</Text>
+            <Text style={[styles.metaLabel, { color: isDarkMode ? Colors.dark_text_secondary : '#5C7E86' }]}>Date Raised</Text>
+            <Text style={[styles.metaValue, { color: isDarkMode ? Colors.white : '#282828' }]}>{formatDate(createdAt)}</Text>
           </View>
           <View style={[styles.metaCol, styles.metaColRight]}>
-            <Text style={[styles.metaLabel, styles.metaLabelRight]}>Last updated</Text>
-            <Text style={[styles.metaValue, styles.metaValueRight]}>{formatDate(updatedAt)}</Text>
+            <Text style={[styles.metaLabel, styles.metaLabelRight, { color: isDarkMode ? Colors.dark_text_secondary : '#5C7E86' }]}>Last updated</Text>
+            <Text style={[styles.metaValue, styles.metaValueRight, { color: isDarkMode ? Colors.white : '#282828' }]}>{formatDate(updatedAt)}</Text>
           </View>
         </View>
 
@@ -350,7 +351,7 @@ const TicketDetailScreen = () => {
 
         {/* File Upload Section - Above input bar */}
         {showFileUpload && (
-          <View style={styles.fileUploadSection}>
+          <View style={[styles.fileUploadSection, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color, borderTopColor: isDarkMode ? Colors.dark_separator : '#E5E5E5' }]}>
             <ChatFileSelector
               files={selectedFiles}
               onChange={setSelectedFiles}
@@ -361,8 +362,8 @@ const TicketDetailScreen = () => {
         )}
 
         {ticketData?.status?.toUpperCase() !== 'CLOSED' && (
-          <View style={[styles.inputBarWrap, { marginBottom: 30 }]}>
-            <View style={styles.inputBar}>
+          <View style={[styles.inputBarWrap, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color, marginBottom: 30 }]}>
+            <View style={[styles.inputBar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
               <TouchableOpacity 
                 style={styles.attachBtn} 
                 onPress={() => setShowFileUpload(!showFileUpload)}
@@ -371,9 +372,9 @@ const TicketDetailScreen = () => {
                 <Ionicons name="attach" size={30} color={Colors.primary} />
               </TouchableOpacity>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: isDarkMode ? Colors.white : Colors.black }]}
                 placeholder="Type here…………"
-                placeholderTextColor="#A8B6C2"
+                placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#A8B6C2"}
                 value={message}
                 onChangeText={setMessage}
               />
@@ -405,7 +406,6 @@ export default TicketDetailScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.bg_color,
   },
   container: {
     flex: 1,
@@ -423,7 +423,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    color: Colors.font_gray,
     fontFamily: 'Inter-SemiBold',
   },
   headerSubtitle: {
@@ -457,7 +456,6 @@ const styles = StyleSheet.create({
   },
   ticketId: {
     fontSize: 13,
-    color: Colors.font_gray,
     fontFamily: 'Inter-Regular',
     marginBottom: 4,
   },
@@ -468,7 +466,6 @@ const styles = StyleSheet.create({
   },
   ticketSubject: {
     fontSize: 18,
-    color: '#5C7E86',
     fontFamily: 'Inter-SemiBold',
     lineHeight: 24,
     flex: 1,
@@ -489,7 +486,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginHorizontal: 26, 
     marginTop: 8,
-    backgroundColor: 'rgba(117, 200, 173, 0.05)',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 25,
@@ -505,7 +501,6 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 13,
-    color: '#5C7E86',
     fontFamily: 'Inter-Medium',
   },
   metaLabelRight: {
@@ -515,7 +510,6 @@ const styles = StyleSheet.create({
   },
   metaValue: {
     fontSize: 14,
-    color: '#282828',
     fontFamily: 'Inter-SemiBold',
     marginTop: 4,
   },
@@ -560,22 +554,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   fileUploadSection: {
-    backgroundColor: Colors.bg_color,
     paddingHorizontal: 0,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
     marginTop: 8,
   },
   inputBarWrap: {
-    backgroundColor: Colors.bg_color,
     paddingHorizontal: 20,
     paddingTop: 8,
   },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     marginHorizontal: 0,
     marginBottom: 0,
     borderRadius: 12,
@@ -595,7 +585,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter-Italic',
     fontSize: 14,
-    color: Colors.black,
     paddingVertical: 6,
     paddingRight: 10,
   },

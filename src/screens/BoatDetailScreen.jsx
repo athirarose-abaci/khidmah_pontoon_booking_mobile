@@ -11,7 +11,7 @@ import { ToastContext } from '../context/ToastContext';
 import ImageView from 'react-native-image-viewing';
 import Error from '../helpers/Error';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { updateBoatStatus, removeBoat } from '../../store/boatSlice';
 
 const { width, height } = Dimensions.get('window');
@@ -23,6 +23,7 @@ const BoatDetailScreen = () => {
   const insets = useSafeAreaInsets();
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   
   const [boat, setBoat] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,8 +145,8 @@ const BoatDetailScreen = () => {
     : require('../assets/images/no_image.jpg');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar backgroundColor="transparent" barStyle="dark-content" translucent />
+    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]} edges={['top']}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "transparent"} barStyle={isDarkMode ? "light-content" : "dark-content"} translucent />
       
       {/* Header with back button */}
       <View style={styles.header}>
@@ -170,11 +171,11 @@ const BoatDetailScreen = () => {
         </View>
 
         {/* Boat details card */}
-        <View style={styles.detailsCard}>
+        <View style={[styles.detailsCard, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]}>
           <View style={styles.detailsHeader}>
             <View style={styles.boatInfo}>
-              <Text style={styles.boatId}>{boat?.registration_number || 'N/A'}</Text>
-              <Text style={styles.boatName}>{boat?.name}</Text>
+              <Text style={[styles.boatId, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>{boat?.registration_number || 'N/A'}</Text>
+              <Text style={[styles.boatName, { color: Colors.primary }]}>{boat?.name}</Text>
             </View>
             
             <View style={styles.actionButtons}>
@@ -213,26 +214,29 @@ const BoatDetailScreen = () => {
           </View>
 
           {boat?.description ? (
-            <Text style={styles.description}>
+            <Text style={[styles.description, { color: isDarkMode ? Colors.white : '#333' }]}>
               {boat.description}
             </Text>
           ) : (
-            <View style={styles.noDescriptionContainer}>
-              <Text style={styles.noDescriptionText}>
+            <View style={[styles.noDescriptionContainer, { 
+              backgroundColor: isDarkMode ? Colors.dark_container : '#F8F9FA',
+              borderColor: isDarkMode ? Colors.input_border_dark : '#E9ECEF'
+            }]}>
+              <Text style={[styles.noDescriptionText, { color: isDarkMode ? Colors.dark_text_secondary : '#6C757D' }]}>
                 Add a few words about the yacht's standout features…
               </Text>
             </View>
           )}
 
           <View style={styles.sizeContainer}>
-            <Text style={styles.sizeText}>Size: {boat?.length} x {boat?.width} ft</Text>
+            <Text style={[styles.sizeText, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>Size: {boat?.length} x {boat?.width} ft</Text>
           </View>
         </View>
 
         {/* Boat images section */}
-        <View style={styles.imagesSection}>
-          <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>Boat Images</Text>
+        <View style={[styles.imagesSection, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]}>
+          <View style={[styles.divider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E9ECEF' }]} />
+          <Text style={[styles.sectionTitle, { color: isDarkMode ? Colors.white : '#333' }]}>Boat Images</Text>
           {boat?.images?.length > 0 ? (
             <View style={styles.imagesGrid}>
               {boat?.images.map((image, index) => (
@@ -256,7 +260,7 @@ const BoatDetailScreen = () => {
                 style={styles.noImagesIcon} 
                 resizeMode="contain" 
               />
-              <Text style={styles.noImagesText}>No boat images found</Text>
+              <Text style={[styles.noImagesText, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>No boat images found</Text>
             </View>
           )}
         </View>
@@ -327,11 +331,11 @@ const BoatDetailScreen = () => {
         onConfirm={handleDeleteErrorConfirm}
         title="Confirm Delete"
         message={deleteError || "This boat has associated bookings or data. Are you sure you want to proceed with deletion? This action cannot be undone."}
-        confirmText={isConfirmingDelete ? "" : "Confirm Delete"}
+        confirmText={isConfirmingDelete ? "" : "Confirm"}
         cancelText="Cancel"
         warningIconName="warning"
         warningIconColor="#FF6B35"
-        warningIconSize={50}
+        warningIconSize={35}
         confirmIconName="delete"
         confirmIconColor="white"
         confirmIconSize={18}
@@ -346,7 +350,6 @@ const BoatDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   header: {
     position: 'absolute',
@@ -378,7 +381,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   detailsCard: {
-    backgroundColor: Colors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginTop: -20,
@@ -398,13 +400,11 @@ const styles = StyleSheet.create({
   },
   boatId: {
     fontSize: 14,
-    color: '#666',
     fontFamily: 'Inter-Medium',
     marginBottom: 4,
   },
   boatName: {
     fontSize: 24,
-    color: Colors.primary,
     fontFamily: 'Inter-Bold',
   },
   actionButtons: {
@@ -428,15 +428,12 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#333',
     fontFamily: 'Inter-Regular',
     lineHeight: 24,
     marginBottom: 20,
   },
   noDescriptionContainer: {
-    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E9ECEF',
     borderStyle: 'dashed',
     borderRadius: 8,
     paddingVertical: 16,
@@ -445,7 +442,6 @@ const styles = StyleSheet.create({
   },
   noDescriptionText: {
     fontSize: 14,
-    color: '#6C757D',
     fontFamily: 'Inter-Medium',
     fontStyle: 'italic',
     textAlign: 'center',
@@ -456,23 +452,19 @@ const styles = StyleSheet.create({
   },
   sizeText: {
     fontSize: 14,
-    color: '#666',
     fontFamily: 'Inter-Medium',
   },
   imagesSection: {
-    backgroundColor: Colors.white,
     paddingHorizontal: 30,
     paddingBottom: 30,
     flex: 1,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E9ECEF',
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    color: '#333',
     fontFamily: 'Inter-SemiBold',
     marginBottom: 15,
   },
@@ -499,7 +491,6 @@ const styles = StyleSheet.create({
   },
   noImagesText: {
     fontSize: 12,
-    color: Colors.font_gray,
     fontFamily: 'Inter-Medium',
     textAlign: 'center',
   },

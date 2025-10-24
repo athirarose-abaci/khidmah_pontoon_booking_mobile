@@ -109,69 +109,122 @@ const ImageSourceModal = ({
       transparent={true}
       animationType="fade"
       onRequestClose={onClose}>
-      <BlurView
-        style={styles.blurOverlay}
-        blurType={isDarkMode ? 'dark' : 'light'}
-        blurAmount={1}>
+      <View style={[styles.modalOverlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
         <View
           style={[
             styles.sourceModalContent,
-            { backgroundColor: isDarkMode ? Colors.black : 'white' },
+            { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white },
           ]}>
-          <Text
-            style={[
-              styles.sourceModalTitle,
-              { color: isDarkMode ? Colors.white : '#333' },
-            ]}>
-            Select Image Source
-          </Text>
-          <View style={styles.sourceButtonContainer}>
-            <TouchableOpacity
-              style={styles.sourceButton}
-              onPress={() => selectImage('camera')}>
-              <Ionicons name="camera" size={24} color={Colors.primary} />
-              <Text style={styles.sourceButtonText}>Take Photo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.sourceButton}
-              onPress={() => selectImage('gallery')}>
-              <Ionicons name="images" size={24} color={Colors.primary} />
-              <Text style={styles.sourceButtonText}>Choose from Gallery</Text>
+          {/* Header */}
+          <View style={[styles.header, { 
+            borderBottomColor: isDarkMode ? Colors.dark_separator : '#F2F2F2'
+          }]}>
+            <View style={styles.headerLeft}>
+              <View style={styles.headerIcon}>
+                <Ionicons name="camera" size={20} color={Colors.primary} />
+              </View>
+              <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Select Image Source</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={onClose}
+            >
+              <Ionicons name="close" size={16} color="white" />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.sourceCancelButton}
-            onPress={onClose}>
-            <Text style={styles.sourceCancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+
+          <View style={styles.sourceButtonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.sourceButton,
+                styles.firstButton,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark_bg_color : '#F9F9F9',
+                  borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                }
+              ]}
+              onPress={() => selectImage('camera')}>
+              <Ionicons name="camera" size={24} color={Colors.primary} />
+              <Text style={[styles.sourceButtonText, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sourceButton,
+                styles.lastButton,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark_bg_color : '#F9F9F9',
+                  borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                }
+              ]}
+              onPress={() => selectImage('gallery')}>
+              <Ionicons name="images" size={24} color={Colors.primary} />
+              <Text style={[styles.sourceButtonText, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Choose from Gallery</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </BlurView>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  blurOverlay: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)'
   },
   sourceModalContent: {
     width: width * 0.8,
     borderRadius: 20,
-    padding: 24,
+    padding: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    marginBottom: 10,
+  },
+  headerLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  sourceModalTitle: {
+  headerIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  headerTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    marginBottom: 20,
+  },
+  closeButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    backgroundColor: Colors.red,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sourceButtonContainer: {
     width: '100%',
     gap: 12,
-    marginBottom: 20,
+    paddingHorizontal: 30,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
   sourceButton: {
     flexDirection: 'row',
@@ -181,27 +234,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    backgroundColor: '#F9F9F9',
+    alignSelf: 'center',
+    width: '80%',
+  },
+  firstButton: {
+    marginTop: 10,
+  },
+  lastButton: {
+    marginBottom: 10,
   },
   sourceButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#333',
     marginLeft: 12,
-  },
-  sourceCancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  sourceCancelButtonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: Colors.primary,
   },
 });
 

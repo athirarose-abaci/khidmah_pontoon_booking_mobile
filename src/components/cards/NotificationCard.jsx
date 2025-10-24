@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, PanResponder
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { Colors, getNotificationConfig } from '../../constants/customStyles';
 import { formatTimeAgo } from '../../helpers/timeHelper';
+import { useSelector } from 'react-redux';
 
 const NotificationCard = ({ 
   item, 
@@ -11,6 +12,7 @@ const NotificationCard = ({
   onPress,
   onDelete
 }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const config = getNotificationConfig(item?.type, item?.subject);
   const translateX = useRef(new Animated.Value(0)).current;
   const deleteButtonWidth = 80;
@@ -96,7 +98,10 @@ const NotificationCard = ({
       <Animated.View 
         style={[
           styles.notificationCard,
-          { transform: [{ translateX }] }
+          { 
+            transform: [{ translateX }],
+            backgroundColor: isDarkMode ? Colors.dark_container : Colors.white
+          }
         ]}
         {...panResponder.panHandlers}
       >
@@ -113,15 +118,15 @@ const NotificationCard = ({
           
           <View style={styles.textContent}>
             <View style={styles.titleRow}>
-              <Text style={styles.notificationTitle}>{item?.subject}</Text>
-              <Text style={styles.timeAgo}>{formatTimeAgo(item?.created_at)}</Text>
+              <Text style={[styles.notificationTitle, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{item?.subject}</Text>
+              <Text style={[styles.timeAgo, { color: isDarkMode ? Colors.dark_text_secondary : '#B0B0B0' }]}>{formatTimeAgo(item?.created_at)}</Text>
             </View>
-            <Text style={styles.notificationMessage}>{item?.message}</Text>
+            <Text style={[styles.notificationMessage, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>{item?.message}</Text>
             
             {item?.hasActions && (
               <View style={styles.actionButtons}>
                 <TouchableOpacity 
-                  style={styles.extendButton}
+                  style={[styles.extendButton, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]}
                   onPress={() => onExtendStay(item?.id)}
                 >
                   <MaterialDesignIcons name="timer-plus-outline" size={16} color={Colors.primary} />
@@ -175,7 +180,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   notificationCard: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     marginBottom: 0,
     shadowColor: '#000',
@@ -211,20 +215,17 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 14.5,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.heading_font,
     flex: 1,
     marginRight: 8,
   },
   timeAgo: {
     fontSize: 11,
     fontFamily: 'Inter-Regular',
-    color: '#B0B0B0',
     fontStyle: 'italic',
   },
   notificationMessage: {
     fontSize: 13,
     fontFamily: 'Inter-Regular',
-    color: Colors.font_gray,
     lineHeight: 20,
     marginBottom: 8,
   },
@@ -243,7 +244,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.primary,
-    backgroundColor: Colors.white,
     gap: 6,
   },
   extendButtonText: {

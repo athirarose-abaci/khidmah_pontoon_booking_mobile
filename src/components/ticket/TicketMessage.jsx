@@ -4,12 +4,14 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import moment from 'moment';
 import { Colors } from '../../constants/customStyles';
 import { BASE_URL_IMAGE } from '../../constants/baseUrl';
+import { useSelector } from 'react-redux';
 
 const TicketMessage = ({ 
   item, 
   authState, 
   onFilePress 
 }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const name = item?.created_by_name || '';
   const isCurrentUser = item?.created_by?.role === 'CUSTOMER';
   const avatarUri = item?.created_by?.avatar ? { uri: `${BASE_URL_IMAGE}${item?.created_by?.avatar}` } : null;
@@ -31,39 +33,81 @@ const TicketMessage = ({
       )}
       
       <View style={[styles.messageColumn, isCurrentUser ? styles.messageColumnRight : styles.messageColumnLeft]}>
-        {!!name && !isCurrentUser && <Text style={styles.msgAuthorName}>{name}</Text>}
+        {!!name && !isCurrentUser && <Text style={[styles.msgAuthorName, { color: isDarkMode ? Colors.dark_text_secondary : '#5C7E86' }]}>{name}</Text>}
         
-        {!!item?.message && (
-          <View style={[styles.messageBubble, isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft]}>
-            <Text style={[styles.msgBody, isCurrentUser ? styles.msgBodyRight : styles.msgBodyLeft]}>{item.message}</Text>
-          </View>
-        )}
+         {!!item?.message && (
+           <View style={[
+             styles.messageBubble, 
+             isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft,
+             { 
+               backgroundColor: isCurrentUser 
+                 ? (isDarkMode ? 'rgba(117, 200, 173, 0.2)' : 'rgba(117, 200, 173, 0.15)')
+                 : (isDarkMode ? Colors.dark_container : Colors.white),
+               borderWidth: isCurrentUser ? 0 : 1,
+               borderColor: isCurrentUser 
+                 ? 'transparent'
+                 : (isDarkMode ? 'rgba(117, 200, 173, 0.2)' : 'rgba(117, 200, 173, 0.2)')
+             }
+           ]}>
+             <Text style={[
+               styles.msgBody, 
+               isCurrentUser ? styles.msgBodyRight : styles.msgBodyLeft,
+               { color: isCurrentUser 
+                 ? Colors.white 
+                 : (isDarkMode ? Colors.white : Colors.heading_font)
+               }
+             ]}>{item.message}</Text>
+           </View>
+         )}
         {hasFile && (
           <TouchableOpacity 
-            style={[styles.fileAttachment, isCurrentUser ? styles.fileAttachmentRight : styles.fileAttachmentLeft]} 
+            style={[
+              styles.fileAttachment, 
+              isCurrentUser ? styles.fileAttachmentRight : styles.fileAttachmentLeft,
+              { 
+                backgroundColor: isDarkMode ? Colors.dark_bg_color : '#F8F9FA',
+                borderColor: isDarkMode ? Colors.dark_separator : '#E9ECEF'
+              }
+            ]} 
             activeOpacity={0.7}
             onPress={() => onFilePress(item?.file)}
           >
-            <View style={[styles.fileIconContainer, isCurrentUser ? styles.fileIconContainerRight : styles.fileIconContainerLeft]}>
+            <View style={[
+              styles.fileIconContainer, 
+              isCurrentUser ? styles.fileIconContainerRight : styles.fileIconContainerLeft,
+              { backgroundColor: isDarkMode ? Colors.dark_container : '#E3F2FD' }
+            ]}>
               <Ionicons 
                 name={item?.file?.includes('.jpg') || item?.file?.includes('.jpeg') || item?.file?.includes('.png') ? 'image' : 'document'} 
                 size={20} 
-                color={isCurrentUser ? Colors.primary : Colors.primary} 
+                color={Colors.primary} 
               />
             </View>
             <View style={styles.fileInfoContainer}>
-              <Text style={[styles.fileName, isCurrentUser ? styles.fileNameRight : styles.fileNameLeft]} numberOfLines={1}>
+              <Text style={[
+                styles.fileName, 
+                isCurrentUser ? styles.fileNameRight : styles.fileNameLeft,
+                { color: isDarkMode ? Colors.white : '#212529' }
+              ]} numberOfLines={1}>
                 {item?.file?.split('/').pop() || 'Attachment'}
               </Text>
-              <Text style={[styles.fileType, isCurrentUser ? styles.fileTypeRight : styles.fileTypeLeft]}>
+              <Text style={[
+                styles.fileType, 
+                isCurrentUser ? styles.fileTypeRight : styles.fileTypeLeft,
+                { color: isDarkMode ? Colors.dark_text_secondary : '#6C757D' }
+              ]}>
                 {item?.file?.includes('.jpg') || item?.file?.includes('.jpeg') || item?.file?.includes('.png') ? 'Image' : 'Document'}
               </Text>
             </View>
-            <Ionicons name="download-outline" size={16} color={isCurrentUser ? Colors.primary : Colors.primary} />
+            <Ionicons name="download-outline" size={16} color={Colors.primary} />
           </TouchableOpacity>
         )}
         
-        <Text style={[styles.msgTime, isCurrentUser ? styles.msgTimeRight : styles.msgTimeLeft]}>
+        <Text style={[
+          styles.msgTime, 
+          isCurrentUser ? styles.msgTimeRight : styles.msgTimeLeft,
+          { color: isDarkMode ? Colors.dark_text_secondary : '#8E9AA6' }
+        ]}>
           {moment(when).isValid() ? moment(when).format('DD MMM YYYY, hh:mm A') : ''}
         </Text>
       </View>
@@ -133,7 +177,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   messageBubbleLeft: {
-    backgroundColor: Colors.white,
     borderTopLeftRadius: 4,
     shadowColor: '#000',
     shadowOpacity: 0.05,
@@ -142,14 +185,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   messageBubbleRight: {
-    backgroundColor: 'rgba(117, 200, 173, 0.15)',
     borderTopRightRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(117, 200, 173, 0.3)',
   },
   msgAuthorName: {
     fontSize: 12,
-    color: '#5C7E86',
     fontFamily: 'Inter-Medium',
     marginBottom: 4,
   },
@@ -159,15 +198,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   msgBodyLeft: {
-    color: Colors.heading_font,
   },
   msgBodyRight: {
-    color: Colors.heading_font,
   },
   msgTime: {
     marginTop: 4,
     fontSize: 10,
-    color: '#8E9AA6',
     fontFamily: 'Inter-Italic',
   },
   msgTimeLeft: {
@@ -188,14 +224,10 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   fileAttachmentLeft: {
-    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E9ECEF',
   },
   fileAttachmentRight: {
-    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E9ECEF',
   },
   fileIconContainer: {
     width: 32,
@@ -206,10 +238,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   fileIconContainerLeft: {
-    backgroundColor: '#E3F2FD',
   },
   fileIconContainerRight: {
-    backgroundColor: '#E3F2FD',
   },
   fileInfoContainer: {
     flex: 1,
@@ -221,19 +251,15 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   fileNameLeft: {
-    color: '#212529',
   },
   fileNameRight: {
-    color: '#212529',
   },
   fileType: {
     fontSize: 10,
     fontFamily: 'Inter-Regular',
   },
   fileTypeLeft: {
-    color: '#6C757D',
   },
   fileTypeRight: {
-    color: '#6C757D',
   },
 });

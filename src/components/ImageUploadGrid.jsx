@@ -86,7 +86,7 @@ const ImageUploadGrid = ({
           isEmpty && styles.emptyImageContainer,
           imageContainerStyle,
           {
-            backgroundColor: isDarkMode ? Colors.black : '#F9F9F9',
+            backgroundColor: isDarkMode ? Colors.dark_container : '#F9F9F9',
             borderColor: isDarkMode ? Colors.font_gray : '#BDBDBD',
           },
         ]}
@@ -103,7 +103,13 @@ const ImageUploadGrid = ({
                 color={isDarkMode ? Colors.font_gray : '#666'}
               />
             ) : !disabled ? (
-              <View style={isLarge ? styles.largePlusIconContainer : styles.plusIconContainer}>
+              <View style={[
+                isLarge ? styles.largePlusIconContainer : styles.plusIconContainer,
+                {
+                  backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5',
+                  borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                }
+              ]}>
                 <Ionicons
                   name="add"
                   size={isLarge ? 32 : 24}
@@ -295,9 +301,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#F5F5F5',
     borderWidth: 1,
-    borderColor: '#E5E5E5',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -305,9 +309,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
     borderWidth: 1,
-    borderColor: '#E5E5E5',
     justifyContent: 'center',
     alignItems: 'center',
   },

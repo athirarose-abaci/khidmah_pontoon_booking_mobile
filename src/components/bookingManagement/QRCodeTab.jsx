@@ -7,7 +7,7 @@ import Share from 'react-native-share';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import { ToastContext } from '../../context/ToastContext';
 
-const QRCodeTab = ({ bookingData }) => {
+const QRCodeTab = ({ bookingData, isDarkMode }) => {
   const viewShotRef = useRef(null);
 
   const toastContext = useContext(ToastContext);
@@ -32,7 +32,6 @@ const QRCodeTab = ({ bookingData }) => {
       });
 
     } catch (error) {
-      // Don't show error if user simply cancelled the share
       if (error.message !== 'User did not share') {
         toastContext.showToast('Failed to share QR code', 'short', 'error');
       }
@@ -46,14 +45,14 @@ const QRCodeTab = ({ bookingData }) => {
       contentContainerStyle={{ paddingBottom: 20 }}
     >
       <View style={styles.section}>
-        <View style={styles.qrCard}>
+        <View style={[styles.qrCard, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           <View style={styles.cardHeaderContainer}>
             <View style={styles.cardHeaderIconContainer}>
               <View style={styles.cardHeaderIcon}>
                 <Ionicons name="qr-code" size={20} color={Colors.white} />
               </View>
             </View>
-            <Text style={styles.cardHeaderText}>Booking QR Code</Text>
+            <Text style={[styles.cardHeaderText, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Booking QR Code</Text>
             <TouchableOpacity 
               style={styles.shareButtonContainer}
               onPress={handleShareQRCode}
@@ -62,7 +61,7 @@ const QRCodeTab = ({ bookingData }) => {
               <Ionicons name="share-outline" size={24} color={Colors.primary} />
             </TouchableOpacity>
           </View>
-          <View style={styles.cardHeaderSeparator} />
+          <View style={[styles.cardHeaderSeparator, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
           <ViewShot 
             ref={viewShotRef} 
             options={{ format: 'png', quality: 0.9 }}
@@ -99,19 +98,19 @@ const QRCodeTab = ({ bookingData }) => {
               </View>
             </View>
             <View style={styles.qrDetails}>
-              <View style={styles.refNoContainer}>
+              <View style={[styles.refNoContainer, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.black }]}>
                 <View style={styles.refNoRow}>
-                  <Text style={styles.refNoLabel}>Ref No:</Text>
-                  <Text style={styles.refNoValue}>{bookingData?.booking_number || 'N/A'}</Text>
+                  <Text style={[styles.refNoLabel, { color: isDarkMode ? Colors.white : Colors.white }]}>Ref No:</Text>
+                  <Text style={[styles.refNoValue, { color: isDarkMode ? Colors.white : Colors.white }]}>{bookingData?.booking_number || 'N/A'}</Text>
                 </View>
               </View>
                 <View style={styles.nameContainer}>
-                  <Text style={styles.nameLabel}>Name:</Text>
-                  <Text style={styles.nameValue}>{bookingData?.customer?.full_name || 'N/A'}</Text>
+                  <Text style={[styles.nameLabel, { color: isDarkMode ? Colors.white : Colors.black }]}>Name:</Text>
+                  <Text style={[styles.nameValue, { color: isDarkMode ? Colors.white : Colors.black }]}>{bookingData?.customer?.full_name || 'N/A'}</Text>
                 </View>
                 <View style={styles.dottedLineContainer}>
                   {Array.from({ length: 20 }, (_, index) => (
-                    <View key={index} style={styles.dottedLineDot} />
+                    <View key={index} style={[styles.dottedLineDot, { backgroundColor: isDarkMode ? Colors.white : Colors.black }]} />
                   ))}
                 </View>
                 {/* <Text style={styles.poweredBy}>Powered by</Text> */}
@@ -159,7 +158,6 @@ const styles = StyleSheet.create({
   cardHeaderText: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.heading_font,
     flex: 1,
     marginLeft: 12,
   },
@@ -176,7 +174,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   qrCard: {
-    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
   },
@@ -249,7 +246,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   refNoContainer: {
-    backgroundColor: Colors.black,
     paddingHorizontal: 20,
     paddingVertical: 5,
   },
@@ -261,12 +257,10 @@ const styles = StyleSheet.create({
   refNoLabel: {
     fontSize: 16,
     fontFamily: 'merchant-copy-regular',
-    color: Colors.white,
   },
   refNoValue: {
     fontSize: 16,
     fontFamily: 'merchant-copy-regular',
-    color: Colors.white,
   },
   nameContainer: {
     flexDirection: 'row',
@@ -276,12 +270,10 @@ const styles = StyleSheet.create({
   nameLabel: {
     fontSize: 16,
     fontFamily: 'merchant-copy-regular',
-    color: Colors.black,
   },
   nameValue: {
     fontSize: 16,
     fontFamily: 'merchant-copy-regular',
-    color: Colors.black,
   },
   dottedLineContainer: {
     flexDirection: 'row',
@@ -293,7 +285,6 @@ const styles = StyleSheet.create({
   dottedLineDot: {
     width: 10,
     height: 1,
-    backgroundColor: Colors.black,
   },
   poweredBy: {
     fontSize: 12,

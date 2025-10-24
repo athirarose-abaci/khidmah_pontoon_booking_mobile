@@ -31,6 +31,7 @@ const NotificationScreen = ({ navigation }) => {
 
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const liveNotifications = useSelector(state => state.notificationSlice.notifications);
   const socket = useSocket();
   console.log("liveNotifications", liveNotifications);
@@ -220,18 +221,18 @@ const NotificationScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} edges={["left", "right"]}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
       
       {/* Fixed Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.font_gray} />
+          <Ionicons name="chevron-back" size={24} color={isDarkMode ? Colors.white : Colors.font_gray} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>Notifications</Text>
       </View>
 
       {/* Notifications FlatList */}
@@ -270,7 +271,7 @@ const NotificationScreen = ({ navigation }) => {
               title="No notifications yet"
               subtitle="You don't have any notifications at the moment."
               onRefresh={refreshControl}
-              isDarkMode={false}
+              isDarkMode={isDarkMode}
             />
           </View>
         }
@@ -312,7 +313,6 @@ export default NotificationScreen
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.bg_color,
   },
   header: {
     flexDirection: 'row',
@@ -320,7 +320,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     marginTop: 40,
-    backgroundColor: Colors.bg_color,
   },
   backButton: {
     marginRight: 15,
@@ -328,7 +327,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.font_gray,
   },
   flatList: {
     flex: 1,

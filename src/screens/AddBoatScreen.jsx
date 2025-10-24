@@ -22,6 +22,7 @@ const AddBoatScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const route = useRoute();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const authState = useSelector(state => state.authSlice.authState);
   
   const isEditMode = route.params?.isEditMode || false;
@@ -182,16 +183,22 @@ const AddBoatScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor="transparent" barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "transparent"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
       
       {/* Background Overlay */}
-      <View style={styles.overlay} />
+      <View style={[styles.overlay, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} />
       
-      <Animated.View style={[styles.screenContainer, { transform: [{ translateY: slideAnim }] }]}>
-        <SafeAreaView style={styles.safeArea} edges={['left','right','bottom']}>
+      <Animated.View style={[styles.screenContainer, { 
+        transform: [{ translateY: slideAnim }],
+        backgroundColor: isDarkMode ? Colors.dark_container : Colors.white
+      }]}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]} edges={['left','right','bottom']}>
           {/* Header */}
-          <View style={styles.header}>
+          <View style={[styles.header, { 
+            backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+            borderBottomColor: isDarkMode ? Colors.dark_separator : '#F2F2F2'
+          }]}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIcon}>
                 {isEditMode ? (
@@ -200,7 +207,7 @@ const AddBoatScreen = () => {
                     <Ionicons name="add-circle-outline" size={25} color={Colors.primary} />
                 )}
               </View>
-              <Text style={styles.headerTitle}>{isEditMode ? 'Edit Boat Details' : 'Add New Boat'}</Text>
+              <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{isEditMode ? 'Edit Boat Details' : 'Add New Boat'}</Text>
             </View>
             <TouchableOpacity 
               style={styles.closeButton}
@@ -221,9 +228,13 @@ const AddBoatScreen = () => {
             <View style={styles.formContainer}>
               {/* Boat Name */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Boat Name*</Text>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Boat Name*</Text>
                 <TextInput
-                  style={[styles.input, errors.boatName && styles.inputError]}
+                  style={[styles.input, errors.boatName && styles.inputError, { 
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light
+                  }]}
                   value={boatName}
                   onChangeText={(text) => {
                     setBoatName(text);
@@ -232,16 +243,20 @@ const AddBoatScreen = () => {
                     }
                   }}
                   placeholder="Enter boat name"
-                  placeholderTextColor="#C8C8C8"
+                  placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"}
                 />
                 {errors.boatName && <Text style={styles.errorText}>{errors.boatName}</Text>}
               </View>
 
               {/* Boat Reg No */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Boat Reg No*</Text>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Boat Reg No*</Text>
                 <TextInput
-                  style={[styles.input, errors.boatRegNo && styles.inputError]}
+                  style={[styles.input, errors.boatRegNo && styles.inputError, { 
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light
+                  }]}
                   value={boatRegNo}
                   onChangeText={(text) => {
                     setBoatRegNo(text);
@@ -250,16 +265,20 @@ const AddBoatScreen = () => {
                     }
                   }}
                   placeholder="Enter registration number"
-                  placeholderTextColor="#C8C8C8"
+                  placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"}
                 />
                 {errors.boatRegNo && <Text style={styles.errorText}>{errors.boatRegNo}</Text>}
               </View>
 
               {/* Boat Length */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Boat Length (ft)*</Text>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Boat Length (ft)*</Text>
                 <TextInput
-                  style={[styles.input, errors.boatLength && styles.inputError]}
+                  style={[styles.input, errors.boatLength && styles.inputError, { 
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light
+                  }]}
                   value={boatLength}
                   onChangeText={(text) => {
                     setBoatLength(text);
@@ -268,7 +287,7 @@ const AddBoatScreen = () => {
                     }
                   }}
                   placeholder="Enter boat length (ft)"
-                  placeholderTextColor="#C8C8C8"
+                  placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"}
                   keyboardType="numeric"
                 />
                 {errors.boatLength && <Text style={styles.errorText}>{errors.boatLength}</Text>}
@@ -276,9 +295,13 @@ const AddBoatScreen = () => {
 
               {/* Boat Width */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Boat Width (ft)*</Text>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Boat Width (ft)*</Text>
                 <TextInput
-                  style={[styles.input, errors.boatWidth && styles.inputError]}
+                  style={[styles.input, errors.boatWidth && styles.inputError, { 
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light
+                  }]}
                   value={boatWidth}
                   onChangeText={(text) => {
                     setBoatWidth(text);
@@ -287,7 +310,7 @@ const AddBoatScreen = () => {
                     }
                   }}
                   placeholder="Enter boat width (ft)"
-                  placeholderTextColor="#C8C8C8"
+                  placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"}
                   keyboardType="numeric"
                 />
                 {errors.boatWidth && <Text style={styles.errorText}>{errors.boatWidth}</Text>}
@@ -295,9 +318,13 @@ const AddBoatScreen = () => {
 
               {/* Description */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Description</Text>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Description</Text>
                 <TextInput
-                  style={[styles.input, styles.textArea, errors.description && styles.inputError]}
+                  style={[styles.input, styles.textArea, errors.description && styles.inputError, { 
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border_light
+                  }]}
                   value={description}
                   onChangeText={(text) => {
                     setDescription(text);
@@ -306,7 +333,7 @@ const AddBoatScreen = () => {
                     }
                   }}
                   placeholder="Enter boat description"
-                  placeholderTextColor="#C8C8C8"
+                  placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#C8C8C8"}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -324,7 +351,7 @@ const AddBoatScreen = () => {
                   disabled={isLoading}
                   showLoading={isLoading}
                   allowDelete={true}
-                  isDarkMode={false}
+                  isDarkMode={isDarkMode}
                   gridStyle={styles.centeredImageGrid}
                 />
                 {errors.images && <Text style={styles.errorText}>{errors.images}</Text>}
@@ -333,7 +360,7 @@ const AddBoatScreen = () => {
           </ScrollView>
 
           {/* Save Button */}
-          <View style={styles.buttonContainer}>
+          <View style={[styles.buttonContainer, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
             <TouchableOpacity 
               style={[styles.saveButton, isLoading && styles.saveButtonDisabled]} 
               onPress={handleSave}
@@ -360,7 +387,6 @@ const AddBoatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg_color,
   },
   overlay: {
     position: 'absolute',
@@ -368,11 +394,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.bg_color,
   },
   screenContainer: {
     flex: 1,
-    backgroundColor: 'white',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     marginTop: 50, 
@@ -390,6 +414,8 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingTop: 0,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   header: {
     flexDirection: 'row',
@@ -398,7 +424,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F2',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -415,7 +442,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#4C4C4C',
   },
   closeButton: {
     width: 24,

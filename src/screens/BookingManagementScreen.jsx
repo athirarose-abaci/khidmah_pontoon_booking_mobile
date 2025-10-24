@@ -13,6 +13,7 @@ import { ToastContext } from '../context/ToastContext';
 import Error from '../helpers/Error';
 import { useFocusEffect } from '@react-navigation/native';
 import AbaciLoader from '../components/AbaciLoader';
+import { useSelector } from 'react-redux';
 
 const BookingManagementScreen = ({ route, navigation }) => {
   const { booking } = route.params || {};
@@ -27,6 +28,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
   const [isTabLoading, setIsTabLoading] = useState(false);
 
   const toastContext = useContext(ToastContext);
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   useFocusEffect(
     useCallback(() => {
@@ -164,25 +166,25 @@ const BookingManagementScreen = ({ route, navigation }) => {
 
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar backgroundColor="#F7F7F7" barStyle="dark-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : '#F7F7F7' }]} edges={["left", "right"]}>
+      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
       
       {/* Header */}
       <View style={styles.header}>
         <MaterialIcons
           name="chevron-left"
           size={30}
-          color={Colors.font_gray}
+          color={isDarkMode ? Colors.white : Colors.font_gray}
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         />
-        <Text style={styles.headerTitle}>Booking Management</Text>
+        <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>Booking Management</Text>
         <View style={styles.placeholder} />
       </View>
 
       {/* Booking Details Section */}
       <View style={styles.section}>
-        <View style={styles.bookingHeader}>
+        <View style={[styles.bookingHeader, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           <View style={styles.bookingHeaderLeft}>
             {bookingData?.status && bookingData?.status !== 'CHECKED_OUT' && (
               <View style={[styles.statusTag, { backgroundColor: getStatusTagColors(bookingData?.status).backgroundColor }]}>
@@ -191,11 +193,11 @@ const BookingManagementScreen = ({ route, navigation }) => {
                 </Text>
               </View>
             )}
-            <Text style={styles.bookingTitle}>Booking Details</Text>
-            <Text style={styles.bookingId}>{booking?.booking_number}</Text>
+            <Text style={[styles.bookingTitle, { color: isDarkMode ? Colors.white : '#4C4C4C' }]}>Booking Details</Text>
+            <Text style={[styles.bookingId, { color: Colors.primary }]}>{booking?.booking_number}</Text>
           </View>
           <View style={styles.actionButtons}>
-            {bookingData?.status !== 'CANCELLED' && <View style={styles.bookingHeaderVerticalDivider} />}
+            {bookingData?.status !== 'CANCELLED' && <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />}
             {bookingData?.status === 'CHECKED_OUT' ? (
               <View style={styles.checkedOutButton}>
                 <MaterialDesignIcons name="check-circle" size={15} color={Colors.black} />
@@ -256,9 +258,9 @@ const BookingManagementScreen = ({ route, navigation }) => {
       >
         <View style={styles.tabContent}>
           {activeTab === 'info' ? (
-            <BoatDetailsTab bookingData={bookingData} isLoading={isLoading} />
+            <BoatDetailsTab bookingData={bookingData} isLoading={isLoading} isDarkMode={isDarkMode} />
           ) : (
-            <QRCodeTab bookingData={bookingData} isLoading={isLoading} />
+            <QRCodeTab bookingData={bookingData} isLoading={isLoading} isDarkMode={isDarkMode} />
           )}
         </View>
       </ScrollView>
@@ -350,7 +352,6 @@ export default BookingManagementScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
   },
   header: {
     flexDirection: 'row',
@@ -367,7 +368,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.font_gray,
     marginLeft: 5,
     flex: 1,
   },
@@ -414,7 +414,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
   },
@@ -424,12 +423,10 @@ const styles = StyleSheet.create({
   bookingTitle: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#4C4C4C',
   },
   bookingId: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: Colors.primary,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -439,7 +436,6 @@ const styles = StyleSheet.create({
   bookingHeaderVerticalDivider: {
     width: 1,
     height: 60,
-    backgroundColor: '#E8EBEC',
     marginLeft: 15,
   },
   checkInButton: {

@@ -5,7 +5,7 @@ import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 
-const BoatDetailsTab = ({ bookingData }) => {
+const BoatDetailsTab = ({ bookingData, isDarkMode }) => {
   
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
@@ -44,32 +44,32 @@ const BoatDetailsTab = ({ bookingData }) => {
     <View style={styles.container}>
       {/* Boat Details Section */}
       <View style={styles.section}>
-        <View style={styles.boatCard}>
+        <View style={[styles.boatCard, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           <View style={styles.cardHeaderContainer}>
             <View style={styles.cardHeaderIconContainer}>
               <View style={styles.cardHeaderIcon}>
                 <Ionicons name="boat" size={23} color={Colors.white} />
               </View>
             </View>
-            <Text style={styles.cardHeaderText}>Boat Details</Text>
+            <Text style={[styles.cardHeaderText, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Boat Details</Text>
           </View>
-          <View style={styles.cardHeaderSeparator} />
+          <View style={[styles.cardHeaderSeparator, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
           <View style={styles.boatContent}>
             <Image source={getBoatImage()} style={styles.boatImage} />
             <View style={styles.boatInfo}>
-              <Text style={styles.boatName}>{bookingData?.boat?.name || ''}</Text>
+              <Text style={[styles.boatName, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{bookingData?.boat?.name || ''}</Text>
               <View style={styles.boatDetails}>
                 <View style={styles.capacityContainer}>
                   <Image source={require('../../assets/images/capacity.png')} style={styles.capacityIcon} />
                   <Text style={styles.capacityText}>{bookingData?.passengers !== undefined ? bookingData?.passengers : ''}</Text>
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Boat Reg.No</Text>
-                  <Text style={styles.detailValue}>{bookingData?.boat?.registration_number || ''}</Text>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Boat Reg.No</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{bookingData?.boat?.registration_number || ''}</Text>
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Boat Size</Text>
-                  <Text style={styles.detailValue}>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Boat Size</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>
                     {bookingData?.boat?.length && bookingData?.boat?.width 
                       ? `${bookingData?.boat?.length} ft x ${bookingData?.boat?.width} ft` 
                       : ''}
@@ -83,35 +83,35 @@ const BoatDetailsTab = ({ bookingData }) => {
 
       {/* Booking Information Section */}
       <View style={styles.section}>
-        <View style={styles.chartererCard}>
+        <View style={[styles.chartererCard, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           <View style={styles.cardHeaderContainer}>
               <View style={styles.cardHeaderIconContainer}>
                 <View style={styles.cardHeaderIcon}>
                   <Image source={require('../../assets/images/person_pin.png')} style={styles.cardHeaderImage} />
                 </View>
               </View>
-            <Text style={styles.cardHeaderText}>Chartered Information Details</Text>
+            <Text style={[styles.cardHeaderText, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Chartered Information Details</Text>
           </View>
-          <View style={styles.cardHeaderSeparator} />
+          <View style={[styles.cardHeaderSeparator, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
           <View style={styles.chartererContent}>
             <View style={styles.chartererRow}>
               <View style={styles.chartererLeftColumn}>
                 <View style={styles.chartererDetailColumn}>
-                  <Text style={styles.detailLabel}>Full Name</Text>
-                  <Text style={styles.detailValue}>{bookingData?.customer?.full_name || ''}</Text>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Full Name</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{bookingData?.customer?.full_name || ''}</Text>
                 </View>
               </View>
               <View style={styles.chartererRightColumn}>
                 <View style={styles.chartererDetailColumn}>
-                  <Text style={styles.detailLabel}>Mobile Number</Text>
-                  <Text style={styles.detailValue}>{bookingData?.customer?.mobile_number || ''}</Text>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Mobile Number</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{bookingData?.customer?.mobile_number || ''}</Text>
                 </View>
               </View>
             </View>
             <View style={styles.emailRow}>
               <View style={styles.emailDetailColumn}>
-                <Text style={styles.detailLabel}>Email</Text>
-                <Text style={styles.detailValue}>{bookingData?.customer?.email || ''}</Text>
+                <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Email</Text>
+                <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{bookingData?.customer?.email || ''}</Text>
               </View>
             </View>
           </View>
@@ -120,30 +120,30 @@ const BoatDetailsTab = ({ bookingData }) => {
 
       {/* Date and Time Section */}
       <View style={styles.section}>
-        <View style={styles.dateTimeCard}>
+        <View style={[styles.dateTimeCard, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           <View style={styles.cardHeaderContainer}>
               <View style={styles.cardHeaderIconContainer}>
                 <View style={styles.cardHeaderIcon}>
                   <Ionicons name="calendar-outline" size={20} color={Colors.white} />
                 </View>
               </View>
-            <Text style={styles.cardHeaderText}>Date and Time</Text>
+            <Text style={[styles.cardHeaderText, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>Date and Time</Text>
           </View>
-          <View style={styles.cardHeaderSeparator} />
+          <View style={[styles.cardHeaderSeparator, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
           <View style={styles.dateTimeContent}>
             <View style={styles.dateTimeRow}>
               <View style={styles.dateTimeLeftColumn}>
                 <View style={styles.dateTimeDetailColumn}>
-                  <Text style={styles.detailLabel}>Arrival</Text>
-                  <Text style={styles.detailValue}>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Arrival</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>
                     {formatDateTime(bookingData?.start_date)}
                   </Text>
                 </View>
               </View>
               <View style={styles.dateTimeRightColumn}>
                 <View style={styles.dateTimeDetailColumn}>
-                  <Text style={styles.detailLabel}>Departure</Text>
-                  <Text style={styles.detailValue}>
+                  <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Departure</Text>
+                  <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>
                     {formatDateTime(bookingData?.end_date)}
                   </Text>
                 </View>
@@ -196,7 +196,6 @@ const styles = StyleSheet.create({
   cardHeaderText: {
     fontSize: 17,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.heading_font,
   },
   cardHeaderSeparator: {
     height: 1,
@@ -206,7 +205,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   boatCard: {
-    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
   },
@@ -230,7 +228,6 @@ const styles = StyleSheet.create({
   boatName: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: Colors.heading_font,
     marginBottom: 4,
   },
   boatDetails: {
@@ -263,15 +260,12 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 13,
     fontFamily: 'Inter-Regular',
-    color: Colors.font_gray,
   },
   detailValue: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: Colors.heading_font,
   },
   chartererCard: {
-    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
   },
@@ -304,7 +298,6 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dateTimeCard: {
-    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
   },
