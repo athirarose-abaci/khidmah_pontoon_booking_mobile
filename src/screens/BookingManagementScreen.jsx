@@ -192,7 +192,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
               </View>
             )}
             <Text style={styles.bookingTitle}>Booking Details</Text>
-            <Text style={styles.bookingId}>#{booking?.booking_number}</Text>
+            <Text style={styles.bookingId}>{booking?.booking_number}</Text>
           </View>
           <View style={styles.actionButtons}>
             {bookingData?.status !== 'CANCELLED' && <View style={styles.bookingHeaderVerticalDivider} />}

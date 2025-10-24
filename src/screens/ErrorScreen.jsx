@@ -5,17 +5,16 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Colors } from '../constants/customStyles';
-import BackgroundImage from './BackgroundImage';
+import BackgroundImage from '../components/BackgroundImage';
 import { setAuthToggle } from '../../store/authSlice';
-import { fetchSystemStatus } from '../apis/auth';
-import AbaciLoader from './AbaciLoader';
+import AbaciLoader from '../components/AbaciLoader';
+import { fetchSystemStatus } from '../apis/system';
 
 const { width, height } = Dimensions.get('window');
 
-const ErrorScreen = ({ onRefresh }) => {
+const ErrorScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   
-  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const dispatch = useDispatch();
   const authToggle = useSelector(state => state.authSlice.authToggle);
 
@@ -24,14 +23,12 @@ const ErrorScreen = ({ onRefresh }) => {
     setIsLoading(true);
     try {
       const response = await fetchSystemStatus();
-      console.log('response', response);
       if(response?.status === 'success' && response?.details?.admin_users_exist){
         dispatch(setAuthToggle(!authToggle))
       }else {
         dispatch(setAuthToggle(!authToggle))
       }
     } catch (error) {
-      console.log('error', error);
       dispatch(setAuthToggle(!authToggle))
     } finally {
       setIsLoading(false);

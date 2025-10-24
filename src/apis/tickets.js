@@ -129,17 +129,12 @@ export const replyToTicket = async (ticketId, payload, files = []) => {
                 });
                 responses.push(fileResponse.data);
             }
-            console.log('formData from the replyToTicket', formData);
-            console.log('responses from the replyToTicket', responses);
             return responses[responses.length - 1]; 
         } else {
-            console.log('payload from the replyToTicket', payload);
             const response = await authAxios.post(`users/ticket/${ticketId}/conversations/`, payload);
-            console.log('response from the replyToTicket', response);
             return response.data;
         }
     } catch (error) {
-        console.log('error from the replyToTicket', error);
         throw error;
     }
 }

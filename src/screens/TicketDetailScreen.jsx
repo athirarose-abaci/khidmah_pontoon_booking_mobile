@@ -14,8 +14,8 @@ import Error from '../helpers/Error';
 import ChatFileSelector from '../components/ticket/ChatFileSelector';
 import TicketMessage from '../components/ticket/TicketMessage';
 import ImageView from 'react-native-image-viewing';
-import AbaciLoader from '../components/AbaciLoader';
 import { setTickets } from '../../store/ticketSlice';
+import { useSocket } from '../components/WebSocketProvider';
 
 const TicketDetailScreen = () => {
   const navigation = useNavigation();
@@ -26,6 +26,8 @@ const TicketDetailScreen = () => {
   
   const authState = useSelector(state => state.authSlice.authState);
   const dispatch = useDispatch();
+  const messages = useSelector(state => state.chatSlice.messages);
+  const socket = useSocket();
 
   const ticketId = route?.params?.ticketId;
 
@@ -38,9 +40,18 @@ const TicketDetailScreen = () => {
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState([]);
-  const [isSendingReply, setIsSendingReply] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef(null);
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+  const [didInitialScroll, setDidInitialScroll] = useState(false);
+
+  const [isSending, setIsSending] = useState(false);
+
+  const scrollToBottom = (animated = true) => {
+    requestAnimationFrame(() => {
+      flatListRef.current?.scrollToEnd({ animated });
+    });
+  };
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -55,12 +66,36 @@ const TicketDetailScreen = () => {
     }
   }, [isFocused]);
 
+  // Socket events for viewing/leaving ticket
+  useEffect(() => {
+    if (socket && ticketId) {
+      // Emit viewing_ticket when component mounts or ticketId changes
+      socket.emit('viewing_ticket', { ticket_id: ticketId });
+      console.log('viewing_ticket', { ticket_id: ticketId });
+      
+      // Return cleanup function to emit left_ticket when component unmounts
+      return () => {
+        if (socket && ticketId) {
+          socket.emit('left_ticket', { ticket_id: ticketId });
+          console.log('left_ticket', { ticket_id: ticketId });
+        }
+      };
+    }
+  }, [socket, ticketId, isFocused]);
+
+  // // Emit viewing_ticket when screen becomes focused
+  // useEffect(() => {
+  //   if (socket && ticketId && isFocused) {
+  //     socket.emit('viewing_ticket', { ticket_id: ticketId });
+  //     console.log('viewing_ticket on focus', { ticket_id: ticketId });
+  //   }
+  // }, [socket, ticketId, isFocused]);
+
   const loadTicket = async () => {
     if (!ticketId) return;
     setIsLoading(true);
     try {
       const response = await fetchTicketById(ticketId);
-      console.log('Ticket response:', response);
       setTicketData(response);
       dispatch(setTickets(response));
     } catch (error) {
@@ -85,8 +120,14 @@ const TicketDetailScreen = () => {
     setIsLoadingMessages(true);
     try {
       const response = await fetchTicketConversations(ticketId);
-      console.log('Conversation response:', response);
       setConversation(response);
+      // Scroll to end after first conversation load only
+      if (!didInitialScroll) {
+        setTimeout(() => {
+          scrollToBottom(true);
+          setDidInitialScroll(true);
+        }, 100);
+      }
     } catch (error) {
       const err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
@@ -94,6 +135,26 @@ const TicketDetailScreen = () => {
       setIsLoadingMessages(false);
     }
   };
+
+  useEffect(() => {
+    if (messages[ticketId] && messages[ticketId] !== null) {
+      // If it's a single message object, add it to the conversation
+      setConversation((prev) => {
+        // Check if this message already exists to prevent duplicates
+        const messageExists = prev.some(msg => msg.id === messages[ticketId].id);
+        if (!messageExists) {
+          return [...prev, messages[ticketId]];
+        }
+        return prev;
+      });
+      // Only auto-scroll if user is already at/near bottom
+      if (isUserAtBottom) {
+        setTimeout(() => {
+          scrollToBottom(true);
+        }, 100);
+      }
+    }
+  }, [messages, ticketId, isUserAtBottom]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -107,13 +168,23 @@ const TicketDetailScreen = () => {
     }
   };
 
+  useEffect(() => {
+    if (conversation?.length > 0) {
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 100);
+    }
+  }, [conversation]);
+  
+
   const handleSendReply = async () => {
+    if(isSending) return;
     if (!message?.trim() && selectedFiles.length === 0) {
       toastContext.showToast('Please enter a message or select a file', 'short', 'warning');
       return;
     }
-    setIsSendingReply(true);
     try {
+      setIsSending(true);
       const payload = { 
         ticket: ticketId, 
         message: message.trim() || '', 
@@ -121,19 +192,23 @@ const TicketDetailScreen = () => {
         file: null 
       };
       await replyToTicket(ticketId, payload, selectedFiles);
+
       setMessage('');
       setSelectedFiles([]);
       setShowFileUpload(false);
       Keyboard.dismiss(); 
+
       await loadConversation();
+
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
+      
     } catch (error) {
       const err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
-      setIsSendingReply(false);
+      setIsSending(false);
     }
   };
 
@@ -219,17 +294,34 @@ const TicketDetailScreen = () => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={{ flex: 1 }} 
-          activeOpacity={1} 
-          onPress={() => showFileUpload && setShowFileUpload(false)}
+        <View 
+          style={{ flex: 1 }}
         >
           <FlatList
             ref={flatListRef}
             data={conversation}
-            keyExtractor={(it, idx) => String(it?.id || idx)}
+            keyExtractor={(it, idx) => `${it?.id || 'msg'}_${idx}_${it?.created_at || Date.now()}`}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 26, paddingTop: 10, paddingBottom: (insets?.bottom || 0) + 0 }}
+            onContentSizeChange={() => {
+              if (isUserAtBottom) {
+                scrollToBottom(false);
+              }
+            }}
+            onLayout={() => {
+              if (!didInitialScroll) {
+                scrollToBottom(false);
+                setDidInitialScroll(true);
+              }
+            }}
+            onScrollBeginDrag={() => showFileUpload && setShowFileUpload(false)}
+            onScroll={(e) => {
+              const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+              const threshold = 40; // px
+              const isAtBottomNow = contentOffset.y + layoutMeasurement.height >= contentSize.height - threshold;
+              setIsUserAtBottom(isAtBottomNow);
+            }}
+            scrollEventThrottle={16}
             renderItem={({ item }) => (
               <TicketMessage 
                 item={item}
@@ -254,7 +346,7 @@ const TicketDetailScreen = () => {
               ) : null
             }
           />
-        </TouchableOpacity>
+        </View>
 
         {/* File Upload Section - Above input bar */}
         {showFileUpload && (
@@ -268,27 +360,29 @@ const TicketDetailScreen = () => {
           </View>
         )}
 
-        <View style={[styles.inputBarWrap, { marginBottom: 30 }]}>
-          <View style={styles.inputBar}>
-            <TouchableOpacity 
-              style={styles.attachBtn} 
-              onPress={() => setShowFileUpload(!showFileUpload)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="attach" size={30} color={Colors.primary} />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              placeholder="Type here…………"
-              placeholderTextColor="#A8B6C2"
-              value={message}
-              onChangeText={setMessage}
-            />
-            <TouchableOpacity style={styles.sendBtn} activeOpacity={0.8} onPress={handleSendReply}>
-              <Ionicons name="send" size={20} color={Colors.white} />
-            </TouchableOpacity>
+        {ticketData?.status?.toUpperCase() !== 'CLOSED' && (
+          <View style={[styles.inputBarWrap, { marginBottom: 30 }]}>
+            <View style={styles.inputBar}>
+              <TouchableOpacity 
+                style={styles.attachBtn} 
+                onPress={() => setShowFileUpload(!showFileUpload)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="attach" size={30} color={Colors.primary} />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                placeholder="Type here…………"
+                placeholderTextColor="#A8B6C2"
+                value={message}
+                onChangeText={setMessage}
+              />
+              <TouchableOpacity style={styles.sendBtn} activeOpacity={0.8} onPress={handleSendReply}>
+                <Ionicons name="send" size={20} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
         </View>
       </KeyboardAvoidingView>
       
@@ -302,8 +396,6 @@ const TicketDetailScreen = () => {
         doubleTapToZoomEnabled={true}
       />
       
-      {/* AbaciLoader for sending replies */}
-      <AbaciLoader visible={isSendingReply} />
     </SafeAreaView>
   );
 };

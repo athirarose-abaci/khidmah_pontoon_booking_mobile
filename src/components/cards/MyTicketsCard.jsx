@@ -1,16 +1,39 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors, getTicketStatusColors, getDisplayTicketStatus } from '../../constants/customStyles';
 import { useSelector } from 'react-redux';
+import moment from 'moment';
 
 const MyTicketsCard = ({ item, onPress }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+
+  // Format created date
+  const formatCreatedAt = (value) => {
+    if (!value) return { date: '', time: '' };
+    const m = moment(value);
+    if (!m.isValid()) return { date: '', time: '' };
+    return { date: m.format('DD.MM.YY'), time: m.format('hh.mmA') };
+  };
+
+  // Get agent information if ticket is claimed
+  const getAgentInfo = () => {
+    if (item?.status === 'IN_PROGRESS' && item?.claimed_by) {
+      return {
+        name: item?.claimed_by?.full_name || item?.claimed_by?.first_name || item?.claimed_by?.username || '',
+        avatar: item?.claimed_by?.avatar ? { uri: item?.claimed_by?.avatar } : undefined,
+      };
+    }
+    return null;
+  };
+
   const description = typeof item?.description === 'string' ? item?.description : '';
   const displayDescription = description.length > 26 ? `${description.slice(0, 26)}…` : description;
   const statusColors = getTicketStatusColors(item?.status);
   const displayStatus = getDisplayTicketStatus(item?.status);
+  const { date: createdAtDate, time: createdAtTime } = formatCreatedAt(item?.created_at || item?.createdAt || item?.created_on);
+  const agent = getAgentInfo();
 
-  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  
   return (
     <TouchableOpacity 
       activeOpacity={0.8} 
@@ -52,15 +75,15 @@ const MyTicketsCard = ({ item, onPress }) => {
 
         <View style={styles.footerRow}>
           <View style={styles.agentRow}>
-            {item?.agent ? (
+            {agent ? (
               <>
-                {item?.agent?.avatar ? (
-                  <Image source={item?.agent?.avatar} style={styles.avatar} />
+                {agent?.avatar ? (
+                  <Image source={agent?.avatar} style={styles.avatar} />
                 ) : null}
                 <View style={styles.agentTextBlock}>
                   <Text style={[styles.agentRole, { color: isDarkMode ? Colors.primary : '#00263A' }]}>Assigned Agent</Text>
                   <Text style={[styles.agentName, { color: isDarkMode ? Colors.white : Colors.black }]}>
-                    {item?.agent?.name ? item?.agent?.name : ''}
+                    {agent?.name ? agent?.name : ''}
                   </Text>
                 </View>
               </>
@@ -68,11 +91,16 @@ const MyTicketsCard = ({ item, onPress }) => {
           </View>
 
           <View style={styles.rightSection}>
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationCount}>3</Text>
-            </View>
+            {agent && (
+              <View style={styles.messageIconContainer}>
+                <View style={styles.messageBadge}>
+                  <Text style={styles.messageCount}>{item?.unread_message_count || 0}</Text>
+                </View>
+                <Ionicons name="chatbox-outline" size={20} color="#B0B0B0" />
+              </View>
+            )} 
             <Text style={styles.timestamp}>
-              {item?.createdAtDate} {item?.createdAtTime}
+              {createdAtDate} {createdAtTime}
             </Text>
           </View>
         </View>
@@ -182,33 +210,34 @@ const styles = StyleSheet.create({
     color: '#B0B0B0',
     fontFamily: 'Inter-Italic',
   },
-  unassignedBadge: {
-    backgroundColor: '#FFF4E5',
-    borderColor: '#FFC78E',
-    borderWidth: 1,
-    paddingHorizontal: 25,
-    paddingVertical: 4,
-    borderRadius: 8,
+  messageIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 2,
+    position: 'relative',
   },
-  unassignedText: {
-    color: '#C27A00',
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-  },
-  notificationBadge: {
+  messageBadge: {
     backgroundColor: Colors.primary,
     borderRadius: 8,
-    minWidth: 18,
-    height: 18,
+    minWidth: 17,
+    height: 17,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    marginBottom: 4,
+    paddingHorizontal: 3,
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    zIndex: 1,
+    borderWidth: 1,
+    borderColor: Colors.white,
+    textAlign: 'center',
   },
-  notificationCount: {
+  messageCount: {
     color: Colors.white,
     fontSize: 10,
     fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+    lineHeight: 12,
   },
 });
 

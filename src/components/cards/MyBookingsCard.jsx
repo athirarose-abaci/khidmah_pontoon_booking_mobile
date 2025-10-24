@@ -8,6 +8,7 @@ import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-
 import Error from '../../helpers/Error';
 import { ToastContext } from '../../context/ToastContext';
 import ExtendBookingModal from '../modals/ExtendBookingModal';
+import ConfirmationModal from '../modals/ConfirmationModal';
 import AbaciLoader from '../AbaciLoader';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateBooking as updateBookingAction } from '../../../store/bookingSlice';
@@ -21,14 +22,20 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
   const { backgroundColor: statusBg, textColor: statusTextColor } = getStatusTagColorsWithBg(booking?.status);
   const [checkingOut, setCheckingOut] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [extending, setExtending] = useState(false);
 
   const toastContext = useContext(ToastContext);
 
-  const handleCheckOutPress = async () => {
+  const handleCheckOutPress = () => {
+    setShowCheckoutModal(true);
+  };
+
+  const handleConfirmCheckout = async () => {
     if (checkingOut) return;
     try {
       setCheckingOut(true);
+      setShowCheckoutModal(false);
       const updated = await checkOutBooking(booking?.id);
       if (updated) {
         dispatch(updateBookingAction(updated));
@@ -53,6 +60,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
       }
       toastContext.showToast(`Booking extended by ${hours}:${minutes}`, "short", "success");
     } catch (error) {
+      console.log('-------------------------error-----------------------',error)
       let err_msg = Error(error);
       toastContext.showToast(err_msg, "short", "error");
     } finally {
@@ -182,6 +190,22 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
         onExtend={handleExtendBooking}
         bookingItem={booking}
         extending={extending}
+      />
+      <ConfirmationModal
+        isVisible={showCheckoutModal}
+        onRequestClose={() => setShowCheckoutModal(false)}
+        onConfirm={handleConfirmCheckout}
+        title="Check-out Confirmation"
+        message="Are you sure you want to check out? This action cannot be undone."
+        confirmText="Check-out"
+        cancelText="Cancel"
+        showWarningIcon={true}
+        warningIconName="exit-to-app"
+        warningIconColor="#FF6B35"
+        confirmIconName="exit-to-app"
+        confirmIconColor="white"
+        confirmButtonColor="#FF6B35"
+        warningIconBgColor="#FFF3E0"
       />
       <AbaciLoader visible={extending || checkingOut} />
     </TouchableOpacity>

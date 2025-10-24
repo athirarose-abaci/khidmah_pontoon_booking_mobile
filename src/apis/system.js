@@ -27,3 +27,12 @@ export const fetchNotifications = async (page = 1, limit = 10) => {
         throw error;
     }
 };
+
+export const deleteNotification = async (notificationId) => {
+    try {
+        const response = await authAxios.delete(`systems/notifications/${notificationId}/`);
+        return response?.data;
+    } catch (error) {
+        throw error;
+    }
+};

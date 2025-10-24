@@ -5,6 +5,8 @@ import boatSlice from "./boatSlice";
 import bookingSlice from "./bookingSlice";
 import ticketSlice from "./ticketSlice";
 import socketSlice from "./socketSlice";
+import chatSlice from "./chatSlice";
+import notificationSlice from "./notificationSlice";
 
 const store = configureStore({
     reducer : {
@@ -14,6 +16,8 @@ const store = configureStore({
         bookingSlice : bookingSlice,
         ticketSlice : ticketSlice,
         socketSlice : socketSlice,
+        chatSlice : chatSlice,
+        notificationSlice : notificationSlice,
     }
 })
 

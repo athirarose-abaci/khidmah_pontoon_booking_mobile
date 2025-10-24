@@ -75,7 +75,6 @@ const BoatDetailScreen = () => {
     setIsDeleting(true);
     try {
       const response = await deleteBoat(boat?.id);
-      console.log('Delete boat response:', response);
       
       // Check if response has error property
       if (response?.error) {
@@ -90,7 +89,6 @@ const BoatDetailScreen = () => {
       navigation.goBack();
     } catch (error) {
       let err_msg = Error(error);
-      console.log('Delete boat error:', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsDeleting(false);
@@ -102,14 +100,12 @@ const BoatDetailScreen = () => {
     setIsConfirmingDelete(true);
     try {
       const response = await deleteBoat(boat?.id, true); // Pass is_confirm = true
-      console.log('Delete boat with confirmation response:', response);
       
       dispatch(removeBoat(boat?.id));
       toastContext.showToast('Boat deleted successfully!', 'short', 'success');
       navigation.goBack();
     } catch (error) {
       let err_msg = Error(error);
-      console.log('Delete boat with confirmation error:', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsConfirmingDelete(false);

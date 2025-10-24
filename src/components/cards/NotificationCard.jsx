@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, PanResponder } from 'react-native';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { Colors, getNotificationConfig } from '../../constants/customStyles';
 import { formatTimeAgo } from '../../helpers/timeHelper';
@@ -7,9 +7,50 @@ import { formatTimeAgo } from '../../helpers/timeHelper';
 const NotificationCard = ({ 
   item, 
   onExtendStay, 
-  onCheckout 
+  onCheckout,
+  onPress,
+  onDelete
 }) => {
   const config = getNotificationConfig(item?.type, item?.subject);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const deleteButtonWidth = 80;
+
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dx) > 10;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dx < 0) {
+        translateX.setValue(Math.max(gestureState.dx, -deleteButtonWidth));
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dx < -deleteButtonWidth / 2) {
+        // Swipe threshold reached, show delete button
+        Animated.spring(translateX, {
+          toValue: -deleteButtonWidth,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        // Snap back to original position
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(item?.id);
+    }
+    // Reset position after delete
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+    }).start();
+  };
   
   const renderIcon = () => {
     if (config.iconType === 'image' && config.iconSource) {
@@ -32,43 +73,73 @@ const NotificationCard = ({
     return null;
   };
 
+  const handlePress = () => {
+    if (onPress) {
+      onPress(item);
+    }
+  };
+
   return (
-    <View style={styles.notificationCard}>
-      <View style={styles.cardContent}>
-        <View style={[styles.iconContainer, { 
-          backgroundColor: config.backgroundColor
-        }]}>
-          {renderIcon()}
-        </View>
-        
-        <View style={styles.textContent}>
-          <View style={styles.titleRow}>
-            <Text style={styles.notificationTitle}>{item?.subject}</Text>
-            <Text style={styles.timeAgo}>{formatTimeAgo(item?.created_at)}</Text>
-          </View>
-          <Text style={styles.notificationMessage}>{item?.message}</Text>
-          
-          {item?.hasActions && (
-            <View style={styles.actionButtons}>
-              <TouchableOpacity 
-                style={styles.extendButton}
-                onPress={() => onExtendStay(item?.id)}
-              >
-                <MaterialDesignIcons name="timer-plus-outline" size={16} color={Colors.primary} />
-                <Text style={styles.extendButtonText}>Extend stay</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.checkoutButton}
-                onPress={() => onCheckout(item?.id)}
-              >
-                <Image source={require('../../assets/images/clock_out.png')} style={{width: 16, height: 16, resizeMode: 'contain'}} />
-                <Text style={styles.checkoutButtonText}>Check-out</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+    <View style={styles.container}>
+      {/* Delete Button Background */}
+      <View style={styles.deleteButtonContainer}>
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={handleDelete}
+        >
+          <MaterialDesignIcons name="delete-outline" size={24} color={Colors.white} />
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Main Card */}
+      <Animated.View 
+        style={[
+          styles.notificationCard,
+          { transform: [{ translateX }] }
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity 
+          style={styles.cardContent}
+          onPress={handlePress}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.iconContainer, { 
+            backgroundColor: config.backgroundColor
+          }]}>
+            {renderIcon()}
+          </View>
+          
+          <View style={styles.textContent}>
+            <View style={styles.titleRow}>
+              <Text style={styles.notificationTitle}>{item?.subject}</Text>
+              <Text style={styles.timeAgo}>{formatTimeAgo(item?.created_at)}</Text>
+            </View>
+            <Text style={styles.notificationMessage}>{item?.message}</Text>
+            
+            {item?.hasActions && (
+              <View style={styles.actionButtons}>
+                <TouchableOpacity 
+                  style={styles.extendButton}
+                  onPress={() => onExtendStay(item?.id)}
+                >
+                  <MaterialDesignIcons name="timer-plus-outline" size={16} color={Colors.primary} />
+                  <Text style={styles.extendButtonText}>Extend stay</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.checkoutButton}
+                  onPress={() => onCheckout(item?.id)}
+                >
+                  <Image source={require('../../assets/images/clock_out.png')} style={{width: 16, height: 16, resizeMode: 'contain'}} />
+                  <Text style={styles.checkoutButtonText}>Check-out</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -76,6 +147,33 @@ const NotificationCard = ({
 export default NotificationCard;
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+    marginBottom: 0,
+  },
+  deleteButtonContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FF4444',
+    borderRadius: 12,
+  },
+  deleteButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  deleteButtonText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    marginTop: 4,
+  },
   notificationCard: {
     backgroundColor: Colors.white,
     borderRadius: 12,

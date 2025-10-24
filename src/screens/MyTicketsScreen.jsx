@@ -18,6 +18,7 @@ import { fetchTickets } from '../apis/tickets';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTickets, clearTickets } from '../../store/ticketSlice';
 import moment from 'moment';
+import { useRef } from 'react'; 
 
 const MyTicketsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -43,13 +44,66 @@ const MyTicketsScreen = () => {
   const limit = 10;
   const [searchQuery, setSearchQuery] = useState('null');
 
-  const formatCreatedAt = (value) => {
-    if (!value) return { date: '', time: '' };
-    const m = moment(value);
-    if (!m.isValid()) return { date: '', time: '' };
-    return { date: m.format('DD.MM.YY'), time: m.format('hh.mmA') };
-  };
+  const messages = useSelector(state => state.chatSlice.messages);
+  
+  const ticketsDataRef = useRef(ticketsData);
+  const lastProcessedMessages = useRef({});
 
+  useEffect(() => {
+    ticketsDataRef.current = ticketsData;
+  }, [ticketsData]);
+
+
+
+ useEffect(() => {
+    ticketsDataRef.current = ticketsData;
+  }, [ticketsData]);
+
+  useEffect(() => {
+    if (!messages || Object.keys(messages).length === 0) return;
+
+    // Get current tickets data from ref
+    const currentTickets = [...ticketsDataRef.current];
+    let shouldUpdate = false;
+
+    Object.entries(messages).forEach(([ticketId, messageData]) => {
+      const numericTicketId = Number(ticketId);
+      
+      // Skip if we already processed this message
+      const messageId = messageData?.id || messageData?.[0]?.id;
+      if (lastProcessedMessages.current[messageId]) return;
+      
+      // Find the ticket in current data
+      const ticketIndex = currentTickets.findIndex(
+        ticket => ticket.id === numericTicketId || ticket.ticket_id === numericTicketId
+      );
+      
+      if (ticketIndex !== -1) {
+        // Increment unread count
+        currentTickets[ticketIndex] = {
+          ...currentTickets[ticketIndex],
+          unread_message_count: (currentTickets[ticketIndex].unread_message_count || 0) + 1
+        };
+        shouldUpdate = true;
+        
+        // Mark this message as processed
+        if (messageId) {
+          lastProcessedMessages.current[messageId] = true;
+        }
+      }
+    });
+
+    // Update state if we made changes
+    if (shouldUpdate) {
+      setTicketsData(currentTickets);
+      
+      // Clean up old processed messages (optional, to prevent memory leak)
+      if (Object.keys(lastProcessedMessages.current).length > 100) {
+        lastProcessedMessages.current = {};
+      }
+    }
+  }, [messages]);
+  
   const handleTicketPress = (ticketId) => {
     setIsNavigatingToDetail(true);
     navigation.navigate('TicketDetail', { ticketId });
@@ -57,25 +111,6 @@ const MyTicketsScreen = () => {
     setTimeout(() => {
       setIsNavigatingToDetail(false);
     }, 1000);
-  };
-
-  const mapTicket = (t) => {
-    const { date, time } = formatCreatedAt(t?.created_at || t?.createdAt || t?.created_on);
-    let agentObj = null;
-    if (t?.status === 'IN_PROGRESS' && t?.claimed_by) {
-      agentObj = {
-        name: t?.claimed_by?.full_name || t?.claimed_by?.first_name || t?.claimed_by?.username || '',
-        avatar: t?.claimed_by?.avatar ? { uri: t?.claimed_by?.avatar } : undefined,
-      };
-    }
-    return {
-      ...t,
-      title: t?.category?.name || '',
-      description: t?.description || '',
-      agent: agentObj,
-      createdAtDate: date,
-      createdAtTime: time,
-    };
   };
 
   const statusForApi = (tab) => {
@@ -95,13 +130,12 @@ const MyTicketsScreen = () => {
     try {
       const response = await fetchTickets(pageNumber, limitNumber, query, statusForApi(tab));
       const results = response?.results || [];
-      const mapped = results.map(mapTicket);
 
       if (isRefresh || pageNumber === 1) {
-        setTicketsData(mapped);
+        setTicketsData(results);
         dispatch(setTickets(results));
       } else {
-        const newData = [...ticketsData, ...mapped];
+        const newData = [...ticketsData, ...results];
         setTicketsData(newData);
         const appendedRaw = [...(storedTickets || []), ...results];
         dispatch(setTickets(appendedRaw));
@@ -273,9 +307,8 @@ const MyTicketsScreen = () => {
         visible={showCreateTicketModal}
         onClose={() => setShowCreateTicketModal(false)}
         onCreated={(created) => {
-          // Optimistically add the created ticket to the local mapped list
-          const mappedCreated = mapTicket(created);
-          setTicketsData(prev => [mappedCreated, ...prev]);
+          // Optimistically add the created ticket to the local list
+          setTicketsData(prev => [created, ...prev]);
         }}
       />
       <AbaciLoader visible={isLoading} />

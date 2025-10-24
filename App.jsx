@@ -1,20 +1,20 @@
 import MainRouter from './routes/MainRouter';
 import AbaciToast from './src/components/AbaciToast';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from './src/constants/baseUrl';
-import { Appearance, Platform } from 'react-native';
-import CookieManager from '@react-native-cookies/cookies';
 import { setAuthState } from './store/authSlice';
-import { useDispatch, useSelector } from 'react-redux';
 import { removeData, storeData } from './src/helpers/asyncStorageHelper';
-import { clearCookies } from './src/helpers/clearCookieHelper';
-import { useEffect, useState } from 'react';
-import { setIsDarkMode } from './store/themeSlice';
 import AbaciLoader from './src/components/AbaciLoader';
-import ErrorScreen from './src/components/ErrorScreen';
 import { fetchProfile } from './src/apis/auth';
 import { fetchSystemStatus } from './src/apis/system';
+import { useEffect, useState } from 'react';
+import { setIsDarkMode } from './store/themeSlice';
+import ErrorScreen from './src/screens/ErrorScreen';
+import { clearCookies } from './src/helpers/clearCookieHelper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Appearance, Platform } from 'react-native';
+import CookieManager from '@react-native-cookies/cookies';
+import { useDispatch, useSelector } from 'react-redux';
 
 const App = () => {
   const dispatch = useDispatch();

@@ -258,14 +258,11 @@ const NewBookingScreen = ({ navigation, route }) => {
       };
 
       const response = await createBooking(bookingPayload);
-      console.log("response from handleCreateBooking", response);
       dispatch(addBookings([response]));
       setShowSuccessModal(true);
     } catch (error) {
-      console.log("error from handleCreateBooking", error);
       let err_msg = Error(error);
-      console.log("err_msg from handleCreateBooking", err_msg);
-      toastContext.showToast(err_msg, "short", "error");
+      toastContext.showToast(err_msg, "long", "error");
     } finally {
       setIsLoading(false);
     }
@@ -293,13 +290,10 @@ const NewBookingScreen = ({ navigation, route }) => {
       };
 
       const response = await updateBookingAPI(editingBookingId, bookingPayload);
-      console.log("response from handleUpdateBooking", response);
       dispatch(updateBooking(response));
       setShowSuccessModal(true);
     } catch (error) {
-      console.log("error from handleUpdateBooking", error);
       let err_msg = Error(error);
-      console.log("err_msg from handleUpdateBooking", err_msg);
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       setIsLoading(false);
@@ -360,18 +354,14 @@ const NewBookingScreen = ({ navigation, route }) => {
   const getButtonBottomMargin = () => {
     const { height } = screenData;
     
-    // Calculate safe bottom area + minimum margin
     const safeBottomMargin = Math.max(insets.bottom, 20);
     
-    // For smaller screens (height < 700), use smaller margin
     if (height < 700) {
       return safeBottomMargin + 10;
     }
-    // For medium screens (700-800), use moderate margin
     else if (height >= 700 && height < 800) {
       return safeBottomMargin + 15;
     }
-    // For larger screens (height >= 800), use larger margin
     else {
       return safeBottomMargin + 20;
     }

@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setBookings, clearBookings } from '../../store/bookingSlice';
 import { ToastContext } from '../context/ToastContext';
 import AbaciLoader from '../components/AbaciLoader';
+import { fetchProfile } from '../apis/auth';
 
 const MyBookingsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -24,6 +25,8 @@ const MyBookingsScreen = () => {
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  // const unreadCount = useSelector(state => state.notificationSlice.unreadCount);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState('All');
   const tabs = BOOKING_TABS;
@@ -42,6 +45,23 @@ const MyBookingsScreen = () => {
   const [hasMorePages, setHasMorePages] = useState(true);
 
   const { onScroll, insets } = useTabBarScroll();
+
+  const fetchProfileData = async () => {
+    try {
+      const response = await fetchProfile();
+      console.log('Profile data:', response);
+      setUnreadCount(response?.unread_count || 0);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }
+  }
+
+  useEffect(() => {
+    if(isFocused) {
+    fetchProfileData();
+    }
+  }, [isFocused]);
 
   const fetchBookingsData = async (pageNumber, limit, isRefresh = false, searchQuery, status) => {
     if (isRefresh) {
@@ -122,8 +142,16 @@ const MyBookingsScreen = () => {
           <TouchableOpacity 
             activeOpacity={0.7}
             onPress={() => navigation.navigate('Notification')}
+            style={styles.notification_container}
           >
             <Ionicons name="notifications" size={30} color={isDarkMode ? Colors.white : "#6F6F6F"} />
+            {unreadCount > 0 && (
+              <View style={styles.notification_badge}>
+                <Text style={styles.notification_badge_text}>
+                  {unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
         <View style={styles.filter_container}>
@@ -316,5 +344,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 500,
     paddingVertical: 50,
+  },
+  notification_container: {
+    position: 'relative',
+  },
+  notification_badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notification_badge_text: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
   },
 });
