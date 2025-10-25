@@ -1,6 +1,6 @@
 import { authAxios} from "../context/AxiosContext";
 
-export const fetchBookings = async (page = 1, limit = 10, search = null, status = null) => {
+export const fetchBookings = async (page = 1, limit = 10, search = null, status = null, dateRange) => {
     try {
         const offset = limit * (page - 1);
         let url = `bookings/?limit=${limit}&offset=${offset}&page=${page}`;
@@ -12,7 +12,14 @@ export const fetchBookings = async (page = 1, limit = 10, search = null, status 
         if (status && status !== 'All') {
             url += `&status=${encodeURIComponent(status)}`;
         }
-        
+
+        if(dateRange){
+            const endDate = new Date(dateRange.endDate);
+            endDate.setDate(endDate.getDate() + 1);
+            const nextDay = endDate.toISOString().split('T')[0];   
+            url = url + `&start_date=${dateRange.startDate} 00:00&end_date=${nextDay} 00:00`
+        }
+        console.log('url for bookings: ', url);
         const response = await authAxios.get(url);
         return response.data;
     } catch (error) {

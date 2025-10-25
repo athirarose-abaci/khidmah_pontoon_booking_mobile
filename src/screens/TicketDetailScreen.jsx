@@ -72,13 +72,11 @@ const TicketDetailScreen = () => {
     if (socket && ticketId) {
       // Emit viewing_ticket when component mounts or ticketId changes
       socket.emit('viewing_ticket', { ticket_id: ticketId });
-      console.log('viewing_ticket', { ticket_id: ticketId });
       
       // Return cleanup function to emit left_ticket when component unmounts
       return () => {
         if (socket && ticketId) {
           socket.emit('left_ticket', { ticket_id: ticketId });
-          console.log('left_ticket', { ticket_id: ticketId });
         }
       };
     }
@@ -270,7 +268,9 @@ const TicketDetailScreen = () => {
               </Text>
               {!!ticketData?.status && (
                 <View style={[styles.statusBadge, { 
-                  backgroundColor: getTicketStatusColors(ticketData?.status).backgroundColor,
+                  backgroundColor: isDarkMode 
+                    ? Colors.dark_container 
+                    : getTicketStatusColors(ticketData?.status).backgroundColor,
                   borderColor: getTicketStatusColors(ticketData?.status).borderColor 
                 }]}>
                   <Text style={[styles.statusText, { 
@@ -369,14 +369,17 @@ const TicketDetailScreen = () => {
                 onPress={() => setShowFileUpload(!showFileUpload)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="attach" size={30} color={Colors.primary} />
+                <Ionicons name="attach" size={32} color={Colors.primary} />
               </TouchableOpacity>
               <TextInput
                 style={[styles.input, { color: isDarkMode ? Colors.white : Colors.black }]}
-                placeholder="Type here…………"
+                placeholder="Type a message"
                 placeholderTextColor={isDarkMode ? Colors.dark_text_secondary : "#A8B6C2"}
                 value={message}
                 onChangeText={setMessage}
+                multiline={true}
+                textAlignVertical="top"
+                maxLength={1000}
               />
               <TouchableOpacity style={styles.sendBtn} activeOpacity={0.8} onPress={handleSendReply}>
                 <Ionicons name="send" size={20} color={Colors.white} />
@@ -560,7 +563,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   inputBarWrap: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 26,
     paddingTop: 8,
   },
   inputBar: {
@@ -570,7 +573,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -583,10 +586,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontFamily: 'Inter-Italic',
+    fontFamily: 'Inter-Regular',
     fontSize: 14,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingRight: 10,
+    minHeight: 40,
+    maxHeight: 120,
   },
   sendBtn: {
     width: 40,

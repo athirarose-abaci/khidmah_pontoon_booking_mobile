@@ -25,6 +25,7 @@ const MyBookingTabs = () => {
             <Stack.Screen name="AddBoat" component={AddBoatScreen} options={{headerShown: false}}/>
             <Stack.Screen name="BookingManagement" component={BookingManagementScreen} options={{headerShown: false}}/>
             <Stack.Screen name="Notification" component={NotificationScreen} options={{headerShown: false}}/>
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{headerShown: false}}/>
         </Stack.Navigator>
     )
 }

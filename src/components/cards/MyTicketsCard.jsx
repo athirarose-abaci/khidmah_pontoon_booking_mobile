@@ -62,7 +62,9 @@ const MyTicketsCard = ({ item, onPress }) => {
         <View style={styles.statusRow}>
           <Text style={styles.category} numberOfLines={1}>{displayDescription}</Text>
           <View style={[styles.statusBadge, { 
-            backgroundColor: statusColors.backgroundColor,
+            backgroundColor: isDarkMode 
+              ? Colors.dark_container 
+              : statusColors.backgroundColor,
             borderColor: statusColors.borderColor 
           }]}>
             <Text style={[styles.statusText, { color: statusColors.textColor }]}>

@@ -60,7 +60,6 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
       }
       toastContext.showToast(`Booking extended by ${hours}:${minutes}`, "short", "success");
     } catch (error) {
-      console.log('-------------------------error-----------------------',error)
       let err_msg = Error(error);
       toastContext.showToast(err_msg, "short", "error");
     } finally {
@@ -202,6 +201,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
         showWarningIcon={true}
         warningIconName="exit-to-app"
         warningIconColor="#FF6B35"
+        warningIconSize={30}
         confirmIconName="exit-to-app"
         confirmIconColor="white"
         confirmButtonColor="#FF6B35"

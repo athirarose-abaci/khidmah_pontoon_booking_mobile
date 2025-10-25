@@ -70,7 +70,7 @@ const QRCodeTab = ({ bookingData, isDarkMode }) => {
             <View style={styles.qrCodeContainer}>
               {/* Khidmah Logo */}
               <Image 
-                source={require('../../assets/images/khidmah_logo.png')} 
+                source={isDarkMode ? require('../../assets/images/khidmah_logo_dark.png') : require('../../assets/images/khidmah_logo.png')} 
                 style={styles.khidmahLogo}
                 resizeMode="contain"
               />

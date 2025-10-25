@@ -218,6 +218,13 @@ export const NOTIFICATION_CONFIG = {
     iconSource: require('../assets/images/clock_out.png'),
     iconName: null,
   },
+  'checkout_reminder': {
+    backgroundColor: '#E3F2FD',
+    iconColor: '#2196F3',
+    iconType: 'icon',
+    iconSource: null,
+    iconName: 'clock-outline',
+  },
   'booking_successful': {
     backgroundColor: '#E3F4EF',
     iconColor: '#4CAF50',
@@ -239,6 +246,13 @@ export const NOTIFICATION_CONFIG = {
     iconSource: null,
     iconName: 'check-circle-outline',
   },
+  'booking_extended': {
+    backgroundColor: '#E3F2FD',
+    iconColor: '#2196F3',
+    iconType: 'image',
+    iconSource: require('../assets/images/extend_stay.png'),
+    iconName: null,
+  },
   'ticket_created': {
     backgroundColor: '#FFF4E5',
     iconColor: '#F27C21',
@@ -256,16 +270,9 @@ export const NOTIFICATION_CONFIG = {
   'ticket_closed': {
     backgroundColor: '#E2E2E2',
     iconColor: '#6F6F6F',
-    iconType: 'icon',
+    iconType: 'lucide',
     iconSource: null,
-    iconName: 'close-circle-outline',
-  },
-  'booking_extended': {
-    backgroundColor: '#E3F2FD',
-    iconColor: '#2196F3',
-    iconType: 'image',
-    iconSource: require('../assets/images/extend_stay.png'),
-    iconName: null,
+    iconName: 'ticket-x',
   },
   'others': {
     backgroundColor: '#F0F0F0',

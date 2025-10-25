@@ -18,6 +18,7 @@ import { setBookings, clearBookings } from '../../store/bookingSlice';
 import { ToastContext } from '../context/ToastContext';
 import AbaciLoader from '../components/AbaciLoader';
 import { fetchProfile } from '../apis/auth';
+import moment from 'moment';
 
 const MyBookingsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -25,8 +26,8 @@ const MyBookingsScreen = () => {
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  // const unreadCount = useSelector(state => state.notificationSlice.unreadCount);
   const [unreadCount, setUnreadCount] = useState(0);
+  const liveNotifications = useSelector(state => state.notificationSlice.notifications);
 
   const [activeTab, setActiveTab] = useState('All');
   const tabs = BOOKING_TABS;
@@ -38,6 +39,7 @@ const MyBookingsScreen = () => {
   const [bookingsData, setBookingsData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const limit = 10;
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('null');
@@ -46,10 +48,26 @@ const MyBookingsScreen = () => {
 
   const { onScroll, insets } = useTabBarScroll();
 
+  const lastProcessedNotifications = useRef({});
+  const unreadCountRef = useRef(unreadCount);
+
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;
+  }, [selectedDate]);
+  
+  useEffect(() => {
+    if(isFocused) {
+      dispatch(clearBookings());
+      setPage(1);
+      setHasMorePages(true);
+      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
+      selectedDateRef.current = null;
+    }
+  }, [activeTab, isFocused]);
+
   const fetchProfileData = async () => {
     try {
       const response = await fetchProfile();
-      console.log('Profile data:', response);
       setUnreadCount(response?.unread_count || 0);
     } catch (error) {
       let err_msg = Error(error);
@@ -58,12 +76,42 @@ const MyBookingsScreen = () => {
   }
 
   useEffect(() => {
+    unreadCountRef.current = unreadCount;
+  }, [unreadCount]);
+
+  useEffect(() => {
     if(isFocused) {
     fetchProfileData();
     }
   }, [isFocused]);
 
-  const fetchBookingsData = async (pageNumber, limit, isRefresh = false, searchQuery, status) => {
+  // Track notifications similar to MyTicketsScreen
+  useEffect(() => {
+    if (!liveNotifications || Object.keys(liveNotifications).length === 0) return;
+
+    Object.entries(liveNotifications).forEach(([notificationId, notificationData]) => {
+      // Skip if we already processed this notification
+      const notificationIdStr = notificationData?.id || notificationData?.[0]?.id;
+      if (lastProcessedNotifications.current[notificationIdStr]) return;
+      
+      // Increment unread count for new notifications
+      if (notificationData && !lastProcessedNotifications.current[notificationIdStr]) {
+        setUnreadCount(prev => prev + 1);
+        
+        // Mark this notification as processed
+        if (notificationIdStr) {
+          lastProcessedNotifications.current[notificationIdStr] = true;
+        }
+      }
+    });
+
+    // Clean up old processed notifications (optional, to prevent memory leak)
+    // if (Object.keys(lastProcessedNotifications.current).length > 100) {
+    //   lastProcessedNotifications.current = {};
+    // }
+  }, [liveNotifications]);
+
+  const fetchBookingsData = async (pageNumber, limit, isRefresh = false, searchQuery, status, dateRange) => {
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -71,7 +119,7 @@ const MyBookingsScreen = () => {
     }
     
     try {
-      const response = await fetchBookings(pageNumber, limit, searchQuery, status);
+      const response = await fetchBookings(pageNumber, limit, searchQuery, status, dateRange);
       if (isRefresh || pageNumber === 1) {
         setBookingsData(response?.results || []);
         dispatch(setBookings(response?.results || []));
@@ -105,7 +153,7 @@ const MyBookingsScreen = () => {
           dispatch(clearBookings());
           setPage(1);
           setHasMorePages(true);
-          await fetchBookingsData(1, limit, true, searchQuery, getBackendStatus(activeTab));
+          await fetchBookingsData(1, limit, true, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
           setIsSearching(false);
         })();
       }
@@ -113,24 +161,26 @@ const MyBookingsScreen = () => {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  useEffect(() => {
-    if(isFocused) {
-      dispatch(clearBookings());
-      setPage(1);
-      setHasMorePages(true);
-      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
-    }
-  }, [activeTab, isFocused]);
-
-  const refreshControl = () => {
+  const refreshControl = async () => {
+    setIsRefreshing(true);
     const defaultSearch = 'null';
     if(searchQuery !== defaultSearch) {
       setSearchQuery(defaultSearch);
     }
+    // Clear date filter on refresh
+    setSelectedDate(null);
+    selectedDateRef.current = null;
     dispatch(clearBookings());
     setPage(1);
     setHasMorePages(true);
-    fetchBookingsData(1, limit, true, defaultSearch, getBackendStatus(activeTab));
+    await fetchBookingsData(1, limit, true, defaultSearch, getBackendStatus(activeTab), null);
+    setIsRefreshing(false);
+  };
+
+  const handleNotificationPress = () => {
+    // Reset unread count when navigating to notifications
+    setUnreadCount(0);
+    navigation.navigate('Notification');
   };
 
   return (
@@ -141,7 +191,7 @@ const MyBookingsScreen = () => {
           <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>My Bookings</Text>
           <TouchableOpacity 
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('Notification')}
+            onPress={handleNotificationPress}
             style={styles.notification_container}
           >
             <Ionicons name="notifications" size={30} color={isDarkMode ? Colors.white : "#6F6F6F"} />
@@ -179,6 +229,35 @@ const MyBookingsScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Show active date filter */}
+        {selectedDate?.startDate && selectedDate?.endDate && (
+          <View style={[styles.dateFilterBadge, { 
+            backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+            borderColor: isDarkMode ? Colors.dark_separator : Colors.border_line
+          }]}>
+            <Text style={[styles.dateFilterText, { 
+              color: isDarkMode ? Colors.white : Colors.heading_font 
+            }]}>
+              {`${moment(selectedDate.startDate).format('DD MMM YYYY')} - ${moment(selectedDate.endDate).format('DD MMM YYYY')}`}
+            </Text>
+            <TouchableOpacity
+              style={[styles.clearFilterBtn, { 
+                backgroundColor: isDarkMode ? '#FF4444' : Colors.error 
+              }]}
+              onPress={() => {
+                setSelectedDate(null);
+                selectedDateRef.current = null;
+                dispatch(clearBookings());
+                setPage(1);
+                setHasMorePages(true);
+                fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+              }}
+            >
+              <Ionicons name="close" size={14} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
+          )}
+
         <SubTabBar
           tabs={tabs}
           activeTab={activeTab}
@@ -187,13 +266,19 @@ const MyBookingsScreen = () => {
         <View style={styles.booking_card_list}>
           {bookingsData.length === 0 ? (
             <View style={styles.noDataContainer}>
-              <NoDataImage
-                imageSource={require('../assets/images/no_booking.png')}
-                title="No bookings yet"
-                subtitle="You haven't made any bookings."
-                onRefresh={refreshControl}
-                isDarkMode={isDarkMode}
-              />
+              {isRefreshing ? (
+                <View style={styles.refreshLoaderContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+              ) : (
+                <NoDataImage
+                  imageSource={require('../assets/images/no_booking.png')}
+                  title="No bookings yet"
+                  subtitle="You haven't made any bookings."
+                  onRefresh={refreshControl}
+                  isDarkMode={isDarkMode}
+                />
+              )}
             </View>
           ) : (
             <FlatList
@@ -211,7 +296,7 @@ const MyBookingsScreen = () => {
                       dispatch(clearBookings());
                       setPage(1);
                       setHasMorePages(true);
-                      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
+                      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
                     }}
                   />
                 </View>
@@ -227,7 +312,7 @@ const MyBookingsScreen = () => {
               onEndReachedThreshold={0.01}
               onEndReached={() => {
                 if(hasMorePages && !isLoading) {
-                  fetchBookingsData(page, limit, false, searchQuery, getBackendStatus(activeTab));
+                  fetchBookingsData(page, limit, false, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
                 }
               }}
               ListFooterComponent={
@@ -249,7 +334,17 @@ const MyBookingsScreen = () => {
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         selectedDateRef={selectedDateRef}
-        onRangeSelected={newSelection => setShowDatePicker(false)}
+        onRangeSelected={(newSelection) => {
+          setShowDatePicker(false)
+          dispatch(clearBookings());
+          setPage(1);
+          fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), newSelection);
+        }}
+        onClear={() => {
+          dispatch(clearBookings());
+          setPage(1);
+          fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+        }}
       />
 
       <CreateButton
@@ -365,5 +460,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     fontFamily: 'Inter-Bold',
+  },
+  dateFilterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 26,
+    marginTop: 0,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+    borderWidth: 1,
+    position: 'relative',
+  },
+  dateFilterText: {
+    fontSize: 13,
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  clearFilterBtn: {
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 8,
+  },
+  refreshLoaderContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
   },
 });

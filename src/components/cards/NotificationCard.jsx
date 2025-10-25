@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, PanResponder } from 'react-native';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { Colors, getNotificationConfig } from '../../constants/customStyles';
 import { formatTimeAgo } from '../../helpers/timeHelper';
 import { useSelector } from 'react-redux';
@@ -66,6 +67,14 @@ const NotificationCard = ({
     } else if (config.iconType === 'icon' && config.iconName) {
       return (
         <MaterialDesignIcons 
+          name={config.iconName} 
+          size={30} 
+          color={config.iconColor} 
+        />
+      );
+    } else if (config.iconType === 'lucide' && config.iconName) {
+      return (
+        <Lucide 
           name={config.iconName} 
           size={30} 
           color={config.iconColor} 

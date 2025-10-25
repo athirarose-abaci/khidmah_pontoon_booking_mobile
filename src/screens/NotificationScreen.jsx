@@ -10,7 +10,7 @@ import { ToastContext } from '../context/ToastContext'
 import Error from '../helpers/Error'
 import AbaciLoader from '../components/AbaciLoader'
 import { deleteNotification, fetchNotifications } from '../apis/system'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector, useDispatch } from 'react-redux'
 import { removeNotification } from '../../store/notificationSlice'
@@ -28,13 +28,13 @@ const NotificationScreen = ({ navigation }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const limit = 10;
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
 
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const liveNotifications = useSelector(state => state.notificationSlice.notifications);
   const socket = useSocket();
-  console.log("liveNotifications", liveNotifications);
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -103,13 +103,13 @@ const NotificationScreen = ({ navigation }) => {
   );
 
   useEffect(() => {
+      socket.emit('viewing_notification');
     return () => {
       if (socket && socket.connected) {
-        socket.emit('left_notification');
-        console.log('Emitted left_notification event');
-      }
-    };
-  }, [socket]);
+      socket.emit('left_notification');
+    }
+  };
+  }, [socket, isFocused]);
 
   const fetchNotificationsData = async (pageNumber, limitNumber, isRefresh = false) => {
     if (isRefresh) {
@@ -203,7 +203,6 @@ const NotificationScreen = ({ navigation }) => {
   };
 
   const handleNotificationPress = (notification) => {
-    console.log('Notification pressed:', notification);
     
     if (notification?.type === 'BOOKING' && notification?.foreign_key) {
       const booking = {
@@ -213,10 +212,7 @@ const NotificationScreen = ({ navigation }) => {
       
       navigation.navigate('BookingManagement', { booking });
     } else if (notification?.type === 'TICKET' && notification?.foreign_key) {
-      navigation.getParent()?.navigate('Tickets', {
-        screen: 'TicketDetail',
-        params: { ticketId: notification?.foreign_key }
-      });
+      navigation.navigate('TicketDetail', { ticketId: notification?.foreign_key });
     }
   };
 

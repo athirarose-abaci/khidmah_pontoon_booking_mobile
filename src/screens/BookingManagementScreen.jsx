@@ -187,8 +187,15 @@ const BookingManagementScreen = ({ route, navigation }) => {
         <View style={[styles.bookingHeader, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
           <View style={styles.bookingHeaderLeft}>
             {bookingData?.status && bookingData?.status !== 'CHECKED_OUT' && (
-              <View style={[styles.statusTag, { backgroundColor: getStatusTagColors(bookingData?.status).backgroundColor }]}>
-                <Text style={[styles.statusText, { color: getStatusTagColors(bookingData?.status).textColor }]}>
+              <View style={[styles.statusTag, { 
+                backgroundColor: isDarkMode 
+                  ? Colors.dark_container 
+                  : getStatusTagColors(bookingData?.status).backgroundColor,
+                borderColor: getStatusTagColors(bookingData?.status).textColor
+              }]}>
+                <Text style={[styles.statusText, { 
+                  color: getStatusTagColors(bookingData?.status).textColor 
+                }]}>
                   {getDisplayStatus(bookingData?.status)}
                 </Text>
               </View>
@@ -500,6 +507,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 10,
     marginBottom: 0,
+    borderWidth: 1,
   },
   statusText: {
     fontSize: 11,

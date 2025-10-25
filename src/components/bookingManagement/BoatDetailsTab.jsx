@@ -59,7 +59,7 @@ const BoatDetailsTab = ({ bookingData, isDarkMode }) => {
             <View style={styles.boatInfo}>
               <Text style={[styles.boatName, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>{bookingData?.boat?.name || ''}</Text>
               <View style={styles.boatDetails}>
-                <View style={styles.capacityContainer}>
+                <View style={[styles.capacityContainer, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
                   <Image source={require('../../assets/images/capacity.png')} style={styles.capacityIcon} />
                   <Text style={styles.capacityText}>{bookingData?.passengers !== undefined ? bookingData?.passengers : ''}</Text>
                 </View>
@@ -237,7 +237,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.primary,
     paddingHorizontal: 6,

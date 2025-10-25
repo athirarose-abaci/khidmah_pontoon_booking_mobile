@@ -1,10 +1,10 @@
 import { authAxios, publicAxios } from "../context/AxiosContext";
+import Error from "../helpers/Error";
 
 
-export const userLogin = async (email, otp) => {
+export const userLogin = async (email) => {
     const payload = {
         email : email,
-        otp: otp
     }
     try {
         const response = await publicAxios.post('users/login/', payload);
@@ -21,8 +21,12 @@ export const verifyOTP = async (email, otp) => {
     }
     try {
         const response = await publicAxios.post('users/verify-otp/', payload);
+        // console.log('response in verifyOTP: ', response);
         return response;
     } catch (error) {
+        // console.log('error in verifyOTP: ', error);
+        // let err_msg = Error(error);
+        // console.log('err_msg in verifyOTP: ', err_msg);
         throw err_msg;
     }
 };

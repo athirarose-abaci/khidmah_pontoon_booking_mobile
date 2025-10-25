@@ -12,7 +12,7 @@ const TicketMessage = ({
   onFilePress 
 }) => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  const name = item?.created_by_name || '';
+  const name = item?.created_by?.full_name || '';
   const isCurrentUser = item?.created_by?.role === 'CUSTOMER';
   const avatarUri = item?.created_by?.avatar ? { uri: `${BASE_URL_IMAGE}${item?.created_by?.avatar}` } : null;
   const when = item?.created_at;
@@ -33,7 +33,7 @@ const TicketMessage = ({
       )}
       
       <View style={[styles.messageColumn, isCurrentUser ? styles.messageColumnRight : styles.messageColumnLeft]}>
-        {!!name && !isCurrentUser && <Text style={[styles.msgAuthorName, { color: isDarkMode ? Colors.dark_text_secondary : '#5C7E86' }]}>{name}</Text>}
+        {!!name && !isCurrentUser && <Text style={[styles.msgAuthorName, { color: isDarkMode ? Colors.dark_text_secondary : '#34495E' }]}>{name}</Text>}
         
          {!!item?.message && (
            <View style={[
@@ -41,20 +41,20 @@ const TicketMessage = ({
              isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft,
              { 
                backgroundColor: isCurrentUser 
-                 ? (isDarkMode ? 'rgba(117, 200, 173, 0.2)' : 'rgba(117, 200, 173, 0.15)')
-                 : (isDarkMode ? Colors.dark_container : Colors.white),
+                 ? (isDarkMode ? Colors.primary : 'rgba(117, 200, 173, 0.6)')
+                 : (isDarkMode ? Colors.dark_container : '#F8F9FA'),
                borderWidth: isCurrentUser ? 0 : 1,
                borderColor: isCurrentUser 
                  ? 'transparent'
-                 : (isDarkMode ? 'rgba(117, 200, 173, 0.2)' : 'rgba(117, 200, 173, 0.2)')
+                 : (isDarkMode ? 'rgba(83, 241, 189, 0.2)' : 'rgba(117, 200, 173, 0.3)')
              }
            ]}>
              <Text style={[
                styles.msgBody, 
                isCurrentUser ? styles.msgBodyRight : styles.msgBodyLeft,
                { color: isCurrentUser 
-                 ? Colors.white 
-                 : (isDarkMode ? Colors.white : Colors.heading_font)
+                 ? isDarkMode ? '#4D4D4D' : '#555555'
+                 : (isDarkMode ? Colors.white : '#2C3E50')
                }
              ]}>{item.message}</Text>
            </View>
@@ -106,7 +106,7 @@ const TicketMessage = ({
         <Text style={[
           styles.msgTime, 
           isCurrentUser ? styles.msgTimeRight : styles.msgTimeLeft,
-          { color: isDarkMode ? Colors.dark_text_secondary : '#8E9AA6' }
+          { color: isDarkMode ? Colors.dark_text_secondary : '#7F8C8D' }
         ]}>
           {moment(when).isValid() ? moment(when).format('DD MMM YYYY, hh:mm A') : ''}
         </Text>
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    elevation: 1,
   },
   messageBubbleRight: {
     borderTopRightRadius: 4,

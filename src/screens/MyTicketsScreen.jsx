@@ -53,12 +53,6 @@ const MyTicketsScreen = () => {
     ticketsDataRef.current = ticketsData;
   }, [ticketsData]);
 
-
-
- useEffect(() => {
-    ticketsDataRef.current = ticketsData;
-  }, [ticketsData]);
-
   useEffect(() => {
     if (!messages || Object.keys(messages).length === 0) return;
 
