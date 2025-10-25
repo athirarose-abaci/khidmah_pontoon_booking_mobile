@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import PhoneInput from 'react-native-phone-number-input';
 import { Colors } from '../../constants/customStyles';
 import { register } from '../../apis/auth';
 import { useContext } from 'react';
@@ -17,9 +18,11 @@ const RegisterComponent = ({ setCurrentScreen }) => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [fullPhoneNumber, setFullPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
+  const phoneInput = useRef(null);
   const toastContext = useContext(ToastContext);
 
   const validateForm = () => {
@@ -37,8 +40,12 @@ const RegisterComponent = ({ setCurrentScreen }) => {
     
     if (!phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else if (phone.length < 10) {
+    } else if (phone.length > 12) {
+      newErrors.phone = 'Phone number cannot exceed 12 digits';
+    } else if (phone.length < 7) {
       newErrors.phone = 'Please enter a valid phone number';
+    } else if (!/^\d+$/.test(phone)) {
+      newErrors.phone = 'Phone number should contain only digits';
     }
     
     setErrors(newErrors);
@@ -53,7 +60,8 @@ const RegisterComponent = ({ setCurrentScreen }) => {
     setErrors({});
 
     try {
-      const response = await register(firstName, lastName, email, phone);
+      console.log('fullPhoneNumber in handleRegister: ', fullPhoneNumber);
+      const response = await register(firstName, lastName, email, fullPhoneNumber);
       if (response?.status === 201) {
         toastContext.showToast(response?.data?.message, 'long', 'success');
         setCurrentScreen('otp');
@@ -135,20 +143,68 @@ const RegisterComponent = ({ setCurrentScreen }) => {
         {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
         {/* Phone Number Input */}
-        <View style={styles.inputRow}>
-          <Ionicons name="call-outline" size={22} color={Colors.primary} style={{ marginRight: 15 }} />
-          <TextInput
-            placeholder="Phone Number"
-            placeholderTextColor={Colors.font_gray}
-            value={phone}
+        <View style={styles.phoneInputContainer}>
+          <Ionicons name="call-outline" size={22} color={Colors.primary} style={{ marginRight: 15, marginTop: 8 }} />
+          <PhoneInput
+            ref={phoneInput}
+            defaultValue={phone}
+            defaultCode="AE"
+            layout="second"
             onChangeText={(text) => {
+              // Store the phone number without country code for validation
               setPhone(text);
               if (errors.phone) {
                 setErrors(prev => ({ ...prev, phone: '' }));
               }
             }}
-            keyboardType="phone-pad"
-            style={[styles.input, errors.phone && styles.inputError]}
+            onChangeFormattedText={(formattedText) => {
+              // Store the complete phone number with country code for backend
+              setFullPhoneNumber(formattedText);
+            }}
+            withDarkTheme={false}
+            withShadow={false}
+            autoFocus={false}
+            placeholder="Phone Number"
+            textInputProps={{
+              placeholderTextColor: Colors.font_gray,
+              maxLength: 12,
+            }}
+            containerStyle={[styles.phoneInputWrapper, errors.phone && styles.phoneInputError]}
+            textContainerStyle={styles.phoneTextContainer}
+            textInputStyle={[styles.phoneTextInput, errors.phone && styles.phoneTextInputError]}
+            codeTextStyle={styles.phoneCodeText}
+            flagButtonStyle={styles.phoneFlagButton}
+            countryPickerButtonStyle={styles.phoneCountryPicker}
+            disableArrowIcon={false}
+            dropdownImageStyle={styles.phoneDropdownArrow}
+            modalProps={{
+              animationType: 'fade',
+              transparent: true,
+              presentationStyle: 'overFullScreen',
+            }}
+            modalStyle={{
+              backgroundColor: Colors.dark_container,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              position: 'absolute',
+              top: 60,
+              left: 0,
+              right: 0,
+              maxHeight: 300,
+              zIndex: 1000,
+            }}
+            filterProps={{
+              placeholder: 'Search countries...',
+              placeholderTextColor: Colors.font_gray,
+            }}
+            searchInputStyle={{
+              color: Colors.white,
+              backgroundColor: 'transparent',
+              borderBottomWidth: 1,
+              borderBottomColor: Colors.border_line,
+              paddingVertical: 15,
+              paddingHorizontal: 20,
+            }}
           />
         </View>
         {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
@@ -280,5 +336,68 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.7,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  phoneInputWrapper: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    borderColor: Colors.border_line,
+    paddingBottom: 8,
+    paddingRight: 10,
+  },
+  phoneInputError: {
+    borderColor: Colors.error,
+    borderBottomWidth: 2,
+  },
+  phoneTextContainer: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    marginLeft: 0,
+    paddingLeft: 0,
+    flex: 1,
+    marginRight: 5,
+  },
+  phoneTextInput: {
+    color: Colors.white,
+    fontSize: 16,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    textAlign: 'left',
+    flex: 1,
+  },
+  phoneTextInputError: {
+    borderColor: Colors.error,
+  },
+  phoneCodeText: {
+    color: Colors.font_gray,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+  },
+  phoneFlagButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingRight: 15,
+    marginRight: 0,
+    width: 80,
+    height: 30,
+  },
+  phoneCountryPicker: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingRight: 20,
+    marginRight: 0,
+  },
+  phoneDropdownArrow: {
+    color: Colors.white,
+    fontSize: 16,
   },
 });
