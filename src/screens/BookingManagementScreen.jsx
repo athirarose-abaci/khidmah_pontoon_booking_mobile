@@ -22,6 +22,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showCheckoutConfirmationModal, setShowCheckoutConfirmationModal] = useState(false);
   const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,14 +100,20 @@ const BookingManagementScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleCheckOut = async () => {
-    const bookingId = booking?.id;
-    if (!bookingId) {
+  const handleCheckOut = () => {
+    if (!booking?.id) {
       toastContext.showToast('Booking ID not found', 'short', 'error');
       return;
     }
+    setShowCheckoutConfirmationModal(true);
+  };
+
+  const handleConfirmCheckOut = async () => {
+    const bookingId = booking?.id;
+    
     setIsCheckingOut(true);
     try {
+      setShowCheckoutConfirmationModal(false);
       await checkOutBooking(bookingId);
       toastContext.showToast('Booking checked-out successfully!', 'short', 'success');
       navigation.goBack();
@@ -167,7 +174,11 @@ const BookingManagementScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : '#F7F7F7' }]} edges={["left", "right"]}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
       
       {/* Header */}
       <View style={styles.header}>
@@ -204,7 +215,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
             <Text style={[styles.bookingId, { color: Colors.primary }]}>{booking?.booking_number}</Text>
           </View>
           <View style={styles.actionButtons}>
-            {bookingData?.status !== 'CANCELLED' && <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />}
+            {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'NO_SHOW' && <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />}
             {bookingData?.status === 'CHECKED_OUT' ? (
               <View style={styles.checkedOutButton}>
                 <MaterialDesignIcons name="check-circle" size={15} color={Colors.black} />
@@ -241,12 +252,12 @@ const BookingManagementScreen = ({ route, navigation }) => {
                 </Text>
               </TouchableOpacity>
             ) : null}
-            {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CANCELLED' && (
+            {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'CHECKED_IN' && (
               <TouchableOpacity style={styles.editButton} onPress={handleEditBooking}>
                 <MaterialDesignIcons name="square-edit-outline" size={20} color={Colors.primary} />
               </TouchableOpacity>
             )}
-            {bookingData?.status !== 'CANCELLED' && (
+            {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'CHECKED_IN' && bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && (
               <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteBooking}>
                 <MaterialDesignIcons name="close-circle-outline" size={22} color={Colors.white} />
               </TouchableOpacity>
@@ -292,7 +303,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
             color={activeTab === 'info' ? Colors.white : '#6F6F6F'} 
           />
         </TouchableOpacity>
-        {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'CANCELLED' && (
+        {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'NO_SHOW' && (
           <TouchableOpacity 
             style={[styles.tabButton, activeTab === 'qr' && styles.activeTabButton]}
             onPress={() => handleTabSwitch('qr')}
@@ -324,6 +335,29 @@ const BookingManagementScreen = ({ route, navigation }) => {
         confirmIconComponent={
           <Image 
             source={require('../assets/images/clock_in.png')} 
+            style={{ width: 18, height: 18, resizeMode: 'contain', marginBottom: 4 }} 
+          />
+        }
+        showConfirmIcon={true}
+        confirmButtonColor={Colors.primary}
+      />
+
+      {/* Check-out Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={showCheckoutConfirmationModal}
+        onRequestClose={() => setShowCheckoutConfirmationModal(false)}
+        onConfirm={handleConfirmCheckOut}
+        title="Check-out Confirmation"
+        message={`Are you sure you want to check-out booking #${booking?.booking_number}?`}
+        confirmText="Check-out"
+        cancelText="Cancel"
+        showWarningIcon={true}
+        warningIconName="check-circle"
+        warningIconColor={Colors.primary}
+        warningIconBgColor="rgba(117, 200, 173, 0.2)"
+        confirmIconComponent={
+          <Image 
+            source={require('../assets/images/clock_out.png')} 
             style={{ width: 18, height: 18, resizeMode: 'contain', marginBottom: 4 }} 
           />
         }

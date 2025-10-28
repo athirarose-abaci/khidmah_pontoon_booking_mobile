@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   title: {
     color: Colors.primary,
     fontFamily: 'Inter-SemiBold',
-    fontSize: 14.5,
+    fontSize: 13.5,
     flexShrink: 1,
     maxWidth: '40%',
   },

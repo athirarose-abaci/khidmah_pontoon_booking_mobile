@@ -115,7 +115,11 @@ const MyBoatsScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
       <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         {/* Header */}
         <View style={styles.header_container}>

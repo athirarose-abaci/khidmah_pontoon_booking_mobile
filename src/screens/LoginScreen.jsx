@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, StatusBar, Image, BackHandler, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackgroundImage from '../components/BackgroundImage';
@@ -12,6 +12,19 @@ import OTPComponent from '../components/login/OTPComponent';
 const LoginScreen = () => {
   const [currentScreen, setCurrentScreen] = useState('login');
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+
+  // Memoize styles to prevent unnecessary re-renders
+  const scrollViewContentStyle = useMemo(() => ({
+    flexGrow: 1,
+    paddingBottom: currentScreen === 'register' ? 180 : 0,
+    minHeight: '100%'
+  }), [currentScreen]);
+
+  const logoContainerStyle = useMemo(() => [
+    styles.logo_container,
+    currentScreen === 'register' && { marginTop: 10 },
+    currentScreen === 'otp' && { marginTop: -25 }
+  ], [currentScreen]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
@@ -40,19 +53,19 @@ const LoginScreen = () => {
         </View>
         <KeyboardAvoidingView
           style={styles.kb_scroll}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
           <ScrollView
-            style={{ backgroundColor: 'transparent' }}
+            style={styles.scrollView}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: currentScreen === 'register' ? 180 : 0 }}
+            contentContainerStyle={scrollViewContentStyle}
             showsVerticalScrollIndicator={false}
             overScrollMode="never"
+            bounces={false}
+            scrollEventThrottle={16}
           >
-            <View style={[styles.logo_container, 
-              currentScreen === 'register' && {marginTop: 10}, 
-              currentScreen === 'otp' && {marginTop: -25,}]}>
+            <View style={logoContainerStyle}>
               <Image
                 source={require('../assets/images/logo.png')}
                 style={styles.logo}
@@ -106,17 +119,22 @@ const styles = StyleSheet.create({
   logo: { width: 200, height: 100, resizeMode: 'contain' },
   form_container: {
     width: '100%',
-    height: '45%',
+    minHeight: '45%',
     backgroundColor: 'transparent',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    marginTop: 0
+    marginTop: 0,
+    justifyContent: 'center',
   },
   kb_scroll: {
     flex: 1,
     backgroundColor: 'transparent',
     position: 'relative',
     zIndex: 1,
+  },
+  scrollView: {
+    backgroundColor: 'transparent',
+    flex: 1,
   },
 });
 

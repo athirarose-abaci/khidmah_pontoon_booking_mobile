@@ -5,7 +5,7 @@ import { Colors } from '../../constants/customStyles';
 import SuccessLottie from '../lottie/SuccessLottie';
 import { useSelector } from 'react-redux';
 
-const BookingSuccessModal = ({ visible, onClose, onGoHome }) => {
+const BookingSuccessModal = ({ visible, onClose, onGoHome, isEditMode = false }) => {
   const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
 
   return (
@@ -33,7 +33,7 @@ const BookingSuccessModal = ({ visible, onClose, onGoHome }) => {
           </View>
           
           <Text style={[styles.successMessage, { color: isDarkMode ? Colors.white : '#333' }]}>
-            Your booking has been{'\n'}successfully created!
+            Your booking has been{'\n'}successfully {isEditMode ? 'updated!' : 'created!'}
           </Text>
           
           <TouchableOpacity style={[styles.goHomeButton, { backgroundColor: isDarkMode ? Colors.size_bg_dark : 'white', borderColor: isDarkMode ? Colors.input_border_dark : Colors.primary }]} onPress={onGoHome}>

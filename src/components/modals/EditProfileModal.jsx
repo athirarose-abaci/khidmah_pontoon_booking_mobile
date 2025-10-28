@@ -185,7 +185,7 @@ const EditProfileModal = ({ visible, onRequestClose, profileInfo, onProfileUpdat
                         ? profileImage.uri.startsWith('file://') || profileImage.uri.startsWith('content://')
                           ? profileImage
                           : { uri: transformImage(profileImage.uri) }
-                        : require('../../assets/images/profile_image.png')
+                        : require('../../assets/images/no_image_avatar.png')
                       }
                       style={styles.profileImage}
                     />

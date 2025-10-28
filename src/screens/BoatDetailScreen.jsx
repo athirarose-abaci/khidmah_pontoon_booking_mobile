@@ -41,14 +41,26 @@ const BoatDetailScreen = () => {
     navigation.getParent()?.setOptions({
       tabBarStyle: { display: 'none' }
     });
+
+    // Cleanup function to restore tab bar when component unmounts
+    return () => {
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'flex' }
+      });
+    };
   }, [navigation]);
 
   useFocusEffect(
     useCallback(() => {
+      // Hide tab bar when screen comes into focus
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' }
+      });
+      
       if (boatId) {
         loadBoatDetails();
       }
-    }, [boatId])
+    }, [boatId, navigation])
   );
 
   const loadBoatDetails = async () => {
@@ -146,7 +158,11 @@ const BoatDetailScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]} edges={['top']}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "transparent"} barStyle={isDarkMode ? "light-content" : "dark-content"} translucent />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
       
       {/* Header with back button */}
       <View style={styles.header}>

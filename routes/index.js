@@ -53,6 +53,7 @@ const ProfileTabs = () => {
         <Stack.Navigator initialRouteName="ProfileHome">
             <Stack.Screen name="ProfileHome" component={ProfileScreen} options={{headerShown: false}}/>
             <Stack.Screen name="ProfileBoatDetail" component={BoatDetailScreen} options={{headerShown: false}}/>
+            <Stack.Screen name="AddBoat" component={AddBoatScreen} options={{headerShown: false}}/>
         </Stack.Navigator>
     )
 }

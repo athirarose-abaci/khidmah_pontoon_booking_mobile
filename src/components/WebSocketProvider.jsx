@@ -6,7 +6,6 @@ import { SOCKET_URL } from '../constants/baseUrl';
 import { setMessages } from '../../store/chatSlice';
 import { addNotification } from '../../store/notificationSlice';
 
-// Create a context for the socket
 const SocketContext = createContext(null);
 
 const WebSocketProvider = ({children}) => {

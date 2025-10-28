@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, Alert, ActivityIndicator, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -25,6 +25,34 @@ const RegisterComponent = ({ setCurrentScreen }) => {
   const phoneInput = useRef(null);
   const toastContext = useContext(ToastContext);
 
+  const handleFirstNameChange = useCallback((text) => {
+    setFirstName(text);
+    if (errors.firstName) {
+      setErrors(prev => ({ ...prev, firstName: '' }));
+    }
+  }, [errors.firstName]);
+
+  const handleLastNameChange = useCallback((text) => {
+    setLastName(text);
+    if (errors.lastName) {
+      setErrors(prev => ({ ...prev, lastName: '' }));
+    }
+  }, [errors.lastName]);
+
+  const handleEmailChange = useCallback((text) => {
+    setEmail(text);
+    if (errors.email) {
+      setErrors(prev => ({ ...prev, email: '' }));
+    }
+  }, [errors.email]);
+
+  const handlePhoneChange = useCallback((text) => {
+    setPhone(text);
+    if (errors.phone) {
+      setErrors(prev => ({ ...prev, phone: '' }));
+    }
+  }, [errors.phone]);
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -47,7 +75,6 @@ const RegisterComponent = ({ setCurrentScreen }) => {
     } else if (!/^\d+$/.test(phone)) {
       newErrors.phone = 'Phone number should contain only digits';
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,7 +87,6 @@ const RegisterComponent = ({ setCurrentScreen }) => {
     setErrors({});
 
     try {
-      console.log('fullPhoneNumber in handleRegister: ', fullPhoneNumber);
       const response = await register(firstName, lastName, email, fullPhoneNumber);
       if (response?.status === 201) {
         toastContext.showToast(response?.data?.message, 'long', 'success');
@@ -78,10 +104,12 @@ const RegisterComponent = ({ setCurrentScreen }) => {
   return (
     <View style={styles.screen}>
       <LiquidGlassView
-        blurAmount={25}
-        color="rgba(255,255,255,0.12)"
+        blurAmount={15}
+        color="rgba(255,255,255,0.10)"
         borderRadius={30}
         style={styles.glassContainer}
+        shouldRasterizeIOS={true}
+        renderToHardwareTextureAndroid={true}
       >
         <Text style={styles.title}>Register</Text>
         <Text style={styles.subTitle}>Create an account to get started.</Text>
@@ -93,12 +121,7 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="First Name"
             placeholderTextColor={Colors.font_gray}
             value={firstName}
-            onChangeText={(text) => {
-              setFirstName(text);
-              if (errors.firstName) {
-                setErrors(prev => ({ ...prev, firstName: '' }));
-              }
-            }}
+            onChangeText={handleFirstNameChange}
             style={[styles.input, errors.firstName && styles.inputError]}
           />
         </View>
@@ -111,12 +134,7 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="Last Name"
             placeholderTextColor={Colors.font_gray}
             value={lastName}
-            onChangeText={(text) => {
-              setLastName(text);
-              if (errors.lastName) {
-                setErrors(prev => ({ ...prev, lastName: '' }));
-              }
-            }}
+            onChangeText={handleLastNameChange}
             style={[styles.input, errors.lastName && styles.inputError]}
           />
         </View>
@@ -129,12 +147,7 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             placeholder="Email"
             placeholderTextColor={Colors.font_gray}
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) {
-                setErrors(prev => ({ ...prev, email: '' }));
-              }
-            }}
+            onChangeText={handleEmailChange}
             autoCapitalize="none"
             keyboardType="email-address"
             style={[styles.input, errors.email && styles.inputError]}
@@ -145,18 +158,12 @@ const RegisterComponent = ({ setCurrentScreen }) => {
         {/* Phone Number Input */}
         <View style={styles.phoneInputContainer}>
           <Ionicons name="call-outline" size={22} color={Colors.primary} style={{ marginRight: 15, marginTop: 8 }} />
-          <PhoneInput
+          {/* <PhoneInput
             ref={phoneInput}
             defaultValue={phone}
             defaultCode="AE"
             layout="second"
-            onChangeText={(text) => {
-              // Store the phone number without country code for validation
-              setPhone(text);
-              if (errors.phone) {
-                setErrors(prev => ({ ...prev, phone: '' }));
-              }
-            }}
+            onChangeText={handlePhoneChange}
             onChangeFormattedText={(formattedText) => {
               // Store the complete phone number with country code for backend
               setFullPhoneNumber(formattedText);
@@ -177,22 +184,6 @@ const RegisterComponent = ({ setCurrentScreen }) => {
             countryPickerButtonStyle={styles.phoneCountryPicker}
             disableArrowIcon={false}
             dropdownImageStyle={styles.phoneDropdownArrow}
-            modalProps={{
-              animationType: 'fade',
-              transparent: true,
-              presentationStyle: 'overFullScreen',
-            }}
-            modalStyle={{
-              backgroundColor: Colors.dark_container,
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              position: 'absolute',
-              top: 60,
-              left: 0,
-              right: 0,
-              maxHeight: 300,
-              zIndex: 1000,
-            }}
             filterProps={{
               placeholder: 'Search countries...',
               placeholderTextColor: Colors.font_gray,
@@ -205,6 +196,66 @@ const RegisterComponent = ({ setCurrentScreen }) => {
               paddingVertical: 15,
               paddingHorizontal: 20,
             }}
+          /> */}
+          <PhoneInput
+            ref={phoneInput}
+            defaultValue={phone}
+            defaultCode="AE"
+            layout="first"
+            onChangeText={handlePhoneChange}
+            onChangeFormattedText={(formattedText) => {
+              setFullPhoneNumber(formattedText);
+            }}
+            withDarkTheme={false}
+            withShadow={false}
+            autoFocus={false}
+            placeholder="Phone Number"
+            textInputProps={{
+              placeholderTextColor: Colors.font_gray,
+              maxLength: 12,
+              selectionColor: Colors.white,
+            }}
+            containerStyle={[styles.phoneInputWrapper, errors.phone && styles.phoneInputError]}
+            textContainerStyle={styles.phoneTextContainer}
+            textInputStyle={[styles.phoneTextInput, errors.phone && styles.phoneTextInputError]}
+            codeTextStyle={styles.phoneCodeText}
+            flagButtonStyle={styles.phoneFlagButton}
+            countryPickerButtonStyle={styles.phoneCountryPicker}
+            disableArrowIcon={false}
+            dropdownImageStyle={styles.phoneDropdownArrow}
+            
+            modalProps={{
+              animationType: 'slide',
+              presentationStyle: 'pageSheet',
+            }}
+            filterProps={{
+              placeholder: 'Search countries...',
+              placeholderTextColor: Colors.font_gray,
+            }}
+            countryPickerProps={{
+              modalProps: {
+                style: styles.countryPickerModal, 
+              },
+              renderFlagButton: null, 
+              flatListProps: {
+                style: styles.countryList,
+                contentContainerStyle: styles.countryListContent,
+              },
+              countryCodeStyles: styles.countryCodeItem,
+              closeButtonImageStyle: styles.closeButton,
+            }}
+            searchInputStyle={{
+              color: Colors.white,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              borderBottomWidth: 1,
+              borderBottomColor: Colors.border_line,
+              paddingVertical: 15,
+              paddingHorizontal: 20,
+              margin: 15,
+              borderRadius: 8,
+            }}
+            countryPickerBackgroundColor="rgba(0,0,0,0.9)" 
+            closeButtonStyle={styles.modalCloseButton}
           />
         </View>
         {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
@@ -340,6 +391,7 @@ const styles = StyleSheet.create({
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    marginTop: 12,
     marginBottom: 12,
   },
   phoneInputWrapper: {
@@ -348,7 +400,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: Colors.border_line,
     paddingBottom: 8,
-    paddingRight: 10,
+    paddingRight: 0,
   },
   phoneInputError: {
     borderColor: Colors.error,
@@ -359,7 +411,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     paddingVertical: 0,
     paddingHorizontal: 0,
-    marginLeft: 0,
+    marginLeft: 35,
     paddingLeft: 0,
     flex: 1,
     marginRight: 5,
@@ -373,31 +425,55 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     textAlign: 'left',
     flex: 1,
+    marginLeft: 0,
   },
   phoneTextInputError: {
     borderColor: Colors.error,
   },
   phoneCodeText: {
     color: Colors.font_gray,
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Regular',
+    marginRight: 10,
+    paddingRight: 0,
+    marginLeft: -15,
   },
   phoneFlagButton: {
     backgroundColor: 'transparent',
     borderWidth: 0,
-    paddingRight: 15,
+    paddingRight: 12,
     marginRight: 0,
-    width: 80,
-    height: 30,
+    marginLeft: 5,
+    width: 40,
+    height: 20,
   },
   phoneCountryPicker: {
     backgroundColor: 'transparent',
     borderWidth: 0,
-    paddingRight: 20,
+    paddingRight: -15,
     marginRight: 0,
   },
   phoneDropdownArrow: {
-    color: Colors.white,
+    color: Colors.primary,
     fontSize: 16,
+    marginLeft: 0,
+    marginRight: 0,
+  },  
+  countryCodeItem: {
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  modalCloseButton: {
+    color: Colors.primary,
+    fontSize: 18,
+    padding: 15,
+  },
+  closeButton: {
+    tintColor: Colors.primary,
+    width: 20,
+    height: 20,
   },
 });

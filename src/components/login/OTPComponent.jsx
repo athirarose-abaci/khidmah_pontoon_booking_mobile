@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { LiquidGlassView } from '@callstack/liquid-glass';
@@ -46,7 +46,7 @@ const OTPComponent = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleChange = (text, index) => {
+  const handleChange = useCallback((text, index) => {
 		const sanitized = text.replace(/\D/g, "").slice(0, 1);
 		const nextDigits = [...otpDigits];
 		nextDigits[index] = sanitized;
@@ -54,9 +54,9 @@ const OTPComponent = () => {
 		if (sanitized && index < OTP_LENGTH - 1) {
 			inputRefs[index + 1]?.current?.focus();
 		}  
-  };
+  }, [otpDigits, inputRefs]);
 
-	const handleKeyPress = (e, index) => {
+	const handleKeyPress = useCallback((e, index) => {
 		if (e.nativeEvent.key !== "Backspace") return;
 		if (otpDigits[index]) {
 			const next = [...otpDigits];
@@ -70,7 +70,7 @@ const OTPComponent = () => {
 			setOtpDigits(next);
 			inputRefs[index - 1]?.current?.focus();
 		}
-	};
+	}, [otpDigits, inputRefs]);
 
   const composedOtp = otpDigits.join('');
 
@@ -119,9 +119,7 @@ const OTPComponent = () => {
         setCanResend(false);
       }
     } catch (error) {
-      console.log('error in handleResendOTP: ', error);
       let err_msg = Error(error);
-      console.log('err_msg in handleResendOTP: ', err_msg);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsResending(false);
@@ -131,10 +129,12 @@ const OTPComponent = () => {
   return (
     <View style={styles.screen}>
       <LiquidGlassView
-        blurAmount={25}
-        color="rgba(255,255,255,0.12)"
+        blurAmount={15}
+        color="rgba(255,255,255,0.10)"
         borderRadius={30}
         style={styles.otpContainer}
+        shouldRasterizeIOS={true}
+        renderToHardwareTextureAndroid={true}
       >
         <View style={styles.headerContainer}>
           <Text style={styles.title}>OTP{'\n'}Verification</Text>
@@ -147,10 +147,12 @@ const OTPComponent = () => {
           {otpDigits.map((digit, index) => (
             <LiquidGlassView
               key={index}
-              blurAmount={15}
-              color="rgba(255,255,255,0.15)"
+              blurAmount={10}
+              color="rgba(255,255,255,0.12)"
               borderRadius={12}
               style={styles.otpBox}
+              shouldRasterizeIOS={true}
+              renderToHardwareTextureAndroid={true}
             >
               <TextInput
                 value={digit}

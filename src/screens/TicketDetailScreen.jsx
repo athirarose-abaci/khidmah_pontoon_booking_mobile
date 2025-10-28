@@ -229,7 +229,11 @@ const TicketDetailScreen = () => {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} edges={["left","right","bottom"]}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
        <KeyboardAvoidingView 
          style={{ flex: 1 }} 
          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 

@@ -184,7 +184,11 @@ const AddBoatScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "transparent"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
       
       {/* Background Overlay */}
       <View style={[styles.overlay, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} />

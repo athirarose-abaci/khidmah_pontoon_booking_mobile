@@ -35,6 +35,7 @@ const DocumentUpload = ({
   onChange,
   disabled = false,
   maxFiles = 5,
+  isDarkMode = false,
 }) => {
   const toastContext = useContext(ToastContext);
 
@@ -157,7 +158,7 @@ const DocumentUpload = ({
 
   return (
     <View>
-      {!!label && <Text style={styles.label}>{label}</Text>}
+      {!!label && <Text style={[styles.label, { color: isDarkMode ? Colors.label_dark : Colors.label_light }]}>{label}</Text>}
       {!!helperText && <Text style={styles.subtext}>{helperText}</Text>}
 
       <View style={styles.buttonContainer}>

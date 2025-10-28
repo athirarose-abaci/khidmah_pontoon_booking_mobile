@@ -19,7 +19,6 @@ export const fetchBookings = async (page = 1, limit = 10, search = null, status 
             const nextDay = endDate.toISOString().split('T')[0];   
             url = url + `&start_date=${dateRange.startDate} 00:00&end_date=${nextDay} 00:00`
         }
-        console.log('url for bookings: ', url);
         const response = await authAxios.get(url);
         return response.data;
     } catch (error) {

@@ -30,7 +30,10 @@ const STEPS = {
 
 const NewBookingScreen = ({ navigation, route }) => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  const [currentStep, setCurrentStep] = useState(STEPS.PONTOON_DETAILS); 
+  const [currentStep, setCurrentStep] = useState(() => {
+    return route?.params?.editMode ? STEPS.BOAT_DETAILS : STEPS.PONTOON_DETAILS;
+  });
+
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -149,7 +152,7 @@ const NewBookingScreen = ({ navigation, route }) => {
         }
       }
       
-      setCurrentStep(STEPS.BOOKING_DETAILS);
+      setCurrentStep(STEPS.PONTOON_DETAILS);
     }
   }, [route?.params]);
 
@@ -271,6 +274,20 @@ const NewBookingScreen = ({ navigation, route }) => {
   const handleUpdateBooking = async () => {
     setIsLoading(true);
     try {
+      const selectedBoatObj = boatsData.find(boat => boat?.id === selectedBoat);
+      if (!selectedBoatObj) {
+        toastContext.showToast("Please select a boat", "short", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      const selectedBerthObj = berthsData.find(berth => berth?.name === berthName);
+      if (!selectedBerthObj) {
+        toastContext.showToast("Please select a berth", "short", "error");
+        setIsLoading(false);
+        return;
+      }
+
       const formatDateTimeForAPI = (dateString, timeString) => {
         if (!dateString || !timeString) return '';
         
@@ -281,9 +298,9 @@ const NewBookingScreen = ({ navigation, route }) => {
       };
 
       const bookingPayload = {
-        boat: editingBookingData?.boat?.id,
+        boat: selectedBoatObj?.id,
         customer: currentAuthState?.id,
-        berth: editingBookingData?.berth?.id,
+        berth: selectedBerthObj?.id,
         start_date: formatDateTimeForAPI(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
         end_date: formatDateTimeForAPI(bookingDetails?.departureDate, bookingDetails?.departureTime),
         passengers: parseInt(noOfPassengers)
@@ -294,7 +311,7 @@ const NewBookingScreen = ({ navigation, route }) => {
       setShowSuccessModal(true);
     } catch (error) {
       let err_msg = Error(error);
-      toastContext.showToast(err_msg, "short", "error");
+      toastContext.showToast(err_msg, "long", "error");
     } finally {
       setIsLoading(false);
     }
@@ -310,35 +327,65 @@ const NewBookingScreen = ({ navigation, route }) => {
   };
 
   const handleStepClick = (step) => {
-    if (isEditMode && step !== STEPS.BOOKING_DETAILS) {
+    
+    // In edit mode, only allow navigation to boat details and booking details
+    if (isEditMode && step === STEPS.PONTOON_DETAILS) {
       return;
     }
+    
+    // Apply same validation logic as Next button
+    if (step === STEPS.BOAT_DETAILS && currentStep === STEPS.PONTOON_DETAILS) {
+      // Moving from pontoon to boat - validate pontoon details
+      if (!validatePontoonDetails()) {
+        toastContext.showToast("Please fill in both Pontoon Name and Berth Name", "short", "error");
+        return;
+      }
+    } else if (step === STEPS.BOOKING_DETAILS && currentStep === STEPS.BOAT_DETAILS) {
+      // Moving from boat to booking - validate boat details
+      if (!validateBoatDetails()) {
+        toastContext.showToast("Please fill in all required boat details", "short", "error");
+        return;
+      }
+    } else if (step === STEPS.BOOKING_DETAILS && currentStep === STEPS.PONTOON_DETAILS) {
+      // Moving from pontoon directly to booking - validate both pontoon and boat
+      if (!validatePontoonDetails()) {
+        toastContext.showToast("Please fill in both Pontoon Name and Berth Name", "short", "error");
+        return;
+      }
+      if (!validateBoatDetails()) {
+        toastContext.showToast("Please fill in all required boat details", "short", "error");
+        return;
+      }
+    }
+    
+    // Allow navigation to any step if validation passes
     setCurrentStep(step);
   };
 
   const handleBackNavigation = () => {
-    if (isEditMode) {
-      navigation.goBack();
-      return;
-    }
-    
     if (currentStep === STEPS.PONTOON_DETAILS) {
       navigation.goBack();
     } else if (currentStep === STEPS.BOAT_DETAILS) {
-      setCurrentStep(STEPS.PONTOON_DETAILS);
+      if (isEditMode) {
+        navigation.goBack();
+      } else {
+        setCurrentStep(STEPS.PONTOON_DETAILS);
+      }
     } else if (currentStep === STEPS.BOOKING_DETAILS) {
-      setCurrentStep(STEPS.BOAT_DETAILS);
+      if (isEditMode) {
+        setCurrentStep(STEPS.BOAT_DETAILS);
+      } else {
+        setCurrentStep(STEPS.BOAT_DETAILS);
+      }
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      if (!isEditMode) {
-        fetchPontoonsData();
-        fetchBerthsData();
-        fetchBoatsData();
-      }
-    }, [isEditMode])
+      fetchPontoonsData();
+      fetchBerthsData();
+      fetchBoatsData();
+    }, [])
   );
 
   // Listen for screen dimension changes
@@ -426,7 +473,11 @@ const NewBookingScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} edges={["left", "right", "bottom"]}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : Colors.bg_color} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
       <View style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         {/* Header */}
         <View style={styles.header}>
@@ -482,10 +533,11 @@ const NewBookingScreen = ({ navigation, route }) => {
             style={[
               styles.stepIconContainer, 
               currentStep === STEPS.BOAT_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer,
-              isEditMode && styles.disabledStepContainer
+              // In create mode, disable boat tab if pontoon details are not valid
+              !isEditMode && currentStep === STEPS.PONTOON_DETAILS && !validatePontoonDetails() && styles.disabledStepContainer
             ]}
-            onPress={() => !isEditMode && handleStepClick(STEPS.BOAT_DETAILS)}
-            disabled={isEditMode}
+            onPress={() => handleStepClick(STEPS.BOAT_DETAILS)}
+            disabled={!isEditMode && currentStep === STEPS.PONTOON_DETAILS && !validatePontoonDetails()}
           >
             <View style={[styles.stepIcon, currentStep === STEPS.BOAT_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
               <Ionicons name="boat-outline" size={22} color={currentStep === STEPS.BOAT_DETAILS ? Colors.white : (isDarkMode ? Colors.font_gray : "#6F6F6F")}/>
@@ -493,8 +545,18 @@ const NewBookingScreen = ({ navigation, route }) => {
           </TouchableOpacity>
           <View style={[styles.stepConnectorLine, { backgroundColor: isDarkMode ? Colors.dark_separator : Colors.input_border_light }]} />
           <TouchableOpacity 
-            style={[styles.stepIconContainer, currentStep === STEPS.BOOKING_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer]}
+            style={[
+              styles.stepIconContainer, 
+              currentStep === STEPS.BOOKING_DETAILS ? styles.activeIconContainer : styles.inactiveIconContainer,
+              // Disable booking tab if previous steps are not valid
+              !isEditMode && currentStep === STEPS.PONTOON_DETAILS && !validatePontoonDetails() && styles.disabledStepContainer,
+              !isEditMode && currentStep === STEPS.BOAT_DETAILS && !validateBoatDetails() && styles.disabledStepContainer
+            ]}
             onPress={() => handleStepClick(STEPS.BOOKING_DETAILS)}
+            disabled={
+              (!isEditMode && currentStep === STEPS.PONTOON_DETAILS && !validatePontoonDetails()) ||
+              (!isEditMode && currentStep === STEPS.BOAT_DETAILS && !validateBoatDetails())
+            }
           >
             <View style={[styles.stepIcon, currentStep === STEPS.BOOKING_DETAILS ? styles.activeIcon : styles.inactiveIcon]}>
               <Octicons name="people" size={22} color={currentStep === STEPS.BOOKING_DETAILS ? Colors.white : (isDarkMode ? Colors.font_gray : "#6F6F6F")} />
@@ -591,6 +653,7 @@ const NewBookingScreen = ({ navigation, route }) => {
         visible={showSuccessModal}
         onClose={handleCloseModal}
         onGoHome={handleGoHome}
+        isEditMode={isEditMode}
       />
     </SafeAreaView>
   );

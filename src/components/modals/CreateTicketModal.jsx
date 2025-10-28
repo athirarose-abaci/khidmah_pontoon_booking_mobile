@@ -145,7 +145,11 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
       onRequestClose={handleClose}
     >
       <View style={styles.modalContainer}>
-        <StatusBar backgroundColor="rgba(0, 0, 0, 0.09)" barStyle="dark-content" />
+        <StatusBar 
+          translucent={true}
+          backgroundColor="transparent" 
+          barStyle={isDarkMode ? "light-content" : "dark-content"} 
+        />
         
         {/* Background Overlay */}
         <View style={[styles.overlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.09)' }]} />
@@ -299,6 +303,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                     files={files}
                     onChange={setFiles}
                     disabled={isLoading}
+                    isDarkMode={isDarkMode}
                   />
                 </View>
               </View>

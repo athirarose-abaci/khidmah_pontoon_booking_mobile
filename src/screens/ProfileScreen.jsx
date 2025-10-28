@@ -97,9 +97,11 @@ const ProfileScreen = () => {
   const transformImage = (imageUrl) => {
     if (!imageUrl) return null;
 
+    // Check if it's a string and doesn't already start with http or https
     if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
       return BASE_URL_IMAGE + imageUrl;
     }
+
     return imageUrl;
   };
 
@@ -123,7 +125,7 @@ const ProfileScreen = () => {
   const handleCopyPhoneNumber = () => {
     if (organizationSettingsData?.phone) {
       Clipboard.setString(organizationSettingsData?.phone);
-      toastContext.showToast('Phone number copied to clipboard', 'short', 'success');
+      // toastContext.showToast('Phone number copied to clipboard', 'short', 'success');
     }
   };
 
@@ -145,7 +147,7 @@ const ProfileScreen = () => {
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle="dark-content"
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
       />
       <View style={styles.main_container}>
         <BackgroundImage 
@@ -156,15 +158,23 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.image_container}>
             <View style={styles.circle_background}>
-            <Image
+            {/* <Image
                 source={
                   currentAuthState?.avatar 
-                    ? currentAuthState.avatar.startsWith('file://') || currentAuthState.avatar.startsWith('content://')
-                      ? { uri: currentAuthState.avatar }
-                      : { uri: transformImage(currentAuthState.avatar) }
-                    : require('../assets/images/profile_image.png')
+                    ? currentAuthState?.avatar?.startsWith('file://') || currentAuthState?.avatar?.startsWith('content://')
+                      ? { uri: currentAuthState?.avatar }
+                      : { uri: transformImage(currentAuthState?.avatar) }
+                    : require('../assets/images/no_image_avatar.png')
                 }
                 style={styles.image}
+                resizeMode="cover"
+              /> */}
+            <Image
+                source={
+                  currentAuthState?.avatar ? { uri: transformImage(currentAuthState?.avatar) } : require('../assets/images/no_image_avatar.png')
+                }
+                style={styles.image}
+                resizeMode="cover"
               />
             </View>
           </View>
@@ -181,7 +191,7 @@ const ProfileScreen = () => {
                 />
               </TouchableOpacity>
             </View>
-            <Text style={[styles.info_subtitle_id, { color: isDarkMode ? Colors.white : '#353535' }]}>Yatch Owner ID</Text>
+            <Text style={[styles.info_subtitle_id, { color: isDarkMode ? Colors.white : '#353535' }]}>{currentAuthState?.staff_id || ''}</Text>
             <Text style={[styles.info_subtitle_email, { color: isDarkMode ? Colors.white : Colors.font_gray }]}> {currentAuthState?.email} </Text>
           </View>
           <ScrollView

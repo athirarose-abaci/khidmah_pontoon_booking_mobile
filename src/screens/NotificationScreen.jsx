@@ -218,7 +218,11 @@ const NotificationScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]} edges={["left", "right"]}>
-      <StatusBar backgroundColor={isDarkMode ? Colors.dark_bg_color : "#F7F7F7"} barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        translucent={true}
+        backgroundColor="transparent" 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+      />
       
       {/* Fixed Header */}
       <View style={[styles.header, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
@@ -338,7 +342,7 @@ const styles = StyleSheet.create({
   noDataContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 400,
+    minHeight: 550,
     paddingVertical: 50,
   },
 })

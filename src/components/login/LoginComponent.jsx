@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -16,6 +16,14 @@ const LoginComponent = ({ setCurrentScreen }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const toastContext = useContext(ToastContext);
+
+  const handleEmailChange = useCallback((text) => {
+    setEmail(text);
+    // Only clear error if there was an error and user is typing
+    if (errors.email) {
+      setErrors(prev => ({ ...prev, email: '' }));
+    }
+  }, [errors.email]);
 
   const handleLogin = async () => {
     const newErrors = {};
@@ -49,10 +57,12 @@ const LoginComponent = ({ setCurrentScreen }) => {
   return (
     <View style={styles.screen}>
       <LiquidGlassView
-        blurAmount={25}                      
-        color="rgba(255,255,255,0.15)"       
+        blurAmount={15}                      
+        color="rgba(255,255,255,0.12)"       
         borderRadius={30}                    
         style={styles.glassContainer}
+        shouldRasterizeIOS={true}
+        renderToHardwareTextureAndroid={true}
       >
         <Text style={styles.title}>Login</Text>
         <Text style={styles.subTitle}>Sign in to manage reservations.</Text>
@@ -63,12 +73,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
             placeholder="Email Address"
             placeholderTextColor={Colors.font_gray}
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) {
-                setErrors(prev => ({ ...prev, email: '' }));
-              }
-            }}
+            onChangeText={handleEmailChange}
             autoCapitalize="none"
             keyboardType="email-address"
             style={[styles.input, errors.email && styles.inputError]}

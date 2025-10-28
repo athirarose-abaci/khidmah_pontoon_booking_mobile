@@ -48,11 +48,15 @@ const MyTicketsCard = ({ item, onPress }) => {
                 ? item.category.name 
                 : (typeof item?.category === 'string' ? item.category : '');
               
+              let displayText = '';
               if (categoryName.toLowerCase() === 'others' && item?.subject) {
-                return `Others: ${item.subject}`;
+                displayText = `Others: ${item.subject}`;
+              } else {
+                displayText = categoryName;
               }
               
-              return categoryName;
+              // Limit to 22 characters maximum
+              return displayText.length > 22 ? `${displayText.slice(0, 22)}…` : displayText;
             })()}
           </Text>
           {item?.ticket_id ? (
