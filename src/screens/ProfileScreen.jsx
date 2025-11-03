@@ -1,15 +1,16 @@
-import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard, FlatList, ActivityIndicator } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
-import React, { useContext, useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../constants/customStyles';
-import BackgroundImage from '../components/BackgroundImage';
-import useTabBarScroll from '../hooks/useTabBarScroll';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import DeviceInfo from 'react-native-device-info';
+import { Colors } from '../constants/customStyles';
+import BackgroundImage from '../components/BackgroundImage';
+import useTabBarScroll from '../hooks/useTabBarScroll';
 import EditProfileModal from '../components/modals/EditProfileModal';
 import AbaciLoader from '../components/AbaciLoader';
 import { fetchProfile, logout } from '../apis/auth';
@@ -31,12 +32,20 @@ const ProfileScreen = () => {
 
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingCounter, setLoadingCounter] = useState(0);
 
   const [profileData, setProfileData] = useState(null);
   const [boatsData, setBoatsData] = useState([]);
   const [boatsCount, setBoatsCount] = useState(0);
   const [organizationSettingsData, setOrganizationSettingsData] = useState(null);
+  const limit = 10;
+  const [page, setPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
+  const [isPaging, setIsPaging] = useState(false);
+  const boatsListRef = useRef(null);
+
+  const startLoading = () => setLoadingCounter(prev => prev + 1);
+  const stopLoading = () => setLoadingCounter(prev => Math.max(0, prev - 1));
 
   const isFocused = useIsFocused();
   const navigation = useNavigation();
@@ -46,16 +55,23 @@ const ProfileScreen = () => {
   const currentAuthState = useSelector(state => state.authSlice.authState);
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
+
   useEffect(() => {
     if (isFocused) {
       fetchProfileData();
-      fetchBoatsData();
+      setPage(1);
+      setHasMorePages(true);
+      fetchBoatsData(1, true);
+      // Reset horizontal list position to start when returning
+      requestAnimationFrame(() => {
+        boatsListRef.current?.scrollToOffset?.({ offset: 0, animated: false });
+      });
       fetchOrganizationSettingsData();
     }
   }, [isFocused]);
 
   const fetchProfileData = async () => {
-    setIsLoading(true);
+    startLoading();
     try {
       const response = await fetchProfile();
       setProfileData(response);
@@ -63,26 +79,45 @@ const ProfileScreen = () => {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
-      setIsLoading(false);
+      stopLoading();
     }
   };
 
-  const fetchBoatsData = async () => {
-    setIsLoading(true);
+  const fetchBoatsData = async (pageNumber, isReset = false) => {
+    // Show full-screen loader only for initial/reset loads
+    if (isReset || pageNumber === 1) {
+      startLoading();
+    } else {
+      setIsPaging(true);
+    }
     try {
-      const response = await fetchBoats(1, 10);
-      setBoatsCount(response?.count || 0);
-      setBoatsData(response?.results || []);
+      const response = await fetchBoats(pageNumber, limit);
+
+      if (isReset || pageNumber === 1) {
+        setBoatsData(response?.results || []);
+        setBoatsCount(response?.count || 0);
+      } else {
+        setBoatsData(prev => [...prev, ...(response?.results || [])]);
+      }
+
+      setHasMorePages(!!response?.next);
+      if (response?.next) {
+        setPage(prevPage => prevPage + 1);
+      }
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
-      setIsLoading(false);
+      if (isReset || pageNumber === 1) {
+        stopLoading();
+      } else {
+        setIsPaging(false);
+      }
     }
   };
 
   const fetchOrganizationSettingsData = async () => {
-    setIsLoading(true);
+    startLoading();
     try {
       const response = await fetchOrganizationSettings();
       setOrganizationSettingsData(response);
@@ -90,7 +125,7 @@ const ProfileScreen = () => {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
-      setIsLoading(false);
+      stopLoading();
     }
   };
 
@@ -107,18 +142,17 @@ const ProfileScreen = () => {
 
   const handleLogout = async () => {
     setIsLogoutConfirmVisible(false);
-    setIsLoading(true);
+    startLoading();
     try {
       await logout();
       dispatch(setAuthState({}));
       clearCookies();
       await removeData('data');
-      setIsLoading(false);
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
-      setIsLoading(false);
+      stopLoading();
     }
   };
 
@@ -134,11 +168,11 @@ const ProfileScreen = () => {
   };
 
   const handleThemeToggle = () => {
-    setIsLoading(true);
+    startLoading();
     dispatch(setIsDarkMode(!isDarkMode));
     // Simple timeout to show loader briefly
     setTimeout(() => {
-      setIsLoading(false);
+      stopLoading();
     }, 500);
   };
 
@@ -210,16 +244,22 @@ const ProfileScreen = () => {
                 <Text style={styles.boat_title}>My Boats</Text>
                 <Text style={styles.boat_count}>{boatsCount} boats</Text>
               </View>
-              <ScrollView
+              <FlatList
+                ref={boatsListRef}
+                data={boatsData}
+                keyExtractor={(item) => item?.id?.toString()}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.boats_scroll}
-                nestedScrollEnabled={true}
-                scrollEventThrottle={1}
-              >
-                {boatsData.map(boat => (
+                ListFooterComponent={
+                  isPaging ? (
+                    <View style={styles.boats_footer}>
+                      <ActivityIndicator size="small" color={Colors.primary} />
+                    </View>
+                  ) : null
+                }
+                renderItem={({ item: boat }) => (
                   <TouchableOpacity 
-                    key={boat?.id} 
                     style={[styles.boat_card, { backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}
                     onPress={() => handleBoatPress(boat?.id)}
                     activeOpacity={0.8}
@@ -259,8 +299,14 @@ const ProfileScreen = () => {
                       </LinearGradient>
                     </View>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                )}
+                onEndReachedThreshold={0.2}
+                onEndReached={() => {
+                  if (hasMorePages && !isPaging) {
+                    fetchBoatsData(page, false);
+                  }
+                }}
+              />
             </View>
             <View style={styles.support_container}>
               <View style={[styles.support_card, { backgroundColor: isDarkMode ? Colors.dark_container : 'rgba(127, 224, 196, 0.10)' }]}>
@@ -295,7 +341,7 @@ const ProfileScreen = () => {
                   ios_backgroundColor="#E4E4E4"
                   onValueChange={handleThemeToggle}
                   value={isDarkMode}
-                  disabled={isLoading}
+                  disabled={loadingCounter > 0}
                 />
               </View>
 
@@ -319,6 +365,13 @@ const ProfileScreen = () => {
                 </View>
                 <Lucide name="chevron-right" size={23} color="#FF5722" />
               </TouchableOpacity>
+            </View>
+            
+            {/* Version Display */}
+            <View style={styles.version_container}>
+              <Text style={[styles.version_text, { color: isDarkMode ? Colors.font_gray : '#8E8E93' }]}>
+                Version {DeviceInfo.getVersion()}
+              </Text>
             </View>
           </ScrollView>
         </BackgroundImage>
@@ -348,7 +401,7 @@ const ProfileScreen = () => {
           <Ionicons name="exit-outline" size={20} color="white" />
         }
       />
-      <AbaciLoader visible={isLoading} />
+      <AbaciLoader visible={loadingCounter > 0} />
     </SafeAreaView>
   );
 };
@@ -452,6 +505,12 @@ const styles = StyleSheet.create({
   },
   boats_scroll: {
     paddingRight: 26,
+  },
+  boats_footer: {
+    width: 50,
+    height: 230,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   boat_card: {
     width: 195,
@@ -565,5 +624,15 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontFamily: 'Inter-Regular',
     marginLeft: 25,
+  },
+  version_container: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 26,
+  },
+  version_text: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
   },
 });

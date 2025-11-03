@@ -179,7 +179,7 @@ const MyBoatsScreen = () => {
               columnWrapperStyle={boatsData.length % 2 === 1 ? { justifyContent: "flex-start" } : { justifyContent: "space-between" }}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
-                paddingBottom: insets.bottom + 50,
+                paddingBottom: insets.bottom + 280,
                 paddingHorizontal: 16,
               }}
               renderItem={({ item, index }) => (

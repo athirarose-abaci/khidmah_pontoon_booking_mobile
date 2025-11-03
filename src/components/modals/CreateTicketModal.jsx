@@ -31,6 +31,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [descriptionHeight, setDescriptionHeight] = useState(80);
 
   useEffect(() => {
     if (visible) {
@@ -198,7 +199,7 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                   iconStyle={styles.iconStyle}
                   data={categoryData}
                   search
-                  maxHeight={300}
+                  maxHeight={400}
                   labelField="label"
                   valueField="value"
                   placeholder="Select issue category"
@@ -255,15 +256,13 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                         }]}
                         value={subject}
                         onChangeText={(text) => {
-                          const limitedText = text.slice(0, 20);
-                          setSubject(limitedText);
+                          setSubject(text);
                           if (errors.subject) {
                             setErrors(prev => ({ ...prev, subject: '' }));
                           }
                         }}
-                        placeholder="Enter subject (max 20 chars)"
+                        placeholder="Enter subject"
                         placeholderTextColor={isDarkMode ? Colors.font_gray : '#C8C8C8'}
-                        maxLength={20}
                       />
                       {errors.subject && <Text style={styles.errorText}>{errors.subject}</Text>}
                     </View>
@@ -277,7 +276,8 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                     style={[styles.input, styles.textArea, errors.description && styles.inputError, { 
                       backgroundColor: isDarkMode ? Colors.size_bg_dark : '#F5F5F5',
                       color: isDarkMode ? Colors.white : '#4C4C4C',
-                      borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5'
+                      borderColor: isDarkMode ? Colors.input_border_dark : '#E5E5E5',
+                      height: Math.max(80, descriptionHeight)
                     }]}
                     value={description}
                     onChangeText={(text) => {
@@ -291,6 +291,8 @@ const CreateTicketModal = ({ visible, onClose, onCreated }) => {
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
+                    onContentSizeChange={(e) => setDescriptionHeight(e.nativeEvent.contentSize.height)}
+                    scrollEnabled={false}
                   />
                   {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
                 </View>

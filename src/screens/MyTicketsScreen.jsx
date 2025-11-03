@@ -258,7 +258,7 @@ const MyTicketsScreen = () => {
               data={ticketsData}
               keyExtractor={(item) => item.id?.toString?.()}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 300 }}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 280 }}
               renderItem={({ item }) => (
                 <View style={styles.sectionContainer}>
                   <MyTicketsCard 
