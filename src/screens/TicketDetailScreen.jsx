@@ -82,13 +82,13 @@ const TicketDetailScreen = () => {
     }
   }, [socket, ticketId, isFocused]);
 
-  // // Emit viewing_ticket when screen becomes focused
-  // useEffect(() => {
-  //   if (socket && ticketId && isFocused) {
-  //     socket.emit('viewing_ticket', { ticket_id: ticketId });
-  //     console.log('viewing_ticket on focus', { ticket_id: ticketId });
-  //   }
-  // }, [socket, ticketId, isFocused]);
+  // Emit viewing_ticket when screen becomes focused
+  useEffect(() => {
+    if (socket && ticketId && isFocused) {
+      socket.emit('viewing_ticket', { ticket_id: ticketId });
+      console.log('viewing_ticket on focus', { ticket_id: ticketId });
+    }
+  }, [socket, ticketId, isFocused]);
 
   const loadTicket = async () => {
     if (!ticketId) return;

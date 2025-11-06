@@ -17,12 +17,12 @@ const BookingSuccessModal = ({ visible, onClose, onGoHome, isEditMode = false })
     >
       <View style={[styles.modalOverlay, { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
         <View style={[styles.modalContainer, { backgroundColor: isDarkMode ? Colors.dark_container : 'white' }]}>
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={styles.closeButton}
             onPress={onClose}
           >
             <Ionicons name="close" size={20} color="white" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           
           <View style={styles.successIconContainer}>
             <SuccessLottie 
