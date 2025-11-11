@@ -13,6 +13,7 @@ import Error from '../helpers/Error';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateBoatStatus, removeBoat } from '../../store/boatSlice';
+import { BASE_URL_IMAGE } from '../constants/baseUrl';
 
 const { width, height } = Dimensions.get('window');
 
@@ -112,7 +113,7 @@ const BoatDetailScreen = () => {
   const handleDeleteErrorConfirm = async () => {
     setIsConfirmingDelete(true);
     try {
-      const response = await deleteBoat(boat?.id, true); // Pass is_confirm = true
+      const response = await deleteBoat(boat?.id, true); 
       
       dispatch(removeBoat(boat?.id));
       toastContext.showToast('Boat deleted successfully!', 'short', 'success');
@@ -152,16 +153,32 @@ const BoatDetailScreen = () => {
     setImageViewerVisible(true);
   };
 
+  const normalizeImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // If URL starts with http://, replace with https://
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('http://')) {
+      return imageUrl.replace('http://', 'https://');
+    }
+    
+    // If it's a relative path, prepend BASE_URL_IMAGE
+    if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
+      return `${BASE_URL_IMAGE}${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
+
   const mainImage = boat?.images?.length > 0 
-    ? { uri: boat.images[0].image }
+    ? { uri: normalizeImageUrl(boat.images[0].image) }
     : require('../assets/images/no_image.jpg');
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]} edges={['top']}>
-      <StatusBar 
-        translucent={true}
-        backgroundColor="transparent" 
-        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]} edges={['left', 'right']}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
       />
       
       {/* Header with back button */}
@@ -190,46 +207,54 @@ const BoatDetailScreen = () => {
         <View style={[styles.detailsCard, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]}>
           <View style={styles.detailsHeader}>
             <View style={styles.boatInfo}>
-              <Text style={[styles.boatId, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>{boat?.registration_number || 'N/A'}</Text>
+              <View style={styles.registrationRow}>
+                <Text style={[styles.boatId, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>{boat?.registration_number || 'N/A'}</Text>
+                <Text style={[styles.sizeText, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>
+                  Length: {boat?.length} ft
+                </Text>
+              </View>
               <Text style={[styles.boatName, { color: Colors.primary }]}>{boat?.name}</Text>
             </View>
+          </View>
+          
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={handleEdit}
+              activeOpacity={0.7}
+            >
+              <Feather name="edit" size={18} color={Colors.primary} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
             
-            <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
-                onPress={handleEdit}
-                activeOpacity={0.7}
-              >
-                <Feather name="edit" size={18} color={Colors.primary} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.actionButton, 
-                  boat?.status === 'INACTIVE' && { borderColor: Colors.primary },
-                  boat?.status === 'ACTIVE' && { borderColor: '#C0082C' }
-                ]}
-                onPress={() => setDisableModalVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Ionicons 
-                  name={boat?.status === 'ACTIVE' ? "remove-circle-outline" : "checkmark-circle-outline"} 
-                  size={18} 
-                  color={boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50"} 
-                />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={() => setDeleteModalVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="trash" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[
+                styles.actionButton, 
+                boat?.status === 'INACTIVE' && { borderColor: Colors.primary },
+                boat?.status === 'ACTIVE' && { borderColor: '#C0082C' }
+              ]}
+              onPress={() => setDisableModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name={boat?.status === 'ACTIVE' ? "remove-circle-outline" : "checkmark-circle-outline"} 
+                size={18} 
+                color={boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50"} 
+              />
+              <Text style={[styles.disableButtonText, { color: boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50" }]}>Disable</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => setDeleteModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash" size={18} color="#fff" />
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </View>
 
-          {boat?.description ? (
+          {/* {boat?.description ? (
             <Text style={[styles.description, { color: isDarkMode ? Colors.white : '#333' }]}>
               {boat.description}
             </Text>
@@ -242,11 +267,7 @@ const BoatDetailScreen = () => {
                 Add a few words about the yacht's standout features…
               </Text>
             </View>
-          )}
-
-          <View style={styles.sizeContainer}>
-            <Text style={[styles.sizeText, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>Size: {boat?.length} x {boat?.width} ft</Text>
-          </View>
+          )} */}
         </View>
 
         {/* Boat images section */}
@@ -262,7 +283,7 @@ const BoatDetailScreen = () => {
                   activeOpacity={0.8}
                 >
                   <Image
-                    source={{ uri: image?.image }}
+                    source={{ uri: normalizeImageUrl(image?.image) }}
                     style={styles.gridImage}
                     resizeMode="cover"
                   />
@@ -286,7 +307,7 @@ const BoatDetailScreen = () => {
       
       {/* Full Screen Image Viewer */}
       <ImageView
-        images={boat?.images?.map(img => ({ uri: img.image })) || []}
+        images={boat?.images?.map(img => ({ uri: normalizeImageUrl(img.image) })) || []}
         imageIndex={imageViewerIndex}
         visible={imageViewerVisible}
         onRequestClose={() => setImageViewerVisible(false)}
@@ -406,18 +427,20 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   detailsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 15,
   },
   boatInfo: {
     flex: 1,
   },
+  registrationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   boatId: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    marginBottom: 4,
   },
   boatName: {
     fontSize: 24,
@@ -425,22 +448,40 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 8,
+    marginTop: 15,
   },
   actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 10,
     borderWidth: 1,
+    gap: 6,
   },
   editButton: {
     borderColor: Colors.primary,
   },
+  editButtonText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  disableButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
   deleteButton: {
     backgroundColor: '#C0082C',
     borderColor: '#C0082C',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
   description: {
     fontSize: 16,
@@ -478,6 +519,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginBottom: 20,
+    marginTop: -40, //TODO: remove this if description is added
   },
   sectionTitle: {
     fontSize: 18,

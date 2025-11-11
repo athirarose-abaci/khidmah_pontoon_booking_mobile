@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Image } from 'react-native';
 import moment from 'moment';
 import { Colors } from '../../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
-import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import { BASE_URL_IMAGE } from '../../constants/baseUrl';
 
 const BoatDetailsTab = ({ bookingData, isDarkMode }) => {
   
@@ -22,18 +22,34 @@ const BoatDetailsTab = ({ bookingData, isDarkMode }) => {
     return `${dateStr} | ${timeStr}`;
   };
 
+  const normalizeImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // If URL starts with http://, replace with https://
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('http://')) {
+      return imageUrl.replace('http://', 'https://');
+    }
+    
+    // If it's a relative path, prepend BASE_URL_IMAGE
+    if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
+      return `${BASE_URL_IMAGE}${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
+
   const getBoatImage = () => {
     if (bookingData?.boat?.images && bookingData.boat.images.length > 0) {
       const firstImage = bookingData.boat.images[0];
       
       // Handle both string URLs and image objects
       if (typeof firstImage === 'string') {
-        return { uri: firstImage };
+        return { uri: normalizeImageUrl(firstImage) };
       } else if (firstImage && typeof firstImage === 'object') {
         // If it's an object, try to get the URL from common properties
         const imageUrl = firstImage.url || firstImage.image || firstImage.src || firstImage.uri;
         if (imageUrl && typeof imageUrl === 'string') {
-          return { uri: imageUrl };
+          return { uri: normalizeImageUrl(imageUrl) };
         }
       }
     }
@@ -70,8 +86,8 @@ const BoatDetailsTab = ({ bookingData, isDarkMode }) => {
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>Boat Size</Text>
                   <Text style={[styles.detailValue, { color: isDarkMode ? Colors.white : Colors.heading_font }]}>
-                    {bookingData?.boat?.length && bookingData?.boat?.width 
-                      ? `${bookingData?.boat?.length} ft x ${bookingData?.boat?.width} ft` 
+                    {bookingData?.boat?.length 
+                      ? `Length: ${bookingData?.boat?.length} ft` 
                       : ''}
                   </Text>
                 </View>

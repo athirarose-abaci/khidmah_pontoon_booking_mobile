@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../constants/customStyles";
 import { useSelector } from "react-redux";
+import { BASE_URL_IMAGE } from "../../constants/baseUrl";
 
 const MyBoatsCard = ({ item, isLastItem = false }) => {
   const navigation = useNavigation();
@@ -12,10 +13,35 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
     navigation.navigate('BoatDetail', { boatId: item.id });
   };
 
-  const imageUri =
-    item?.images?.length > 0
-      ? { uri: item.images[0].image }
-      : require("../../assets/images/no_image.jpg"); 
+  const getImageUri = () => {
+    if (item?.images?.length > 0) {
+      const imageUrl = item.images[0].image;
+      
+      if (!imageUrl) {
+        return require("../../assets/images/no_image.jpg");
+      }
+      
+      // If URL starts with http://, replace with https://
+      if (typeof imageUrl === 'string' && imageUrl.startsWith('http://')) {
+        return { uri: imageUrl.replace('http://', 'https://') };
+      }
+      
+      // If it's a relative path, prepend BASE_URL_IMAGE
+      if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
+        return { uri: `${BASE_URL_IMAGE}${imageUrl}` };
+      }
+      
+      // Otherwise use as is
+      return { uri: imageUrl };
+    }
+    
+    return require("../../assets/images/no_image.jpg");
+  };
+
+  const imageUri = getImageUri();
+
+  console.log('item from MyBoatsCard', item);
+  console.log('imageUri from MyBoatsCard', imageUri);
 
   return (
     <TouchableOpacity style={[styles.card, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }, isLastItem && styles.lastItemCard]} onPress={handlePress} activeOpacity={0.7}>
@@ -33,7 +59,7 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
       <Text style={[styles.boatName, { color: isDarkMode ? Colors.white : Colors.black }]}>{item.name}</Text>
       <Text style={[styles.boatId]}>{item.registration_number}</Text>
         <Text style={[styles.boatSize, { backgroundColor: isDarkMode ? Colors.size_bg_dark : Colors.size_bg_light }]}>
-        Size: {item.length} x {item.width} ft
+        Length: {item.length} ft
       </Text>
     </TouchableOpacity>
   );

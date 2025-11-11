@@ -23,7 +23,7 @@ const LoginScreen = () => {
   const logoContainerStyle = useMemo(() => [
     styles.logo_container,
     currentScreen === 'register' && { marginTop: 10 },
-    currentScreen === 'otp' && { marginTop: -25 }
+    currentScreen === 'otp' && { marginTop: -50 }
   ], [currentScreen]);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const LoginScreen = () => {
           >
             <View style={logoContainerStyle}>
               <Image
-                source={require('../assets/images/logo.png')}
+                source={require('../assets/images/khidmah_logo_dark.png')}
                 style={styles.logo}
               />
             </View>

@@ -418,6 +418,7 @@ const NewBookingScreen = ({ navigation, route }) => {
     setIsLoading(true);
     try {
       const response = await fetchBerths(pontoonId);
+      console.log('response from fetchBerths', response);
       setBerthsData(response || []);
       dispatch(setBerths(response || []));
       
@@ -493,7 +494,17 @@ const NewBookingScreen = ({ navigation, route }) => {
             <TouchableOpacity
               activeOpacity={0.7}
               style={styles.headerAddBoatActionButton}
-              onPress={() => navigation.navigate('AddBoat')}
+              onPress={() => {
+                const selectedBerth = berthsData.find(berth => berth?.name === berthName);
+                if (selectedBerth) {
+                  navigation.navigate('AddBoat', {
+                    fromBookingScreen: true,
+                    berthData: selectedBerth
+                  });
+                } else {
+                  toastContext.showToast("Please select a berth first", "short", "error");
+                }
+              }}
             >
               <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
               <Text style={styles.headerAddBoatActionText}>Add new boat</Text>

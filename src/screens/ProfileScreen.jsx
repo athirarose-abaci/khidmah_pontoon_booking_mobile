@@ -1,7 +1,6 @@
-import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard, FlatList, ActivityIndicator } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard, FlatList, ActivityIndicator, Linking } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Lucide } from '@react-native-vector-icons/lucide';
-import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -120,6 +119,7 @@ const ProfileScreen = () => {
     startLoading();
     try {
       const response = await fetchOrganizationSettings();
+      console.log(response,"from organization settings");
       setOrganizationSettingsData(response);
     } catch (error) {
       let err_msg = Error(error);
@@ -132,7 +132,12 @@ const ProfileScreen = () => {
   const transformImage = (imageUrl) => {
     if (!imageUrl) return null;
 
-    // Check if it's a string and doesn't already start with http or https
+    // If URL starts with http://, replace with https://
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('http://')) {
+      return imageUrl.replace('http://', 'https://');
+    }
+
+    // If it's a relative path, prepend BASE_URL_IMAGE
     if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
       return BASE_URL_IMAGE + imageUrl;
     }
@@ -156,10 +161,14 @@ const ProfileScreen = () => {
     }
   };
 
-  const handleCopyPhoneNumber = () => {
-    if (organizationSettingsData?.phone) {
-      Clipboard.setString(organizationSettingsData?.phone);
-      // toastContext.showToast('Phone number copied to clipboard', 'short', 'success');
+  const handleCallPhoneNumber = () => {
+    if (organizationSettingsData?.customer_care_phone) {
+      const phoneNumber = organizationSettingsData.customer_care_phone.replace(/[^\d+]/g, ''); 
+      const phoneUrl = `tel:${phoneNumber}`;
+      Linking.openURL(phoneUrl).catch((err) => {
+        console.error('Error opening phone dialer:', err);
+        toastContext.showToast('Unable to open phone dialer', 'short', 'error');
+      });
     }
   };
 
@@ -268,7 +277,7 @@ const ProfileScreen = () => {
                       <Image 
                         source={
                           boat?.images && boat.images.length > 0 
-                            ? { uri: boat.images[0].image } 
+                            ? { uri: transformImage(boat.images[0].image) } 
                             : require('../assets/images/no_image.jpg')
                         } 
                         style={styles.boat_image} 
@@ -293,7 +302,7 @@ const ProfileScreen = () => {
                         <Text style={styles.boat_id}>{boat?.registration_number}</Text>
                         <View style={[styles.size_container, { backgroundColor: isDarkMode ? '#1C1D20' : 'white' }]}>
                           <Text style={[styles.size_text, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>
-                            Size: {boat?.length} x {boat?.width} ft
+                            Length: {boat?.length} ft
                           </Text>
                         </View>
                       </LinearGradient>
@@ -315,11 +324,15 @@ const ProfileScreen = () => {
                 </View>
                 <View style={styles.support_content}>
                   <Text style={[styles.support_label, { color: isDarkMode ? Colors.white : '#373737' }]}>Customer Support</Text>
-                  <Text style={[styles.support_number, { color: isDarkMode ? Colors.white : '#373737' }]}>{organizationSettingsData?.phone}</Text>
+                  <TouchableOpacity onPress={handleCallPhoneNumber}>
+                    <Text style={[styles.support_number, { color: isDarkMode ? Colors.white : '#373737' }]}>
+                      {organizationSettingsData?.customer_care_phone || ""}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.copy_icon} onPress={handleCopyPhoneNumber}>
-                  <MaterialDesignIcons
-                    name="content-copy"
+                <TouchableOpacity style={styles.copy_icon} onPress={handleCallPhoneNumber}>
+                  <MaterialIcons
+                    name="phone"
                     size={25}
                     color={isDarkMode ? Colors.white : '#373737'}
                   />

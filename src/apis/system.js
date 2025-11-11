@@ -36,3 +36,12 @@ export const deleteNotification = async (notificationId) => {
         throw error;
     }
 };
+
+export const sendComplaint = async (payload) => {
+    try {
+        const response = await authAxios.post('systems/customer-care/email/', payload);
+        return response?.data;
+    } catch (error) {
+        throw error;
+    }
+};

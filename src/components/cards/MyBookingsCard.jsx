@@ -1,17 +1,18 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import Ionicons from '@react-native-vector-icons/ionicons';
 import moment from 'moment';
 import { Colors, getStatusTagColorsWithBg, getDisplayStatus } from '../../constants/customStyles';
-import { checkOutBooking, extendBooking } from '../../apis/booking';
+// import { checkOutBooking, extendBooking } from '../../apis/booking';
+import { extendBooking } from '../../apis/booking';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import Error from '../../helpers/Error';
 import { ToastContext } from '../../context/ToastContext';
 import ExtendBookingModal from '../modals/ExtendBookingModal';
-import ConfirmationModal from '../modals/ConfirmationModal';
+// import ConfirmationModal from '../modals/ConfirmationModal';
 import AbaciLoader from '../AbaciLoader';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateBooking as updateBookingAction } from '../../../store/bookingSlice';
+import { BASE_URL_IMAGE } from '../../constants/baseUrl';
 
 const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSuccess }) => {
   const dispatch = useDispatch();
@@ -20,36 +21,36 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
   const booking = bookingFromStore || item;
 
   const { backgroundColor: statusBg, textColor: statusTextColor } = getStatusTagColorsWithBg(booking?.status);
-  const [checkingOut, setCheckingOut] = useState(false);
+  // const [checkingOut, setCheckingOut] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  // const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [extending, setExtending] = useState(false);
 
   const toastContext = useContext(ToastContext);
 
-  const handleCheckOutPress = () => {
-    setShowCheckoutModal(true);
-  };
+  // const handleCheckOutPress = () => {
+  //   setShowCheckoutModal(true);
+  // };
 
-  const handleConfirmCheckout = async () => {
-    if (checkingOut) return;
-    try {
-      setCheckingOut(true);
-      setShowCheckoutModal(false);
-      const updated = await checkOutBooking(booking?.id);
-      if (updated) {
-        dispatch(updateBookingAction(updated));
-        if (onCheckoutSuccess) {
-          onCheckoutSuccess();
-        }
-      }
-    } catch (e) {
-      let err_msg = Error(e);
-      toastContext.showToast(err_msg, "short", "error");
-    } finally {
-      setCheckingOut(false);
-    }
-  };
+  // const handleConfirmCheckout = async () => {
+  //   if (checkingOut) return;
+  //   try {
+  //     setCheckingOut(true);
+  //     setShowCheckoutModal(false);
+  //     const updated = await checkOutBooking(booking?.id);
+  //     if (updated) {
+  //       dispatch(updateBookingAction(updated));
+  //       if (onCheckoutSuccess) {
+  //         onCheckoutSuccess();
+  //       }
+  //     }
+  //   } catch (e) {
+  //     let err_msg = Error(e);
+  //     toastContext.showToast(err_msg, "short", "error");
+  //   } finally {
+  //     setCheckingOut(false);
+  //   }
+  // };
 
   const handleExtendBooking = async (bookingId, hours, minutes) => {
     setExtending(true);
@@ -82,16 +83,32 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
     return `${dateStr} | ${timeStr}`;
   };
 
+  const normalizeImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // If URL starts with http://, replace with https://
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('http://')) {
+      return imageUrl.replace('http://', 'https://');
+    }
+    
+    // If it's a relative path, prepend BASE_URL_IMAGE
+    if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
+      return `${BASE_URL_IMAGE}${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
+
   const getBoatImage = () => {
     if (booking?.boat?.images && booking?.boat?.images?.length > 0) {
       const firstImage = booking?.boat?.images[0];
       
       if (typeof firstImage === 'string') {
-        return { uri: firstImage };
+        return { uri: normalizeImageUrl(firstImage) };
       } else if (firstImage && typeof firstImage === 'object') {
         const imageUrl = firstImage.url || firstImage.image || firstImage.src || firstImage.uri;
         if (imageUrl && typeof imageUrl === 'string') {
-          return { uri: imageUrl };
+          return { uri: normalizeImageUrl(imageUrl) };
         }
       }
     }
@@ -169,7 +186,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
               <Text style={styles.extendButtonText}>Extend stay</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             activeOpacity={0.8}
             style={styles.checkoutButton}
             disabled={checkingOut}
@@ -179,7 +196,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
               <Image source={require('../../assets/images/clock_out.png')} style={styles.btnIcon} />
               <Text style={styles.checkoutButtonText}>Check-out</Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       )}
 
@@ -190,7 +207,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
         bookingItem={booking}
         extending={extending}
       />
-      <ConfirmationModal
+      {/* <ConfirmationModal
         isVisible={showCheckoutModal}
         onRequestClose={() => setShowCheckoutModal(false)}
         onConfirm={handleConfirmCheckout}
@@ -206,8 +223,8 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
         confirmIconColor="white"
         confirmButtonColor="#FF6B35"
         warningIconBgColor="#FFF3E0"
-      />
-      <AbaciLoader visible={extending || checkingOut} />
+      /> */}
+      <AbaciLoader visible={extending} />
     </TouchableOpacity>
   );
 };

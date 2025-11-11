@@ -6,9 +6,9 @@ import { Colors } from '../../constants/customStyles';
 import { verifyOTP, userLogin } from '../../apis/auth';
 import { ToastContext } from '../../context/ToastContext';
 import { getData, storeData } from '../../helpers/asyncStorageHelper';
-import Error from '../../helpers/Error';
 import { useDispatch } from 'react-redux';
 import { setAuthState } from '../../../store/authSlice';
+import Error from '../../helpers/Error';
 
 const { width, height } = Dimensions.get('window');
 const OTP_LENGTH = 4;
@@ -94,7 +94,7 @@ const OTPComponent = () => {
         await storeData('data', JSON.stringify({...response?.data?.user, authenticated: true }));
       }
     } catch (error) {
-      let err_msg = Error(error);
+      const err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsConfirmingOTP(false);
@@ -119,7 +119,7 @@ const OTPComponent = () => {
         setCanResend(false);
       }
     } catch (error) {
-      let err_msg = Error(error);
+      const err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsResending(false);

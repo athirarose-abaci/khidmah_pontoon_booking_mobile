@@ -21,7 +21,7 @@ export const verifyOTP = async (email, otp) => {
         const response = await publicAxios.post('users/verify-otp/', payload);
         return response;
     } catch (error) {
-        throw err_msg;
+        throw error;
     }
 };
 

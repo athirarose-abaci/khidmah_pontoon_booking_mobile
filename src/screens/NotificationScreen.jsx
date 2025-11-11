@@ -1,4 +1,3 @@
-// NotificationScreen.jsx - updated version for setNotifications
 import { StyleSheet, Text, View, TouchableOpacity, FlatList, StatusBar, RefreshControl, ActivityIndicator, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useCallback, useContext, useLayoutEffect, useState, useEffect } from 'react'
@@ -207,7 +206,7 @@ const NotificationScreen = ({ navigation }) => {
     if (notification?.type === 'BOOKING' && notification?.foreign_key) {
       const booking = {
         id: notification?.foreign_key,
-        // booking_number: notification?.message?.match(/#BK-\d+/)?.[0] || `#BK-${notification?.foreign_key?.toString()?.padStart(6, '0')}`
+        booking_number: notification?.message?.match(/#BK-\d+/)?.[0] || `#BK-${notification?.foreign_key?.toString()?.padStart(6, '0')}`
       };
       
       navigation.navigate('BookingManagement', { booking });

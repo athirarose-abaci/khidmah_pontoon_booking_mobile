@@ -28,6 +28,8 @@ const AddBoatScreen = () => {
   const isEditMode = route.params?.isEditMode || false;
   const boatId = route.params?.boatId;
   const existingBoat = route.params?.boatData;
+  const fromBookingScreen = route.params?.fromBookingScreen || false;
+  const berthData = route.params?.berthData || null;
   
   const [boatName, setBoatName] = useState('');
   const [boatRegNo, setBoatRegNo] = useState('');
@@ -63,6 +65,7 @@ const AddBoatScreen = () => {
     setIsInitialLoading(true);
     try {
       const boatData = await fetchBoatById(boatId);
+      console.log('boatData from loadBoatData', boatData);
       setBoatName(boatData?.name || '');
       setBoatRegNo(boatData?.registration_number || '');
       setBoatLength(boatData?.length ? boatData.length.toString() : '');
@@ -121,17 +124,29 @@ const AddBoatScreen = () => {
       newErrors.boatLength = 'Boat length is required';
     } else if (isNaN(boatLength) || parseFloat(boatLength) <= 0) {
       newErrors.boatLength = 'Please enter a valid length';
+    } else {
+      // Validate boat length against berth length + buffer_length when creating from booking screen
+      if (fromBookingScreen && berthData) {
+        const boatLengthValue = parseFloat(boatLength);
+        const berthLength = berthData.length ? parseFloat(berthData.length) : 0;
+        const bufferLength = berthData.buffer_length ? parseFloat(berthData.buffer_length) : 0;
+        const usableLength = berthLength + bufferLength;
+        
+        if (boatLengthValue >= usableLength) {
+          newErrors.boatLength = `The Boat length (${boatLengthValue} ft) exceeds the berth's maximum allowed length (${usableLength} ft). Regret to inform that your boat cannot be berthed in this Pontoon`;
+        }
+      }
     }
     
-    if (!boatWidth.trim()) {
-      newErrors.boatWidth = 'Boat width is required';
-    } else if (isNaN(boatWidth) || parseFloat(boatWidth) <= 0) {
+    // Boat width is optional, but if provided, it must be valid
+    if (boatWidth.trim() && (isNaN(boatWidth) || parseFloat(boatWidth) <= 0)) {
       newErrors.boatWidth = 'Please enter a valid width';
     }
     
-    if (images.length === 0) {
-      newErrors.images = 'At least one image is required';
-    }
+    // Images are optional
+    // if (images.length === 0) {
+    //   newErrors.images = 'At least one image is required';
+    // }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -163,6 +178,7 @@ const AddBoatScreen = () => {
         toastContext.showToast('Boat updated successfully!', 'short', 'success');
       } else {
         response = await createBoat(boatData, images, customerId);
+        console.log('response from create boat', response);
         dispatch(setBoats(response));
         toastContext.showToast('Boat added successfully!', 'short', 'success');
       }
@@ -298,8 +314,8 @@ const AddBoatScreen = () => {
               </View>
 
               {/* Boat Width */}
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Boat Width (ft)*</Text>
+              {/* <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Boat Width (ft)</Text>
                 <TextInput
                   style={[styles.input, errors.boatWidth && styles.inputError, { 
                     backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
@@ -318,10 +334,10 @@ const AddBoatScreen = () => {
                   keyboardType="numeric"
                 />
                 {errors.boatWidth && <Text style={styles.errorText}>{errors.boatWidth}</Text>}
-              </View>
+              </View> */}
 
               {/* Description */}
-              <View style={styles.inputGroup}>
+              {/* <View style={styles.inputGroup}>
                 <Text style={[styles.label, { color: isDarkMode ? Colors.white : Colors.sub_heading_font }]}>Description</Text>
                 <TextInput
                   style={[styles.input, styles.textArea, errors.description && styles.inputError, { 
@@ -343,7 +359,7 @@ const AddBoatScreen = () => {
                   textAlignVertical="top"
                 />
                 {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
-              </View>
+              </View> */}
 
               {/* Boat Images */}
               <View style={styles.inputGroup}>
@@ -351,7 +367,7 @@ const AddBoatScreen = () => {
                   images={images}
                   onImagesChange={handleImagesChange}
                   maxImages={4}
-                  label="Boat Images*"
+                  label="Boat Images"
                   disabled={isLoading}
                   showLoading={isLoading}
                   allowDelete={true}

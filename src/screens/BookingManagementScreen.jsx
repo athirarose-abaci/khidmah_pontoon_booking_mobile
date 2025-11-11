@@ -55,6 +55,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
     setIsLoading(true);
     try {
       const response = await bookingDetails(booking?.id);
+      console.log('response from booking management details', response);
       setBookingData(response);
     } catch (error) {
       let err_msg = Error(error);
@@ -75,55 +76,55 @@ const BookingManagementScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleCheckIn = () => {
-    if (!booking?.id) {
-      toastContext.showToast('Booking ID not found', 'short', 'error');
-      return;
-    }
-    setShowConfirmationModal(true);
-  };
+  // const handleCheckIn = () => {
+  //   if (!booking?.id) {
+  //     toastContext.showToast('Booking ID not found', 'short', 'error');
+  //     return;
+  //   }
+  //   setShowConfirmationModal(true);
+  // };
 
-  const handleConfirmCheckIn = async () => {
-    const bookingId = booking?.id;
+  // const handleConfirmCheckIn = async () => {
+  //   const bookingId = booking?.id;
     
-    setIsCheckingIn(true);
-    try {
-      setShowConfirmationModal(false);
-      await checkInBooking(bookingId);
-      toastContext.showToast('Booking checked-in successfully!', 'short', 'success');
-      navigation.goBack();
-    } catch (error) {
-      let err_msg = Error(error);
-      toastContext.showToast(err_msg, 'short', 'error');
-    } finally {
-      setIsCheckingIn(false);
-    }
-  };
+  //   setIsCheckingIn(true);
+  //   try {
+  //     setShowConfirmationModal(false);
+  //     await checkInBooking(bookingId);
+  //     toastContext.showToast('Booking checked-in successfully!', 'short', 'success');
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     let err_msg = Error(error);
+  //     toastContext.showToast(err_msg, 'short', 'error');
+  //   } finally {
+  //     setIsCheckingIn(false);
+  //   }
+  // };
 
-  const handleCheckOut = () => {
-    if (!booking?.id) {
-      toastContext.showToast('Booking ID not found', 'short', 'error');
-      return;
-    }
-    setShowCheckoutConfirmationModal(true);
-  };
+  // const handleCheckOut = () => {
+  //   if (!booking?.id) {
+  //     toastContext.showToast('Booking ID not found', 'short', 'error');
+  //     return;
+  //   }
+  //   setShowCheckoutConfirmationModal(true);
+  // };
 
-  const handleConfirmCheckOut = async () => {
-    const bookingId = booking?.id;
+  // const handleConfirmCheckOut = async () => {
+  //   const bookingId = booking?.id;
     
-    setIsCheckingOut(true);
-    try {
-      setShowCheckoutConfirmationModal(false);
-      await checkOutBooking(bookingId);
-      toastContext.showToast('Booking checked-out successfully!', 'short', 'success');
-      navigation.goBack();
-    } catch (error) {
-      let err_msg = Error(error);
-      toastContext.showToast(err_msg, 'short', 'error');
-    } finally {
-      setIsCheckingOut(false);
-    }
-  };
+  //   setIsCheckingOut(true);
+  //   try {
+  //     setShowCheckoutConfirmationModal(false);
+  //     await checkOutBooking(bookingId);
+  //     toastContext.showToast('Booking checked-out successfully!', 'short', 'success');
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     let err_msg = Error(error);
+  //     toastContext.showToast(err_msg, 'short', 'error');
+  //   } finally {
+  //     setIsCheckingOut(false);
+  //   }
+  // };
 
   const handleTabSwitch = (tabName) => {
     if (activeTab !== tabName) {
@@ -215,7 +216,14 @@ const BookingManagementScreen = ({ route, navigation }) => {
             <Text style={[styles.bookingId, { color: Colors.primary }]}>{booking?.booking_number}</Text>
           </View>
           <View style={styles.actionButtons}>
-            {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'NO_SHOW' && <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />}
+            {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CHECKED_IN' && <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />}
+            {bookingData?.status === 'CHECKED_OUT' ? (
+              <View style={styles.checkedOutButton}>
+                <MaterialDesignIcons name="check-circle" size={15} color={Colors.black} />
+                <Text style={styles.checkedOutText}>Checked Out</Text>
+              </View>
+            ) : null}
+            {/* Check-in and Check-out buttons commented out
             {bookingData?.status === 'CHECKED_OUT' ? (
               <View style={styles.checkedOutButton}>
                 <MaterialDesignIcons name="check-circle" size={15} color={Colors.black} />
@@ -252,14 +260,17 @@ const BookingManagementScreen = ({ route, navigation }) => {
                 </Text>
               </TouchableOpacity>
             ) : null}
+            */}
             {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'CHECKED_IN' && (
               <TouchableOpacity style={styles.editButton} onPress={handleEditBooking}>
                 <MaterialDesignIcons name="square-edit-outline" size={20} color={Colors.primary} />
+                <Text style={styles.editButtonText}>Edit</Text>
               </TouchableOpacity>
             )}
             {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'CHECKED_IN' && bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && (
               <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteBooking}>
                 <MaterialDesignIcons name="close-circle-outline" size={22} color={Colors.white} />
+                <Text style={styles.deleteButtonText}>Cancel</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -319,7 +330,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
         </LinearGradient>
       )}
 
-      {/* Check-in Confirmation Modal */}
+      {/* Check-in and Check-out Confirmation Modals - Commented out
       <ConfirmationModal
         isVisible={showConfirmationModal}
         onRequestClose={() => setShowConfirmationModal(false)}
@@ -342,7 +353,6 @@ const BookingManagementScreen = ({ route, navigation }) => {
         confirmButtonColor={Colors.primary}
       />
 
-      {/* Check-out Confirmation Modal */}
       <ConfirmationModal
         isVisible={showCheckoutConfirmationModal}
         onRequestClose={() => setShowCheckoutConfirmationModal(false)}
@@ -364,6 +374,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
         showConfirmIcon={true}
         confirmButtonColor={Colors.primary}
       />
+      */}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
@@ -503,23 +514,37 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   editButton: {
-    width: 32,
-    height: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+  },
+  editButtonText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
   deleteButton: {
-    width: 32,
-    height: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.red,
     backgroundColor: Colors.red,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+  },
+  deleteButtonText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
   checkedOutButton: {
     flexDirection: 'row',

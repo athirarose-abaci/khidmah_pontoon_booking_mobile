@@ -143,7 +143,7 @@ export const BOOKING_STATUS_MAP = {
   'Cancelled': 'CANCELLED'
 };
 
-export const BOOKING_TABS = ['All', 'Upcoming', 'Checked In', 'Checked Out', 'No Show', 'Cancelled'];
+export const BOOKING_TABS = ['Upcoming', 'All', 'Checked In', 'Checked Out', 'No Show', 'Cancelled'];
 
 export const getBackendStatus = (tabName) => {
   return BOOKING_STATUS_MAP[tabName] || null;

@@ -29,7 +29,7 @@ const MyBookingsScreen = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const liveNotifications = useSelector(state => state.notificationSlice.notifications);
 
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState('Upcoming');
   const tabs = BOOKING_TABS;
 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -50,6 +50,7 @@ const MyBookingsScreen = () => {
 
   const lastProcessedNotifications = useRef({});
   const unreadCountRef = useRef(unreadCount);
+  const isFirstFocus = useRef(true);
 
   useEffect(() => {
     selectedDateRef.current = selectedDate;
@@ -57,10 +58,15 @@ const MyBookingsScreen = () => {
   
   useEffect(() => {
     if(isFocused) {
+      const tabToUse = isFirstFocus.current ? 'Upcoming' : activeTab;
+      if (isFirstFocus.current) {
+        setActiveTab('Upcoming');
+        isFirstFocus.current = false;
+      }
       dispatch(clearBookings());
       setPage(1);
       setHasMorePages(true);
-      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab));
+      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(tabToUse));
       selectedDateRef.current = null;
     }
   }, [activeTab, isFocused]);
