@@ -1,4 +1,4 @@
 // dev url
-export const SOCKET_URL="https://hayes-races-entrance-neural.trycloudflare.com"
-export const BASE_URL="https://hayes-races-entrance-neural.trycloudflare.com/api/" 
-export const BASE_URL_IMAGE="https://hayes-races-entrance-neural.trycloudflare.com"
+export const SOCKET_URL="https://uses-places-liberty-firewall.trycloudflare.com"
+export const BASE_URL="https://uses-places-liberty-firewall.trycloudflare.com/api/" 
+export const BASE_URL_IMAGE="https://uses-places-liberty-firewall.trycloudflare.com"

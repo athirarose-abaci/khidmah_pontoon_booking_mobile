@@ -565,6 +565,7 @@ const MyBookingsScreen = () => {
                             primary: isDarkMode ? Colors.white : Colors.black,
                             secondary: isDarkMode ? Colors.font_gray : '#666666',
                           },
+                          nowIndicator: 'transparent',
                         },
                       }}
                       eventTextStyle={{
@@ -578,6 +579,7 @@ const MyBookingsScreen = () => {
                           props={props}
                           calendarViewMode={calendarViewMode}
                           isDarkMode={isDarkMode}
+                          onPress={handleEventPress}
                         />
                       )}
                     //   eventCellStyle={(event, props) => {

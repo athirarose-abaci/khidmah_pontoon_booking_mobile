@@ -5,6 +5,7 @@ export const fetchSystemStatus = async () => {
         const response = await publicAxios.get('systems/status/');
         return response?.data;
     } catch (error) {
+        console.log(error,'error');
         throw error;
     }
 };

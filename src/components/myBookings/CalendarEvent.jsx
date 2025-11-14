@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import moment from 'moment';
 import { Colors } from '../../constants/customStyles';
 
-const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode }) => {
+const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) => {
   // For non-day views (week, month)
   if (calendarViewMode !== 'day') {
     const isCurrentUser = event.isCurrentCustomer;
@@ -15,7 +15,9 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode }) => {
     const opacity = isCurrentUser ? 1 : 0.7;
   
     return (
-      <View
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => onPress && onPress(event)}
         style={{
           backgroundColor,
           borderRadius: 4,
@@ -37,7 +39,7 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode }) => {
         >
           {event.booking?.boat?.name || 'Booking'}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   }
   
@@ -62,7 +64,9 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode }) => {
   const timeRange = startTime && endTime ? `${startTime} - ${endTime}` : '';
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => onPress && onPress(event)}
       style={{
         backgroundColor,
         borderRadius: 4,
@@ -100,7 +104,7 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode }) => {
           {timeRange}
         </Text>
       ) : null}
-    </View>
+    </TouchableOpacity>
   );
 };
 
