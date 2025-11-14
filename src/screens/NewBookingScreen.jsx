@@ -35,6 +35,7 @@ const NewBookingScreen = ({ navigation, route }) => {
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
@@ -242,26 +243,39 @@ const NewBookingScreen = ({ navigation, route }) => {
         return;
       }
 
-      const formatDateTimeForAPI = (dateString, timeString) => {
-        if (!dateString || !timeString) return '';
+      // const formatDateTimeForAPI = (dateString, timeString) => {
+      //   if (!dateString || !timeString) return '';
         
-        const time24Hour = convertTo24HourFormat(timeString);
-        const momentDate = moment(`${dateString} ${time24Hour}`, 'DD/MM/YYYY HH:mm');
+      //   const time24Hour = convertTo24HourFormat(timeString);
+      //   const momentDate = moment(`${dateString} ${time24Hour}`, 'DD/MM/YYYY HH:mm');
         
-        return momentDate.toISOString();
+      //   return momentDate.toISOString();
+      // };
+
+      const toLocalISOString = (date, time) => {
+        if (!date || !time) return '';
+        
+        // Convert date from DD/MM/YYYY to YYYY-MM-DD
+        const momentDate = moment(date, 'DD/MM/YYYY');
+        const formattedDate = momentDate.format('YYYY-MM-DD');     
+        // Convert time from 12-hour format to 24-hour format
+        const time24Hour = convertTo24HourFormat(time);
+        // Combine as YYYY-MM-DDTHH:mm:ss
+        return `${formattedDate}T${time24Hour}:00`;
       };
 
       const bookingPayload = {
         boat: selectedBoatObj?.id,
         customer: currentAuthState?.id,
         berth: selectedBerthObj?.id,
-        start_date: formatDateTimeForAPI(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
-        end_date: formatDateTimeForAPI(bookingDetails?.departureDate, bookingDetails?.departureTime),
+        start_date: toLocalISOString(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
+        end_date: toLocalISOString(bookingDetails?.departureDate, bookingDetails?.departureTime),
         passengers: parseInt(noOfPassengers)
       };
 
       const response = await createBooking(bookingPayload);
       dispatch(addBookings([response]));
+      setBookingData(response);
       setShowSuccessModal(true);
     } catch (error) {
       let err_msg = Error(error);
@@ -288,21 +302,33 @@ const NewBookingScreen = ({ navigation, route }) => {
         return;
       }
 
-      const formatDateTimeForAPI = (dateString, timeString) => {
-        if (!dateString || !timeString) return '';
+      // const formatDateTimeForAPI = (dateString, timeString) => {
+      //   if (!dateString || !timeString) return '';
         
-        const time24Hour = convertTo24HourFormat(timeString);
-        const momentDate = moment(`${dateString} ${time24Hour}`, 'DD/MM/YYYY HH:mm');
+      //   const time24Hour = convertTo24HourFormat(timeString);
+      //   const momentDate = moment(`${dateString} ${time24Hour}`, 'DD/MM/YYYY HH:mm');
         
-        return momentDate.toISOString();
+      //   return momentDate.toISOString();
+      // };
+
+      const toLocalISOString = (date, time) => {
+        if (!date || !time) return '';
+        
+        // Convert date from DD/MM/YYYY to YYYY-MM-DD
+        const momentDate = moment(date, 'DD/MM/YYYY');
+        const formattedDate = momentDate.format('YYYY-MM-DD');
+        // Convert time from 12-hour format to 24-hour format
+        const time24Hour = convertTo24HourFormat(time);
+        // Combine as YYYY-MM-DDTHH:mm:ss
+        return `${formattedDate}T${time24Hour}:00`;
       };
 
       const bookingPayload = {
         boat: selectedBoatObj?.id,
         customer: currentAuthState?.id,
         berth: selectedBerthObj?.id,
-        start_date: formatDateTimeForAPI(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
-        end_date: formatDateTimeForAPI(bookingDetails?.departureDate, bookingDetails?.departureTime),
+        start_date: toLocalISOString(bookingDetails?.arrivalDate, bookingDetails?.arrivalTime),
+        end_date: toLocalISOString(bookingDetails?.departureDate, bookingDetails?.departureTime),
         passengers: parseInt(noOfPassengers)
       };
 
@@ -319,11 +345,13 @@ const NewBookingScreen = ({ navigation, route }) => {
 
   const handleGoHome = () => {
     setShowSuccessModal(false);
+    setBookingData(null);
     navigation.goBack();
   };
 
   const handleCloseModal = () => {
     setShowSuccessModal(false);
+    setBookingData(null);
   };
 
   const handleStepClick = (step) => {
@@ -418,7 +446,6 @@ const NewBookingScreen = ({ navigation, route }) => {
     setIsLoading(true);
     try {
       const response = await fetchBerths(pontoonId);
-      console.log('response from fetchBerths', response);
       setBerthsData(response || []);
       dispatch(setBerths(response || []));
       
@@ -665,6 +692,7 @@ const NewBookingScreen = ({ navigation, route }) => {
         onClose={handleCloseModal}
         onGoHome={handleGoHome}
         isEditMode={isEditMode}
+        bookingData={bookingData}
       />
     </SafeAreaView>
   );

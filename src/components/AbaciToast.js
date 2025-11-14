@@ -16,7 +16,7 @@ export default function AbaciToast() {
           minHeight: 50,
           backgroundColor: toastContext.toastType,
           alignSelf: 'center',
-          borderRadius: 5,
+          borderRadius: 12,
           justifyContent: 'center',
           padding: 10,
           alignItems: 'center',

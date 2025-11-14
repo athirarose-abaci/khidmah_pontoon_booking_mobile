@@ -55,7 +55,6 @@ const BookingManagementScreen = ({ route, navigation }) => {
     setIsLoading(true);
     try {
       const response = await bookingDetails(booking?.id);
-      console.log('response from booking management details', response);
       setBookingData(response);
     } catch (error) {
       let err_msg = Error(error);

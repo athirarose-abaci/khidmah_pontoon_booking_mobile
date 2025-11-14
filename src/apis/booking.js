@@ -26,6 +26,25 @@ export const fetchBookings = async (page = 1, limit = 10, search = null, status 
     }
 }
 
+export const fetchBookingsForCalendar = async (dateRange, berthId) => {
+    try {
+        let url = `bookings/calendar/`;
+        if(dateRange){
+            const endDate = new Date(dateRange.endDate);
+            endDate.setDate(endDate.getDate() + 1);
+            const nextDay = endDate.toISOString().split('T')[0];   
+            url = url + `?start_date=${dateRange.startDate}&end_date=${nextDay}`
+        }
+        if(berthId){
+            url = url + `&berth=${berthId}`;
+        }
+        const response = await authAxios.get(url);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const createBooking = async (payload) => {
     try {
         const response = await authAxios.post('bookings/create/', payload);

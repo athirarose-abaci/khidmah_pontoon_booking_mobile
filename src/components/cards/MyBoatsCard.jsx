@@ -40,9 +40,6 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
 
   const imageUri = getImageUri();
 
-  console.log('item from MyBoatsCard', item);
-  console.log('imageUri from MyBoatsCard', imageUri);
-
   return (
     <TouchableOpacity style={[styles.card, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }, isLastItem && styles.lastItemCard]} onPress={handlePress} activeOpacity={0.7}>
       <Image source={imageUri} style={styles.image} />

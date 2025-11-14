@@ -1,5 +1,5 @@
-import { StatusBar, StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import { StatusBar, StyleSheet, View, Text, TouchableOpacity, TextInput, ScrollView, FlatList, ActivityIndicator, RefreshControl, Image, Dimensions } from 'react-native';
+import React, { useEffect, useRef, useState, useContext, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BOOKING_TABS, getBackendStatus } from '../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -9,16 +9,24 @@ import CalendarModal from '../components/modals/CalendarModal';
 import NoDataImage from '../components/NoDataImage';
 import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
+import useBookingEventCalculations from '../hooks/useBookingEventCalculations';
 import CreateButton from '../components/newBooking/CreateButton';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Error from '../helpers/Error';
-import { fetchBookings } from '../apis/booking';
+import { fetchBookings, fetchBookingsForCalendar } from '../apis/booking';
 import { useDispatch, useSelector } from 'react-redux';
 import { setBookings, clearBookings } from '../../store/bookingSlice';
 import { ToastContext } from '../context/ToastContext';
 import AbaciLoader from '../components/AbaciLoader';
 import { fetchProfile } from '../apis/auth';
 import moment from 'moment';
+import { Calendar } from 'react-native-big-calendar';
+import { fetchBerths } from '../apis/berth';
+import { fetchBoatsList } from '../apis/boat';
+import CalendarHeaderControls from '../components/myBookings/CalendarHeaderControls';
+import BerthSelector from '../components/myBookings/BerthSelector';
+import BoatSelector from '../components/myBookings/BoatSelector';
+import CalendarEvent from '../components/myBookings/CalendarEvent';
 
 const MyBookingsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -35,8 +43,18 @@ const MyBookingsScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const selectedDateRef = useRef(null);
+  const [viewMode, setViewMode] = useState('calendar'); 
+  const [calendarViewMode, setCalendarViewMode] = useState('month'); 
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [berthsData, setBerthsData] = useState([]);
+  const [selectedBerth, setSelectedBerth] = useState(null);
+  const [isBerthLoading, setIsBerthLoading] = useState(true);
+  const [boatsData, setBoatsData] = useState([]);
+  const [selectedBoat, setSelectedBoat] = useState(null);
+  const [isBoatLoading, setIsBoatLoading] = useState(false);
 
   const [bookingsData, setBookingsData] = useState([]);
+  const [calendarBookingsData, setCalendarBookingsData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,16 +63,95 @@ const MyBookingsScreen = () => {
   const [searchQuery, setSearchQuery] = useState('null');
   const [isSearching, setIsSearching] = useState(false);
   const [hasMorePages, setHasMorePages] = useState(true);
+  const [isCreateButtonVisible, setIsCreateButtonVisible] = useState(true);
 
-  const { onScroll, insets } = useTabBarScroll();
+  const { onScroll: onTabBarScroll, insets } = useTabBarScroll();
+  
+  const handleScroll = (event) => {
+    onTabBarScroll(event);
+    
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    const threshold = 20;
+    
+    if (currentOffset > threshold && isCreateButtonVisible) {
+      setIsCreateButtonVisible(false);
+    } else if (currentOffset <= threshold && !isCreateButtonVisible) {
+      setIsCreateButtonVisible(true);
+    }
+  };
 
   const lastProcessedNotifications = useRef({});
   const unreadCountRef = useRef(unreadCount);
   const isFirstFocus = useRef(true);
 
+  // Get selected berth data
+  const selectedBerthData = useMemo(() => {
+    return berthsData.find(berth => berth.id === selectedBerth);
+  }, [berthsData, selectedBerth]);
+
+  // Calculate event tracks and positions using custom hook
+  const bookingsForCalculations = viewMode === 'calendar' ? calendarBookingsData : bookingsData;
+  const { calendarEvents } = useBookingEventCalculations(
+    bookingsForCalculations,
+    selectedBerthData,
+    calendarViewMode
+  );
+
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
+
+  // Fetch berths on component mount
+  useEffect(() => {
+    if (isFocused) {
+      fetchBerthsData();
+      if (viewMode === 'calendar') {
+        fetchBoatsData();
+      }
+    }
+  }, [isFocused]);
+
+  // Fetch boats when switching to calendar view
+  useEffect(() => {
+    if (isFocused && viewMode === 'calendar' && boatsData.length === 0) {
+      fetchBoatsData();
+    }
+  }, [viewMode, isFocused]);
+
+  const fetchBerthsData = async () => {
+    setIsBerthLoading(true);
+    try {
+      const response = await fetchBerths();
+      const berths = Array.isArray(response)
+        ? response
+        : (response?.results && Array.isArray(response?.results) ? response?.results : []);
+      setBerthsData(berths);
+      
+      // Auto-select the first berth
+      if (Array.isArray(berths) && berths.length > 0 && !selectedBerth) {
+        setSelectedBerth(berths[0].id);
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsBerthLoading(false);
+    }
+  };
+
+  const fetchBoatsData = async () => {
+    setIsBoatLoading(true);
+    try {
+      const response = await fetchBoatsList();
+      const boats = Array.isArray(response) ? response : (response?.results || []);
+      setBoatsData(boats);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsBoatLoading(false);
+    }
+  };
   
   useEffect(() => {
     if(isFocused) {
@@ -66,10 +163,35 @@ const MyBookingsScreen = () => {
       dispatch(clearBookings());
       setPage(1);
       setHasMorePages(true);
-      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(tabToUse));
+
+      if (viewMode === 'calendar') {
+        if (!isBerthLoading && selectedBerth) {
+          fetchCalendarBookings();
+        }
+      } else {
+        fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(tabToUse));
+      }
       selectedDateRef.current = null;
     }
-  }, [activeTab, isFocused]);
+  }, [activeTab, isFocused, viewMode, isBerthLoading, selectedBerth]);
+
+  useEffect(() => {
+    if (isFocused && viewMode === 'calendar' && selectedBerth && !isFirstFocus.current && !isBerthLoading) {
+      fetchCalendarBookings();
+    }
+  }, [selectedBerth, isBerthLoading]);
+
+  useEffect(() => {
+    if (calendarViewMode !== 'day' || viewMode !== 'calendar') {
+      setSelectedBoat(null);
+    }
+  }, [calendarViewMode, viewMode]);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setSelectedBoat(null);
+    }
+  }, [isFocused]);
 
   const fetchProfileData = async () => {
     try {
@@ -117,6 +239,31 @@ const MyBookingsScreen = () => {
     // }
   }, [liveNotifications]);
 
+  // Fetch bookings for calendar view using the calendar API
+  const fetchCalendarBookings = async () => {
+    if (!selectedBerth) {
+      return;
+    }   
+    setIsLoading(true);
+    try {
+      const startOfMonth = moment(currentMonth).startOf('month').format('YYYY-MM-DD');
+      const endOfMonth = moment(currentMonth).endOf('month').format('YYYY-MM-DD');
+      const dateRange = { startDate: startOfMonth, endDate: endOfMonth };
+      
+      const response = await fetchBookingsForCalendar(dateRange, selectedBerth);
+      const bookings = Array.isArray(response) ? response : (response?.results || []);
+      
+      setCalendarBookingsData(bookings);
+      setHasMorePages(false);
+      setPage(1);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchBookingsData = async (pageNumber, limit, isRefresh = false, searchQuery, status, dateRange) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -153,7 +300,8 @@ const MyBookingsScreen = () => {
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      if(isFocused && searchQuery !== 'null') {
+      // Search only works in list view, not calendar view
+      if(isFocused && searchQuery !== 'null' && viewMode === 'list') {
         setIsSearching(true);
         (async () => {
           dispatch(clearBookings());
@@ -165,7 +313,7 @@ const MyBookingsScreen = () => {
       }
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery]);
+  }, [searchQuery, viewMode]);
 
   const refreshControl = async () => {
     setIsRefreshing(true);
@@ -179,14 +327,51 @@ const MyBookingsScreen = () => {
     dispatch(clearBookings());
     setPage(1);
     setHasMorePages(true);
-    await fetchBookingsData(1, limit, true, defaultSearch, getBackendStatus(activeTab), null);
+    
+    if (viewMode === 'calendar') {
+      if (selectedBerth && !isBerthLoading) {
+        await fetchCalendarBookings();
+      }
+    } else {
+      await fetchBookingsData(1, limit, true, defaultSearch, getBackendStatus(activeTab), null);
+    }
     setIsRefreshing(false);
   };
 
   const handleNotificationPress = () => {
-    // Reset unread count when navigating to notifications
     setUnreadCount(0);
     navigation.navigate('Notification');
+  };
+
+  useEffect(() => {
+    if (isFocused && viewMode === 'calendar' && selectedBerth && !isBerthLoading && !isFirstFocus.current) {
+      fetchCalendarBookings();
+    }
+  }, [currentMonth]);
+
+  const handleMonthChange = (date) => {
+    setCurrentMonth(date);
+  };
+
+  const handleEventPress = (event) => {
+    if (event.booking && event.isCurrentCustomer) {
+      navigation.navigate('BookingManagement', { booking: event.booking });
+    }
+  };
+
+  const handleCellPress = (date) => {
+    setCurrentMonth(date);
+    setCalendarViewMode('day');
+  };
+
+  const navigateMonth = (direction) => {
+    const newMonth = new Date(currentMonth);
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+    setCurrentMonth(newMonth);
   };
 
   return (
@@ -199,7 +384,9 @@ const MyBookingsScreen = () => {
       
       <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         <View style={styles.header_container}>
-          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>My Bookings</Text>
+          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>
+            My Bookings
+          </Text>
           <TouchableOpacity 
             activeOpacity={0.7}
             onPress={handleNotificationPress}
@@ -215,6 +402,7 @@ const MyBookingsScreen = () => {
             )}
           </TouchableOpacity>
         </View>
+        
         <View style={styles.filter_container}>
           <View style={[styles.search_bar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
             <Ionicons
@@ -227,16 +415,18 @@ const MyBookingsScreen = () => {
               style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
               placeholder="Search Bookings"
               placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
-              value={searchQuery!=='null' ? searchQuery : ''}
+              value={searchQuery !== 'null' ? searchQuery : ''}
               onChangeText={text => setSearchQuery(text)}
             />
           </View>
           <TouchableOpacity
             activeOpacity={0.8}
-            style={styles.date_button}
+            style={[styles.date_button, {
+              backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+            }]}
             onPress={() => setShowDatePicker(true)}
           >
-            <Ionicons name="calendar-outline" size={27} color={Colors.white} />
+            <Ionicons name="calendar-outline" size={27} color={Colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -261,27 +451,244 @@ const MyBookingsScreen = () => {
                 dispatch(clearBookings());
                 setPage(1);
                 setHasMorePages(true);
-                fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+                if (viewMode === 'calendar') {
+                  if (selectedBerth && !isBerthLoading) {
+                    fetchCalendarBookings();
+                  }
+                } else {
+                  fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+                }
               }}
             >
               <Ionicons name="close" size={14} color={Colors.white} />
             </TouchableOpacity>
           </View>
-          )}
+        )}
 
-        <SubTabBar
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-        <View style={styles.booking_card_list}>
-          {bookingsData.length === 0 ? (
-            <View style={styles.noDataContainer}>
-              {isRefreshing ? (
-                <View style={styles.refreshLoaderContainer}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
+        {viewMode === 'list' && (
+          <SubTabBar
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        )}
+
+        {viewMode === 'calendar' ? (
+          <ScrollView
+            style={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          >
+            <View style={styles.booking_card_list_calendar}>
+              {isBerthLoading || !selectedBerth ? (
+                <View style={styles.noDataContainer}>
+                  <View style={styles.refreshLoaderContainer}>
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                  </View>
                 </View>
+              // ) : calendarBookingsData.length === 0 ? (
+              //   <View style={styles.noDataContainer}>
+              //     <NoDataImage
+              //       imageSource={require('../assets/images/no_booking.png')}
+              //       title="No bookings yet"
+              //       subtitle="You haven't made any bookings."
+              //       onRefresh={refreshControl}
+              //       isDarkMode={isDarkMode}
+              //     />
+              //   </View>
               ) : (
+                <View style={[styles.calendarContainer, {
+                  borderColor: isDarkMode ? Colors.dark_separator : '#EFEFEF',
+                  borderWidth: 1,
+                  backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                }]}>
+                  <CalendarHeaderControls
+                    calendarViewMode={calendarViewMode}
+                    onCalendarViewModeChange={item => setCalendarViewMode(item.value)}
+                    currentMonth={currentMonth}
+                    onNavigateMonth={navigateMonth}
+                    onToggleView={() => setViewMode('list')}
+                    isDarkMode={isDarkMode}
+                  />
+                  <View style={styles.selectorsContainer}>
+                    <BerthSelector
+                      berthsData={berthsData}
+                      selectedBerth={selectedBerth}
+                      onBerthChange={item => setSelectedBerth(item.value)}
+                      isDarkMode={isDarkMode}
+                    />
+                    {calendarViewMode === 'day' && (
+                      <BoatSelector
+                        boatsData={boatsData}
+                        selectedBoat={selectedBoat}
+                        onBoatChange={item => setSelectedBoat(item.value)}
+                        isDarkMode={isDarkMode}
+                      />
+                    )}
+                  </View>
+                  <View style={[styles.calendarWrapper, {
+                    borderColor: isDarkMode ? Colors.dark_separator : '#E5E5E5',
+                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                  }]}>
+                    <Calendar
+                      key={`${isDarkMode ? 'dark' : 'light'}-${calendarViewMode}-calendar`}
+                      events={calendarEvents}
+                      height={Dimensions.get('window').height - 250}
+                      mode={calendarViewMode}
+                      date={currentMonth}
+                      onSwipeEnd={handleMonthChange}
+                      onPressEvent={handleEventPress}
+                      onPressCell={handleCellPress}
+                      showNowIndicator={false}
+                      ampm={true}
+                      style={{
+                        paddingTop: 0,
+                        paddingHorizontal: 10,
+                        backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                      }}
+                      theme={{
+                        palette: {
+                          primary: {
+                            main: Colors.primary,
+                            contrastText: Colors.white,
+                          },
+                          gray: {
+                            '100': isDarkMode ? Colors.dark_separator : '#F5F5F5',
+                            '200': isDarkMode ? '#4A4D52' : '#E0E0E0',
+                            '300': isDarkMode ? '#5A5D62' : '#D0D0D0',
+                            '500': isDarkMode ? Colors.font_gray : '#999999',
+                            '800': isDarkMode ? Colors.white : Colors.black,
+                          },
+                          text: {
+                            primary: isDarkMode ? Colors.white : Colors.black,
+                            secondary: isDarkMode ? Colors.font_gray : '#666666',
+                          },
+                        },
+                      }}
+                      eventTextStyle={{
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontFamily: 'Inter-SemiBold',
+                      }}
+                      renderEvent={(event, props) => (
+                        <CalendarEvent
+                          event={event}
+                          props={props}
+                          calendarViewMode={calendarViewMode}
+                          isDarkMode={isDarkMode}
+                        />
+                      )}
+                    //   eventCellStyle={(event, props) => {
+                    //   // For non-day views (week, month), use standard styling without positioning
+                    //   const isCurrentUser = event.isCurrentCustomer;
+  
+                    //   const backgroundColor = isCurrentUser
+                    //     ? Colors.primary
+                    //     : (isDarkMode ? '#D0D0D0' : Colors.dark_text_secondary);
+                    
+                    //   const opacity = isCurrentUser ? 1 : 0.7;
+                    //   if (calendarViewMode !== 'day') {
+                    //     // For other customers' bookings
+                    //     if (!event.isCurrentCustomer) {
+                    //       return {
+                    //         backgroundColor,
+                    //         borderRadius: 4,
+                    //         padding: 2,
+                    //         opacity,
+                    //         justifyContent: 'center',
+                    //         alignItems: 'center',
+                    //         top: `${props.style[1]?.top}` || 0,
+                    //         position: 'absolute',
+                    //       };
+                    //     }
+                    //     // For current customer's bookings, use primary color
+                    //     return {
+                    //       backgroundColor,
+                    //       borderRadius: 4,
+                    //       padding: 2,
+                    //       opacity,
+                    //       justifyContent: 'center',
+                    //       alignItems: 'center',
+                    //       top: `${props.style[1]?.top}` || 0,
+                    //       position: 'absolute',
+                    //     };
+                    //   }
+                      
+                    //   // For day view only, apply horizontal positioning based on boat length
+                    //   const widthPercent = event.widthPercent || 100;
+                    //   const leftPercent = event.leftPercent || 0;
+                    //   const bufferPercent = event.bufferPercent || 0;
+                    //   const totalWidth = widthPercent + bufferPercent;
+                    //   console.log(widthPercent,'widthPercent', leftPercent,'leftPercent', bufferPercent,'bufferPercent', totalWidth,'totalWidth', 'event');
+                      
+                    //   // For other customers' bookings
+                    //   if (!event.isCurrentCustomer) {
+                    //     return {
+                    //       backgroundColor,
+                    //       borderRadius: 4,
+                    //       padding: 4, 
+                    //       opacity,
+                    //       width: `${totalWidth}%`,
+                    //       left: `${leftPercent}%`,
+                    //       position: 'absolute',
+                    //       top: `${props.style[1]?.top}` || 0,
+                    //       height: `${props.style[1]?.height}` || 0,
+                    //       justifyContent: 'flex-start',
+                    //       alignItems: 'flex-start',
+                    //     };
+                    //   }
+                    //   // For current customer's bookings, use primary color
+                    //   return {
+                    //     backgroundColor,
+                    //     borderRadius: 4,
+                    //     padding: 4, 
+                    //     opacity,
+                    //     width: `${totalWidth}%`,
+                    //     left: `${leftPercent}%`,
+                    //     position: 'absolute',
+                    //     top: `${props.style[1]?.top}` || 0,
+                    //     height: `${props.style[1]?.height}` || 0,
+                    //     justifyContent: 'flex-start',
+                    //     alignItems: 'flex-start',
+                    //   };
+                    // }}
+
+                    />
+                  </View>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        ) : (
+          <View style={[styles.listContainer, {
+            borderColor: isDarkMode ? Colors.dark_separator : '#EFEFEF',
+            borderWidth: 1,
+            backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+          }]}>
+            {/* List View Header */}
+            <View style={[styles.listHeader, { 
+              backgroundColor: 'transparent',
+            }]}>
+              <Text style={[styles.bookingListHeading, {
+                color: isDarkMode ? Colors.white : Colors.black,
+              }]}>Booking List</Text>
+              <TouchableOpacity
+                onPress={() => setViewMode('calendar')}
+                style={[styles.viewToggleButton, {
+                  backgroundColor: isDarkMode ? Colors.dark_separator : 'rgba(218, 218, 218, 0.25)',
+                }]}
+              >
+                <Image 
+                  source={require('../assets/images/flip_list.png')} 
+                  style={styles.viewToggleImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
+            {bookingsData.length === 0 ? (
+              <View style={styles.noDataContainer}>
                 <NoDataImage
                   imageSource={require('../assets/images/no_booking.png')}
                   title="No bookings yet"
@@ -289,55 +696,56 @@ const MyBookingsScreen = () => {
                   onRefresh={refreshControl}
                   isDarkMode={isDarkMode}
                 />
-              )}
-            </View>
-          ) : (
-            <FlatList
-              data={bookingsData}
-              keyExtractor={item => item.id.toString()}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 280 }}
-              renderItem={({ item }) => (
-                <View style={styles.sectionContainer}>
-                  <MyBookingsCard 
-                    item={item} 
-                    onPress={() => navigation.navigate('BookingManagement', { booking: item })}
-                    isCheckedInTab={activeTab === 'Checked In'}
-                    onCheckoutSuccess={() => {
-                      dispatch(clearBookings());
-                      setPage(1);
-                      setHasMorePages(true);
-                      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
-                    }}
-                  />
-                </View>
-              )}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={refreshControl}
-                  colors={[Colors.primary]}
-                  tintColor={Colors.primary}
-                />
-              }
-              onEndReachedThreshold={0.01}
-              onEndReached={() => {
-                if(hasMorePages && !isLoading) {
-                  fetchBookingsData(page, limit, false, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
-                }
-              }}
-              ListFooterComponent={
-                isLoading ? (
-                  <View style={{ paddingVertical: 20 }}>
-                    <ActivityIndicator size="small" color={Colors.primary} />
+              </View>
+            ) : (
+              <FlatList
+                style={styles.booking_card_list}
+                data={bookingsData}
+                keyExtractor={item => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 100, paddingHorizontal: 8 }}
+                renderItem={({ item }) => (
+                  <View style={styles.sectionContainer}>
+                    <MyBookingsCard 
+                      item={item} 
+                      onPress={() => navigation.navigate('BookingManagement', { booking: item })}
+                      isCheckedInTab={activeTab === 'Checked In'}
+                      onCheckoutSuccess={() => {
+                        dispatch(clearBookings());
+                        setPage(1);
+                        setHasMorePages(true);
+                        fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
+                      }}
+                    />
                   </View>
-                ) : null
-              }
-              onScroll={onScroll}
-              scrollEventThrottle={16}
-            />
-          )}
-        </View>
+                )}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={refreshControl}
+                    colors={[Colors.primary]}
+                    tintColor={Colors.primary}
+                  />
+                }
+                onEndReachedThreshold={0.01}
+                onEndReached={() => {
+                  if(hasMorePages && !isLoading) {
+                    fetchBookingsData(page, limit, false, searchQuery, getBackendStatus(activeTab), selectedDateRef.current);
+                  }
+                }}
+                ListFooterComponent={
+                  isLoading ? (
+                    <View style={{ paddingVertical: 20 }}>
+                      <ActivityIndicator size="small" color={Colors.primary} />
+                    </View>
+                  ) : null
+                }
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+              />
+            )}
+          </View>
+        )}
       </View>
       <CalendarModal
         visible={showDatePicker}
@@ -349,21 +757,35 @@ const MyBookingsScreen = () => {
           setShowDatePicker(false)
           dispatch(clearBookings());
           setPage(1);
-          fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), newSelection);
+          if (viewMode === 'calendar') {
+            if (selectedBerth && !isBerthLoading) {
+              fetchCalendarBookings();
+            }
+          } else {
+            fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), newSelection);
+          }
         }}
         onClear={() => {
           dispatch(clearBookings());
           setPage(1);
-          fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+          if (viewMode === 'calendar') {
+            if (selectedBerth && !isBerthLoading) {
+              fetchCalendarBookings();
+            }
+          } else {
+            fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+          }
         }}
       />
 
-      <CreateButton
-        onPress={() => navigation.navigate('NewBooking')}
-        icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
-        bottom={130 + insets.bottom}
-        right={40}
-      />
+      {isCreateButtonVisible && (
+        <CreateButton
+          onPress={() => navigation.navigate('NewBooking')}
+          icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
+          bottom={130 + insets.bottom}
+          right={40}
+        />
+      )}
       <AbaciLoader visible={isLoading} />
     </SafeAreaView>
   );
@@ -392,13 +814,34 @@ const styles = StyleSheet.create({
     color: Colors.font_gray,
     fontFamily: 'Inter-SemiBold',
   },
+  notification_container: {
+    position: 'relative',
+  },
+  notification_badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notification_badge_text: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
+  },
   filter_container: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 15,
-    paddingHorizontal: 26,
+    paddingHorizontal: 25,
     backgroundColor: 'transparent',
   },
   search_bar: {
@@ -432,7 +875,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -440,37 +882,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
-  },
-  booking_card_list: {
-    paddingHorizontal: 26,
-  },
-  noDataContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 500,
-    paddingVertical: 50,
-  },
-  notification_container: {
-    position: 'relative',
-  },
-  notification_badge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#FF4444',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  notification_badge_text: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: 'Inter-Bold',
   },
   dateFilterBadge: {
     flexDirection: 'row',
@@ -505,9 +916,79 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 8,
   },
+  scrollContainer: {
+    flex: 1,
+  },
+  booking_card_list_calendar: {
+    paddingHorizontal: 0,
+  },
+  calendarContainer: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 30,
+    marginHorizontal: 26,
+    marginTop: 10,
+    marginBottom: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    minHeight: 750,
+  },
+  calendarWrapper: {
+    position: 'relative',
+    borderWidth: 1,
+    borderRadius: 0,
+    padding: 0,
+    paddingTop: 10,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    marginTop: 10,
+    marginHorizontal: 10,
+  },
   refreshLoaderContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
+  },
+  selectorsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    marginTop: -14,
+    paddingBottom: 8,
+  },
+  listContainer: {
+    flex: 1,
+    marginHorizontal: 25,
+    marginTop: 0,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+  },
+  bookingListHeading: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+  },
+  viewToggleButton: {
+    padding: 12,
+    marginRight: 0,
+    borderRadius: 25,
+  },
+  viewToggleImage: {
+    width: 20,
+    height: 20,
+  },
+  booking_card_list: {
+    flex: 1,
+    paddingTop: 0,
+  },
+  sectionContainer: {
+    marginBottom: 8,
   },
 });

@@ -116,7 +116,10 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
   };
 
   return (
-    <TouchableOpacity style={[styles.card, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.card, { 
+      backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+      borderColor: isDarkMode ? Colors.dark_separator : '#EFEFEF',
+    }]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.topRow}>
         {/* Left side image */}
         <View style={styles.imageWrapper}>
@@ -130,7 +133,7 @@ const MyBookingCard = ({ item, onPress, isCheckedInTab = false, onCheckoutSucces
         <View style={styles.content}>
           <View style={styles.headerRow}>
             <Text style={styles.title} >
-              {booking?.boat?.name ? (booking?.boat?.name.length > 11 ? booking?.boat?.name.substring(0, 11) + '...' : booking?.boat?.name) : 'N/A'}
+              {booking?.boat?.name ? (booking?.boat?.name.length > 9 ? booking?.boat?.name.substring(0, 9) + '...' : booking?.boat?.name) : 'N/A'}
             </Text>
             <View style={styles.dot} />
             <Text style={[styles.subTitle, { marginRight: 5 }]} >
@@ -238,11 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     marginTop: 10,
     minHeight: 110,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   topRow: {

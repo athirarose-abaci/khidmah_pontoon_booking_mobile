@@ -86,7 +86,6 @@ const TicketDetailScreen = () => {
   useEffect(() => {
     if (socket && ticketId && isFocused) {
       socket.emit('viewing_ticket', { ticket_id: ticketId });
-      console.log('viewing_ticket on focus', { ticket_id: ticketId });
     }
   }, [socket, ticketId, isFocused]);
 

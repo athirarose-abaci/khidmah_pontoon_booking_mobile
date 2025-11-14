@@ -119,7 +119,6 @@ const ProfileScreen = () => {
     startLoading();
     try {
       const response = await fetchOrganizationSettings();
-      console.log(response,"from organization settings");
       setOrganizationSettingsData(response);
     } catch (error) {
       let err_msg = Error(error);

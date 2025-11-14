@@ -65,7 +65,6 @@ const AddBoatScreen = () => {
     setIsInitialLoading(true);
     try {
       const boatData = await fetchBoatById(boatId);
-      console.log('boatData from loadBoatData', boatData);
       setBoatName(boatData?.name || '');
       setBoatRegNo(boatData?.registration_number || '');
       setBoatLength(boatData?.length ? boatData.length.toString() : '');
@@ -178,7 +177,6 @@ const AddBoatScreen = () => {
         toastContext.showToast('Boat updated successfully!', 'short', 'success');
       } else {
         response = await createBoat(boatData, images, customerId);
-        console.log('response from create boat', response);
         dispatch(setBoats(response));
         toastContext.showToast('Boat added successfully!', 'short', 'success');
       }

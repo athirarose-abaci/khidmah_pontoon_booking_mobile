@@ -43,7 +43,7 @@ const WebSocketProvider = ({children}) => {
       socketRef.current = socket;
       socket.on('connect', () => {
         dispatch(setConnectionStatus(true));
-        console.log('socket connected')
+        // console.log('socket connected')
         dispatch(setError(null));
       });
 

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, StatusBar, RefreshControl, ActivityIndicator, ScrollView } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, StatusBar, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useCallback, useContext, useLayoutEffect, useState, useEffect } from 'react'
 import { Ionicons } from '@react-native-vector-icons/ionicons'
@@ -13,7 +13,6 @@ import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector, useDispatch } from 'react-redux'
 import { removeNotification } from '../../store/notificationSlice'
-import ConfirmationModal from '../components/modals/ConfirmationModal'
 import { useSocket } from '../components/WebSocketProvider'
 
 const NotificationScreen = ({ navigation }) => {
@@ -22,8 +21,6 @@ const NotificationScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [notificationToDelete, setNotificationToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const limit = 10;
   const insets = useSafeAreaInsets();
@@ -151,34 +148,20 @@ const NotificationScreen = ({ navigation }) => {
     fetchNotificationsData(1, limit, true);
   };
 
-  const handleExtendStay = (notificationId) => {
-    // console.log('Extend stay for notification:', notificationId);
-  };
-
-  const handleCheckout = (notificationId) => {
-    // console.log('Checkout for notification:', notificationId);
-  };
-
-  const handleDeleteNotification = (notificationId) => {
-    setNotificationToDelete(notificationId);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!notificationToDelete) {
+  const handleDeleteNotification = async (notificationId) => {
+    if (!notificationId) {
       return;
     }
     
     setIsDeleting(true);
     try {
-      await deleteNotification(notificationToDelete);
-      toastContext.showToast('Notification deleted successfully!', 'short', 'success');
+      await deleteNotification(notificationId);
       
       setApiNotifications(prevNotifications => 
-        prevNotifications.filter(notification => notification.id !== notificationToDelete)
+        prevNotifications.filter(notification => notification.id !== notificationId)
       );
       
-      dispatch(removeNotification(notificationToDelete));
+      dispatch(removeNotification(notificationId));
       
       setPage(1);
       setHasMorePages(true);
@@ -189,15 +172,6 @@ const NotificationScreen = ({ navigation }) => {
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsDeleting(false);
-      setShowDeleteModal(false);
-      setNotificationToDelete(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    if (!isDeleting) {
-      setShowDeleteModal(false);
-      setNotificationToDelete(null);
     }
   };
 
@@ -242,8 +216,6 @@ const NotificationScreen = ({ navigation }) => {
           <View style={styles.sectionContainer}>
             <NotificationCard 
               item={item}
-              onExtendStay={handleExtendStay}
-              onCheckout={handleCheckout}
               onPress={handleNotificationPress}
               onDelete={handleDeleteNotification}
             />
@@ -289,20 +261,6 @@ const NotificationScreen = ({ navigation }) => {
         onEndReachedThreshold={0.1}
       />
       <AbaciLoader visible={isLoading || isDeleting} />
-      
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isVisible={showDeleteModal}
-        onRequestClose={isDeleting ? undefined : handleCancelDelete}
-        onConfirm={isDeleting ? undefined : handleConfirmDelete}
-        title="Delete Notification"
-        message="Are you sure you want to delete this notification? This action cannot be undone."
-        confirmText={isDeleting ? "Deleting..." : "Delete"}
-        cancelText="Cancel"
-        confirmButtonColor={isDeleting ? "#CCCCCC" : "#FF4444"}
-        warningIconName="delete-outline"
-        warningIconColor="#FF4444"
-      />
     </SafeAreaView>
   )
 }
