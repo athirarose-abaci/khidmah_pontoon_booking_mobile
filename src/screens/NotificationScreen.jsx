@@ -8,11 +8,11 @@ import NoDataImage from '../components/NoDataImage'
 import { ToastContext } from '../context/ToastContext'
 import Error from '../helpers/Error'
 import AbaciLoader from '../components/AbaciLoader'
-import { deleteNotification, fetchNotifications } from '../apis/system'
+import { clearNotifications, deleteNotification, fetchNotifications } from '../apis/system'
 import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector, useDispatch } from 'react-redux'
-import { removeNotification } from '../../store/notificationSlice'
+import { removeNotification, clearNotifications as clearNotificationsAction } from '../../store/notificationSlice'
 import { useSocket } from '../components/WebSocketProvider'
 
 const NotificationScreen = ({ navigation }) => {
@@ -116,7 +116,7 @@ const NotificationScreen = ({ navigation }) => {
     
     try {
       const response = await fetchNotifications(pageNumber, limitNumber);
-      
+
       const apiResults = response?.results || [];
       
       if (isRefresh || pageNumber === 1) {
@@ -141,6 +141,23 @@ const NotificationScreen = ({ navigation }) => {
       }
     }
   };
+
+  const clearNotificationsData = async () => {
+    try {
+      const response = await clearNotifications();
+      if (response?.status === 204) {
+        dispatch(clearNotificationsAction());
+        setApiNotifications([]);
+        setPage(1);
+        setHasMorePages(true);
+        toastContext.showToast('Notifications cleared successfully', 'short', 'success');
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }
+  };
+
 
   const refreshControl = () => {
     setPage(1);
@@ -206,6 +223,12 @@ const NotificationScreen = ({ navigation }) => {
           <Ionicons name="chevron-back" size={24} color={isDarkMode ? Colors.white : Colors.font_gray} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>Notifications</Text>
+        <TouchableOpacity 
+          style={styles.clearButton}
+          onPress={clearNotificationsData}
+        >
+          <Text style={[styles.clearButtonText, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>Clear All</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Notifications FlatList */}
@@ -284,6 +307,15 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
+    flex: 1,
+  },
+  clearButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  clearButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
   },
   flatList: {
     flex: 1,

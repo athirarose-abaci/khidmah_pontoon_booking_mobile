@@ -157,6 +157,59 @@ const NewBookingScreen = ({ navigation, route }) => {
     }
   }, [route?.params]);
 
+  // Handle prefill data from calendar (when clicking availability blocks)
+  useEffect(() => {
+    if (route?.params?.prefillData && !route?.params?.editMode) {
+      const prefillData = route?.params?.prefillData;
+      
+      // Set berth name
+      if (prefillData?.berthName) {
+        setBerthName(prefillData.berthName);
+      }
+      
+      // Set selected boat
+      if (prefillData?.selectedBoatId) {
+        setSelectedBoat(prefillData.selectedBoatId);
+      }
+      
+      // Set booking details from startDate and endDate
+      // Convert ISO strings to Date objects if needed
+      if (prefillData?.startDate && prefillData?.endDate) {
+        // Handle both Date objects and ISO strings
+        const startDateObj = typeof prefillData.startDate === 'string' 
+          ? new Date(prefillData.startDate) 
+          : prefillData.startDate;
+        const endDateObj = typeof prefillData.endDate === 'string' 
+          ? new Date(prefillData.endDate) 
+          : prefillData.endDate;
+        
+        const startDate = moment(startDateObj).format('DD/MM/YYYY');
+        const startTime24 = moment(startDateObj).format('HH:mm');
+        const startTime = formatTime12Hour(parseInt(startTime24.split(':')[0]), parseInt(startTime24.split(':')[1]));
+        
+        const endDate = moment(endDateObj).format('DD/MM/YYYY');
+        const endTime24 = moment(endDateObj).format('HH:mm');
+        const endTime = formatTime12Hour(parseInt(endTime24.split(':')[0]), parseInt(endTime24.split(':')[1]));
+        
+        // Calculate duration
+        const startMoment = moment(startDateObj);
+        const endMoment = moment(endDateObj);
+        const duration = moment.duration(endMoment.diff(startMoment));
+        const hours = Math.floor(duration.asHours()).toString().padStart(2, '0');
+        const minutes = duration.minutes().toString().padStart(2, '0');
+        
+        setBookingDetails({
+          arrivalDate: startDate,
+          arrivalTime: startTime,
+          departureDate: endDate,
+          departureTime: endTime,
+          hours: hours,
+          minutes: minutes
+        });
+      }
+    }
+  }, [route?.params?.prefillData]);
+
   const validatePontoonDetails = () => {
     return pontoonName.trim() !== '' && berthName.trim() !== '';
   };

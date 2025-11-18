@@ -34,6 +34,7 @@ const MyBookingsScreen = () => {
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const authState = useSelector(state => state.authSlice.authState);
   const [unreadCount, setUnreadCount] = useState(0);
   const liveNotifications = useSelector(state => state.notificationSlice.notifications);
 
@@ -55,6 +56,7 @@ const MyBookingsScreen = () => {
 
   const [bookingsData, setBookingsData] = useState([]);
   const [calendarBookingsData, setCalendarBookingsData] = useState([]);
+  const [berthAvailabilityData, setBerthAvailabilityData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -91,10 +93,24 @@ const MyBookingsScreen = () => {
 
   // Calculate event tracks and positions using custom hook
   const bookingsForCalculations = viewMode === 'calendar' ? calendarBookingsData : bookingsData;
+  
+  // Determine if we should use availability mode (only when boat is selected in DAY view)
+  // Show legacy view by default, only show availability when boat is selected
+  const useAvailabilityMode = selectedBoat !== null && calendarViewMode === 'day' && viewMode === 'calendar';
+  
+  // Get selected boat data
+  const selectedBoatData = useMemo(() => {
+    return boatsData.find(boat => boat.id === selectedBoat);
+  }, [boatsData, selectedBoat]);
+  
   const { calendarEvents } = useBookingEventCalculations(
     bookingsForCalculations,
     selectedBerthData,
-    calendarViewMode
+    calendarViewMode,
+    selectedBoatData,
+    currentMonth,
+    useAvailabilityMode,
+    berthAvailabilityData
   );
 
   useEffect(() => {
@@ -122,9 +138,8 @@ const MyBookingsScreen = () => {
     setIsBerthLoading(true);
     try {
       const response = await fetchBerths();
-      const berths = Array.isArray(response)
-        ? response
-        : (response?.results && Array.isArray(response?.results) ? response?.results : []);
+      console.log('response from fetchBerths', response);
+      const berths = response?.results || [];
       setBerthsData(berths);
       
       // Auto-select the first berth
@@ -165,7 +180,8 @@ const MyBookingsScreen = () => {
       setHasMorePages(true);
 
       if (viewMode === 'calendar') {
-        if (!isBerthLoading && selectedBerth) {
+        // Only fetch if berth is loaded and selected, and not already fetching
+        if (!isBerthLoading && selectedBerth && !isFetchingCalendar.current) {
           fetchCalendarBookings();
         }
       } else {
@@ -175,11 +191,7 @@ const MyBookingsScreen = () => {
     }
   }, [activeTab, isFocused, viewMode, isBerthLoading, selectedBerth]);
 
-  useEffect(() => {
-    if (isFocused && viewMode === 'calendar' && selectedBerth && !isFirstFocus.current && !isBerthLoading) {
-      fetchCalendarBookings();
-    }
-  }, [selectedBerth, isBerthLoading]);
+  // Removed duplicate useEffect - handled in main useEffect below
 
   useEffect(() => {
     if (calendarViewMode !== 'day' || viewMode !== 'calendar') {
@@ -239,11 +251,16 @@ const MyBookingsScreen = () => {
     // }
   }, [liveNotifications]);
 
+  // Ref to prevent multiple simultaneous API calls
+  const isFetchingCalendar = useRef(false);
+
   // Fetch bookings for calendar view using the calendar API
   const fetchCalendarBookings = async () => {
-    if (!selectedBerth) {
+    if (!selectedBerth || isFetchingCalendar.current) {
       return;
-    }   
+    }
+    
+    isFetchingCalendar.current = true;
     setIsLoading(true);
     try {
       const startOfMonth = moment(currentMonth).startOf('month').format('YYYY-MM-DD');
@@ -251,9 +268,11 @@ const MyBookingsScreen = () => {
       const dateRange = { startDate: startOfMonth, endDate: endOfMonth };
       
       const response = await fetchBookingsForCalendar(dateRange, selectedBerth);
-      const bookings = Array.isArray(response) ? response : (response?.results || []);
-      
+      console.log('response from fetchBookingsForCalendar', response);
+      const bookings = response?.data || [];
+      const availabilityBlocks = response?.berth_settings || [];
       setCalendarBookingsData(bookings);
+      setBerthAvailabilityData(availabilityBlocks);
       setHasMorePages(false);
       setPage(1);
     } catch (error) {
@@ -261,6 +280,7 @@ const MyBookingsScreen = () => {
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       setIsLoading(false);
+      isFetchingCalendar.current = false;
     }
   };
 
@@ -343,6 +363,7 @@ const MyBookingsScreen = () => {
     navigation.navigate('Notification');
   };
 
+  // Handle month change - debounced to prevent too many calls
   useEffect(() => {
     if (isFocused && viewMode === 'calendar' && selectedBerth && !isBerthLoading && !isFirstFocus.current) {
       fetchCalendarBookings();
@@ -356,6 +377,29 @@ const MyBookingsScreen = () => {
   const handleEventPress = (event) => {
     if (event.booking && event.isCurrentCustomer) {
       navigation.navigate('BookingManagement', { booking: event.booking });
+      return;
+    }
+    
+    // Handle availability blocks - navigate to create booking
+    if (event.isSelectedBoat && event.availabilityBlock) {
+      const block = event.availabilityBlock;
+      const berthId = event.berthId || block.berthId;
+      const berthName = block.berthName;
+      
+      // Get time range from the event and convert to ISO strings for serialization
+      const startTime = event.start instanceof Date ? event.start.toISOString() : event.start;
+      const endTime = event.end instanceof Date ? event.end.toISOString() : event.end;
+      
+      // Navigate to NewBooking with pre-filled data
+      navigation.navigate('NewBooking', {
+        prefillData: {
+          berthId: berthId,
+          berthName: berthName,
+          startDate: startTime,
+          endDate: endTime,
+          selectedBoatId: selectedBoat, 
+        }
+      });
     }
   };
 

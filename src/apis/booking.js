@@ -1,4 +1,5 @@
 import { authAxios} from "../context/AxiosContext";
+import Error from "../helpers/Error";
 
 export const fetchBookings = async (page = 1, limit = 10, search = null, status = null, dateRange) => {
     try {

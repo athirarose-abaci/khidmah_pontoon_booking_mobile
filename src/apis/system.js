@@ -5,7 +5,6 @@ export const fetchSystemStatus = async () => {
         const response = await publicAxios.get('systems/status/');
         return response?.data;
     } catch (error) {
-        console.log(error,'error');
         throw error;
     }
 };
@@ -37,6 +36,15 @@ export const deleteNotification = async (notificationId) => {
         throw error;
     }
 };
+
+export const clearNotifications = async () => {
+    try {
+        const response = await authAxios.delete('systems/notifications/clear/');
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
 
 export const sendComplaint = async (payload) => {
     try {
