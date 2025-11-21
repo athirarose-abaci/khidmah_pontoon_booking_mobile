@@ -1,18 +1,32 @@
 import { useMemo } from 'react';
 import moment from 'moment';
-import { createAvailabilityBlocks, getWorkingHours, parseMinDuration } from '../helpers/availabilityHelper';
+import { isBerthActiveOnDate } from './useBoatOccupancyBlocks';
 
-const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarViewMode, selectedBoat, currentDate, useAvailabilityMode = false, berthAvailabilityData = []) => {
+const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarViewMode, berthSettings, selectedBoat, currentDate) => {
   // Calculate horizontal positioning for day view based on boat length
   const calculateEventTracksAndPositions = useMemo(() => {
-    // If using availability mode, skip the old calculation
-    if (useAvailabilityMode) {
-      return [];
+    // For day view, check if berth is active on the current date
+    if (calendarViewMode === 'day' && currentDate && selectedBerthData) {
+      if (!isBerthActiveOnDate(currentDate, selectedBerthData, berthSettings)) {
+        return []; // Return empty array if berth is not active
+      }
     }
 
-    if (!selectedBerthData || !bookingsData.length || calendarViewMode !== 'day') {
+    // Filter bookings by selected boat if boat is selected
+    let filteredBookings = bookingsData;
+    if (selectedBoat && calendarViewMode === 'day') {
+      filteredBookings = bookingsData.filter(booking => {
+        if (!booking?.boat) return false;
+        const bookingBoatId = typeof booking.boat === 'object' 
+          ? booking.boat.id 
+          : booking.boat;
+        return bookingBoatId === selectedBoat;
+      });
+    }
+
+    if (!selectedBerthData || !filteredBookings.length || calendarViewMode !== 'day') {
       // For non-day views, return events without position data
-      return bookingsData
+      return filteredBookings
         .filter(booking => booking?.start_date && booking?.end_date)
         .map(booking => {
           const startMoment = moment(booking?.start_date);
@@ -34,7 +48,7 @@ const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarVi
             boatLength: parseFloat(booking?.boat?.length || 0),
           };
         })
-        .filter(event => event !== null); 
+        .filter(event => event !== null); // Remove null entries
     }
 
     const berthLength = parseFloat(selectedBerthData?.length) || 100;
@@ -43,7 +57,7 @@ const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarVi
     const assigned = [];
     
     // Filter out bookings with invalid dates
-    const validBookings = bookingsData.filter(booking => {
+    const validBookings = filteredBookings.filter(booking => {
       if (!booking?.start_date || !booking?.end_date) return false;
       const startMoment = moment(booking.start_date);
       const endMoment = moment(booking.end_date);
@@ -77,7 +91,7 @@ const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarVi
       const startDate = startMoment.toDate();
       const endDate = endMoment.toDate();
       
-      const bufferLength = parseFloat(booking?.boat_buffer_length || 0);
+      const bufferLength = parseFloat(booking?.boat_buffer_length) || 0;
       const boatLength = parseFloat(booking?.boat?.length) || 0;
       const widthPercent = (boatLength / berthLength) * 100;
       const bufferPercent = (bufferLength / berthLength) * 100;
@@ -138,266 +152,17 @@ const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarVi
     });
 
     return assigned;
-  }, [bookingsData, selectedBerthData, calendarViewMode, useAvailabilityMode]);
-
-  // NEW CODE - Availability blocks calculation for CUSTOMER role in DAY view
-  const availabilityEvents = useMemo(() => {
-    if (!useAvailabilityMode || calendarViewMode !== 'day' || !selectedBerthData) {
-      return [];
-    }
-
-    // Filter bookings to the current date range
-    const filteredBookings = bookingsData.filter((booking) => {
-      if (!booking?.start_date || !booking?.end_date) return false;
-      const bookingStartDate = new Date(booking?.start_date);
-      const bookingEndDate = new Date(booking?.end_date);
-      const currentDateObj = currentDate ? new Date(currentDate) : new Date();
-      const dayStart = new Date(currentDateObj);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(currentDateObj);
-      dayEnd.setHours(23, 59, 59, 999);
-      // Check if booking overlaps with the date range
-      return bookingStartDate < dayEnd && bookingEndDate > dayStart;
-    });
-
-    // Get working hours for the current date being viewed from berthAvailabilityData
-    const workingHours = getWorkingHours(
-      currentDate ? new Date(currentDate) : new Date(),
-      berthAvailabilityData,
-    );
-    
-    // If no working hours data is available (data missing), return empty array
-    if (!workingHours || !workingHours.start || !workingHours.end) {
-      return [];
-    }
-    
-    const dayStartTime = workingHours.start;
-    const dayEndTime = workingHours.end;
-    const isDayAvailable = workingHours.isAvailable !== false; // Default to true if not specified
-
-    // If day is not available (is_active = false), create a "Not Available" block
-    if (!isDayAvailable && selectedBerthData) {
-      const berthLength = selectedBerthData.length ?? 100;
-      const maxAllowed = selectedBerthData.max_boat_allowed ?? 2;
-
-      const notAvailableBlock = {
-        id: `not-available-${selectedBerthData.id}-${dayStartTime.getTime()}-${dayEndTime.getTime()}`,
-        start: dayStartTime,
-        end: dayEndTime,
-        title: 'Not Available',
-        berthId: selectedBerthData.id,
-        berthName: selectedBerthData.name,
-        occupiedCount: 0,
-        maxAllowed,
-        isAvailable: false,
-        isFullyOccupied: true,
-        isNotAvailable: true,
-        overlappingBookings: [],
-        berthLength,
-        occupiedLength: berthLength,
-        availableLength: 0,
-        bufferLength: 0,
-        widthPercent: 100,
-      };
-
-      // Convert to calendar event format
-      return [{
-        id: notAvailableBlock.id,
-        title: notAvailableBlock.title,
-        start: notAvailableBlock.start,
-        end: notAvailableBlock.end,
-        berthId: notAvailableBlock.berthId,
-        berthName: notAvailableBlock.berthName,
-        isNotAvailable: true,
-        isAvailable: false,
-        isFullyOccupied: true,
-        widthPercent: 100,
-      }];
-    }
-
-    // Create availability blocks for CUSTOMER in DAY view (only if day is available)
-    const availabilityBlocks = createAvailabilityBlocks(
-      filteredBookings,
-      selectedBoat,
-      dayStartTime,
-      dayEndTime,
-      selectedBerthData,
-    );
-
-    // If no bookings exist, create a single unoccupied block for the working hours
-    // Note: The helper should handle this, but we add it here as a fallback for the selected berth
-    if (filteredBookings.length === 0 && selectedBerthData && availabilityBlocks.length === 0) {
-      const berthLength = selectedBerthData.length ?? 100;
-      const maxAllowed = selectedBerthData.max_boat_allowed ?? 2;
-      
-      // Calculate block duration and check min_duration using the shared helper function
-      const blockDurationMs = dayEndTime.getTime() - dayStartTime.getTime();
-      const minDurationMs = parseMinDuration(selectedBerthData);
-      const isDurationTooShort = minDurationMs > 0 && blockDurationMs < minDurationMs;
-
-      availabilityBlocks.push({
-        id: `availability-${selectedBerthData.id}-${dayStartTime.getTime()}-${dayEndTime.getTime()}`,
-        start: dayStartTime,
-        end: dayEndTime,
-        title: `Available (${berthLength.toFixed(1)}ft free)`,
-        berthId: selectedBerthData.id,
-        berthName: selectedBerthData.name,
-        occupiedCount: 0,
-        maxAllowed,
-        isAvailable: !isDurationTooShort,
-        isFullyOccupied: isDurationTooShort,
-        overlappingBookings: [],
-        berthLength,
-        occupiedLength: 0,
-        availableLength: berthLength,
-        bufferLength: 0, 
-        widthPercent: isDurationTooShort ? 100 : 0,
-      });
-    }
-
-    // Convert availability blocks to calendar events format
-    const calendarEvents = [];
-
-    // Process all availability blocks (both occupied and unoccupied)
-    availabilityBlocks.forEach((block) => {
-      // Check if the selected boat is already booked during this time block
-      // Use allOverlappingBookings (all bookings) instead of overlappingBookings (filtered for display)
-      const allOverlappingBookings = block.allOverlappingBookings || block.overlappingBookings || [];
-      const isSelectedBoatAlreadyBooked = selectedBoat?.id 
-        ? allOverlappingBookings.some((booking) => booking?.boat?.id === selectedBoat.id)
-        : false;
-
-      // Add occupied blocks (single color for all occupied)
-      // Only show occupied blocks if there's actually something occupied
-      if (block.occupiedLength > 0) {
-        // If the selected boat is already booked, mark as fully occupied (100% width, unavailable)
-        const shouldShowAsFullyOccupied = isSelectedBoatAlreadyBooked || block.isFullyOccupied;
-        // If fully occupied (max allowed reached) or selected boat is already booked, use 100% width
-        // Otherwise use the calculated width based on occupied length
-        const displayWidthPercent = shouldShowAsFullyOccupied ? 100 : block.widthPercent;
-        
-        const stripedBlockData = {
-          id: block.id,
-          start: block.start,
-          end: block.end,
-          title: '', // Empty title for visual bar only
-          status: 'OCCUPIED', // Single status for all occupied blocks
-          berthId: block.berthId,
-          berthName: block.berthName,
-          occupiedCount: block.occupiedCount,
-          maxAllowed: block.maxAllowed,
-          isAvailable: isSelectedBoatAlreadyBooked ? false : block.isAvailable,
-          isFullyOccupied: shouldShowAsFullyOccupied,
-          availabilityBlock: block,
-          widthPercent: displayWidthPercent,
-          // Length information
-          occupiedLength: block.occupiedLength,
-          availableLength: block.availableLength,
-          berthLength: block.berthLength,
-          isSelectedBoatAlreadyBooked,
-        };
-
-        console.log('🔴 STRIPED BLOCK (Unavailable/Occupied):', {
-          timeRange: `${new Date(block.start).toLocaleTimeString()} - ${new Date(block.end).toLocaleTimeString()}`,
-          berthName: block.berthName,
-          occupiedLength: `${block.occupiedLength.toFixed(1)}ft`,
-          availableLength: `${block.availableLength.toFixed(1)}ft`,
-          berthLength: `${block.berthLength.toFixed(1)}ft`,
-          widthPercent: `${displayWidthPercent.toFixed(1)}%`,
-          isFullyOccupied: shouldShowAsFullyOccupied,
-          isAvailable: stripedBlockData.isAvailable,
-          occupiedCount: block.occupiedCount,
-          maxAllowed: block.maxAllowed,
-          isSelectedBoatAlreadyBooked,
-        });
-        
-        calendarEvents.push(stripedBlockData);
-      }
-
-      // If boat is selected, check if it can fit and create a dotted block
-      // This works for both occupied blocks (on the right side) and unoccupied blocks (full width)
-      // Skip if the selected boat is already booked (it should show as unavailable/striped)
-      if (selectedBoat?.id && selectedBoat.length && !block.isFullyOccupied && !isSelectedBoatAlreadyBooked) {
-
-        const selectedBoatLength = parseFloat(selectedBoat.length) || 0;
-        // Use boat's buffer_length (boats have buffer_length, berths don't)
-        // Check if boat has buffer_length property (could be boat_buffer_length or buffer_length)
-        const boatBufferLength = parseFloat(selectedBoat.buffer_length || selectedBoat.boat_buffer_length || 0);
-        const requiredSpace = selectedBoatLength + boatBufferLength;
-        
-        // Check if boat can actually fit in the available space
-        const boatFits = block.availableLength >= requiredSpace;
-
-        if (boatFits) {
-          // Calculate position and width based on boat's actual dimensions
-          const boatWidthPercent = (selectedBoatLength / block.berthLength) * 100;
-          const boatBufferPercent = (boatBufferLength / block.berthLength) * 100;
-          const totalBoatWidthPercent = boatWidthPercent + boatBufferPercent;
-          
-          // For unoccupied blocks (occupiedLength === 0), start at 0
-          // For occupied blocks, start after occupied space
-          const boatLeftPercent = block.occupiedLength > 0 ? block.widthPercent : 0;
-          
-          // Verify the boat doesn't exceed the berth width
-          if (boatLeftPercent + totalBoatWidthPercent <= 100) {
-            // Create dotted block for selected boat showing where it would fit
-            const primaryColorBlockData = {
-              id: `selected-boat-${block.id}-${selectedBoat.id}`,
-              start: block.start,
-              end: block.end,
-              title: '', // Empty title
-              status: 'SELECTED_BOAT', // Special status for selected boat
-              berthId: block.berthId,
-              availabilityBlock: block,
-              widthPercent: totalBoatWidthPercent,
-              leftPercent: boatLeftPercent,
-              isSelectedBoat: true,
-              // Length information
-              selectedBoatLength,
-              boatBufferLength,
-              requiredSpace,
-              boatWidthPercent,
-              boatBufferPercent,
-              totalBoatWidthPercent,
-              boatLeftPercent,
-              blockAvailableLength: block.availableLength,
-              blockBerthLength: block.berthLength,
-              blockOccupiedLength: block.occupiedLength,
-            };
-
-            console.log('🟢 PRIMARY COLOR BLOCK (Available/Selected Boat):', {
-              timeRange: `${new Date(block.start).toLocaleTimeString()} - ${new Date(block.end).toLocaleTimeString()}`,
-              boatName: selectedBoat.name || selectedBoat.id,
-              boatLength: `${selectedBoatLength.toFixed(1)}ft`,
-              boatBufferLength: `${boatBufferLength.toFixed(1)}ft`,
-              requiredSpace: `${requiredSpace.toFixed(1)}ft`,
-              availableLength: `${block.availableLength.toFixed(1)}ft`,
-              berthLength: `${block.berthLength.toFixed(1)}ft`,
-              occupiedLength: `${block.occupiedLength.toFixed(1)}ft`,
-              widthPercent: `${totalBoatWidthPercent.toFixed(1)}%`,
-              leftPercent: `${boatLeftPercent.toFixed(1)}%`,
-              boatWidthPercent: `${boatWidthPercent.toFixed(1)}%`,
-              boatBufferPercent: `${boatBufferPercent.toFixed(1)}%`,
-              boatFits: boatFits,
-            });
-
-            calendarEvents.push(primaryColorBlockData);
-          }
-        }
-      }
-    });
-
-    return calendarEvents;
-  }, [bookingsData, selectedBerthData, calendarViewMode, selectedBoat, currentDate, useAvailabilityMode]);
+  }, [bookingsData, selectedBerthData, calendarViewMode, selectedBoat, berthSettings, currentDate]);
 
   // Transform bookings to calendar events format for react-native-big-calendar
   const calendarEvents = useMemo(() => {
-    // If using availability mode, return availability events
-    if (useAvailabilityMode && calendarViewMode === 'day') {
-      return availabilityEvents;
+    // For day view, check if berth is active on the current date
+    if (calendarViewMode === 'day' && currentDate && selectedBerthData) {
+      if (!isBerthActiveOnDate(currentDate, selectedBerthData, berthSettings)) {
+        return []; // Return empty array if berth is not active
+      }
     }
-    
-    // Otherwise, use legacy booking event model
+
     return calculateEventTracksAndPositions
       .filter(eventData => {
         // Ensure we have valid dates using moment
@@ -429,12 +194,11 @@ const useBookingEventCalculations = (bookingsData, selectedBerthData, calendarVi
           isOverflow: isOverflow || false,
         };
       });
-  }, [calculateEventTracksAndPositions, availabilityEvents, useAvailabilityMode, calendarViewMode]);
+  }, [calculateEventTracksAndPositions, calendarViewMode, currentDate, selectedBerthData, berthSettings]);
 
   return {
     calculateEventTracksAndPositions,
     calendarEvents,
-    availabilityEvents,
   };
 };
 

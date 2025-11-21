@@ -119,7 +119,7 @@ const NewBookingScreen = ({ navigation, route }) => {
         }
         
         // Set booking details
-        if (bookingData.start_date) {
+        if (bookingData?.start_date) {
           const startDate = moment(bookingData?.start_date).format('DD/MM/YYYY');
           const startTime24 = moment(bookingData?.start_date).format('HH:mm');
           const startTime = formatTime12Hour(parseInt(startTime24.split(':')[0]), parseInt(startTime24.split(':')[1]));
@@ -161,6 +161,11 @@ const NewBookingScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (route?.params?.prefillData && !route?.params?.editMode) {
       const prefillData = route?.params?.prefillData;
+      
+      // Set pontoon name if provided
+      if (prefillData?.pontoonName) {
+        setPontoonName(prefillData.pontoonName);
+      }
       
       // Set berth name
       if (prefillData?.berthName) {
@@ -523,7 +528,7 @@ const NewBookingScreen = ({ navigation, route }) => {
       setPontoonsData(pontoons);
       dispatch(setPontoons(pontoons));
       
-      if(response?.length === 1) {
+      if(response?.length === 1 && !route?.params?.prefillData?.pontoonName) {
         const singlePontoon = pontoons[0];
         setPontoonName(singlePontoon?.name);
         await fetchBerthsData(singlePontoon?.id);

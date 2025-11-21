@@ -1,5 +1,5 @@
 import { StatusBar, StyleSheet, View, Text, TouchableOpacity, TextInput, ScrollView, FlatList, ActivityIndicator, RefreshControl, Image, Dimensions } from 'react-native';
-import React, { useEffect, useRef, useState, useContext, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useContext, useMemo, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BOOKING_TABS, getBackendStatus } from '../constants/customStyles';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -11,7 +11,7 @@ import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import useBookingEventCalculations from '../hooks/useBookingEventCalculations';
 import CreateButton from '../components/newBooking/CreateButton';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/native';
 import Error from '../helpers/Error';
 import { fetchBookings, fetchBookingsForCalendar } from '../apis/booking';
 import { useDispatch, useSelector } from 'react-redux';
@@ -23,10 +23,12 @@ import moment from 'moment';
 import { Calendar } from 'react-native-big-calendar';
 import { fetchBerths } from '../apis/berth';
 import { fetchBoatsList } from '../apis/boat';
+import { fetchPontoons } from '../apis/pontoon';
 import CalendarHeaderControls from '../components/myBookings/CalendarHeaderControls';
 import BerthSelector from '../components/myBookings/BerthSelector';
 import BoatSelector from '../components/myBookings/BoatSelector';
 import CalendarEvent from '../components/myBookings/CalendarEvent';
+import useBoatOccupancyBlocks, { convertOccupancyBlocksToEvents } from '../hooks/useBoatOccupancyBlocks';
 
 const MyBookingsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -34,7 +36,6 @@ const MyBookingsScreen = () => {
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  const authState = useSelector(state => state.authSlice.authState);
   const [unreadCount, setUnreadCount] = useState(0);
   const liveNotifications = useSelector(state => state.notificationSlice.notifications);
 
@@ -47,6 +48,8 @@ const MyBookingsScreen = () => {
   const [viewMode, setViewMode] = useState('calendar'); 
   const [calendarViewMode, setCalendarViewMode] = useState('month'); 
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isPontoonLoading, setIsPontoonLoading] = useState(true);
+  const [pontoonsData, setPontoonsData] = useState([]);
   const [berthsData, setBerthsData] = useState([]);
   const [selectedBerth, setSelectedBerth] = useState(null);
   const [isBerthLoading, setIsBerthLoading] = useState(true);
@@ -56,8 +59,9 @@ const MyBookingsScreen = () => {
 
   const [bookingsData, setBookingsData] = useState([]);
   const [calendarBookingsData, setCalendarBookingsData] = useState([]);
-  const [berthAvailabilityData, setBerthAvailabilityData] = useState([]);
+  const [berthSettings, setBerthSettings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTransitionLoading, setIsTransitionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const limit = 10;
@@ -91,36 +95,64 @@ const MyBookingsScreen = () => {
     return berthsData.find(berth => berth.id === selectedBerth);
   }, [berthsData, selectedBerth]);
 
+  // Calculate occupancy blocks for selected boat in day view
+  const occupancyBlocks = useBoatOccupancyBlocks(
+    calendarBookingsData,
+    selectedBoat,
+    calendarViewMode === 'day' ? currentMonth : null,
+    selectedBerthData,
+    berthSettings,
+    boatsData
+  );
+
   // Calculate event tracks and positions using custom hook
   const bookingsForCalculations = viewMode === 'calendar' ? calendarBookingsData : bookingsData;
-  
-  // Determine if we should use availability mode (only when boat is selected in DAY view)
-  // Show legacy view by default, only show availability when boat is selected
-  const useAvailabilityMode = selectedBoat !== null && calendarViewMode === 'day' && viewMode === 'calendar';
-  
-  // Get selected boat data
-  const selectedBoatData = useMemo(() => {
-    return boatsData.find(boat => boat.id === selectedBoat);
-  }, [boatsData, selectedBoat]);
-  
-  const { calendarEvents } = useBookingEventCalculations(
+  const { calendarEvents: regularCalendarEvents } = useBookingEventCalculations(
     bookingsForCalculations,
     selectedBerthData,
     calendarViewMode,
-    selectedBoatData,
-    currentMonth,
-    useAvailabilityMode,
-    berthAvailabilityData
+    berthSettings,
+    selectedBoat,
+    calendarViewMode === 'day' ? currentMonth : null,
   );
+
+  // Replace calendar events with occupancy blocks when boat is selected in day view
+  const calendarEvents = useMemo(() => {
+    // When boat is selected in day view, show ONLY occupancy blocks (no regular events)
+    if (calendarViewMode === 'day' && selectedBoat) {
+      if (occupancyBlocks.length > 0) {
+        // Convert occupancy blocks to calendar events - show ONLY occupancy blocks
+        const selectedBoatObj = boatsData.find(boat => boat.id === selectedBoat);
+        return convertOccupancyBlocksToEvents(occupancyBlocks, selectedBoatObj, selectedBerthData);
+      }
+      // If no occupancy blocks, return empty array to avoid showing regular events
+      return [];
+    }
+    // For non-day views or when no boat is selected, show regular calendar events
+    return regularCalendarEvents;
+  }, [calendarViewMode, selectedBoat, occupancyBlocks, regularCalendarEvents, boatsData, selectedBerthData]);
 
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
 
-  // Fetch berths on component mount
+  // Show loader when navigating to this screen
+  useFocusEffect(
+    useCallback(() => {
+      // Show transition loader when screen is about to be focused
+      setIsTransitionLoading(true);
+      
+      return () => {
+        // Cleanup when screen loses focus
+        setIsTransitionLoading(false);
+      };
+    }, [])
+  );
+
+  // Fetch pontoons on component mount
   useEffect(() => {
     if (isFocused) {
-      fetchBerthsData();
+      fetchPontoonsData();
       if (viewMode === 'calendar') {
         fetchBoatsData();
       }
@@ -134,17 +166,46 @@ const MyBookingsScreen = () => {
     }
   }, [viewMode, isFocused]);
 
-  const fetchBerthsData = async () => {
+  const fetchPontoonsData = async () => {
+    setIsPontoonLoading(true);
+    try {
+      const response = await fetchPontoons();
+      const pontoons = Array.isArray(response)
+        ? response
+        : (response?.results && Array.isArray(response?.results) ? response?.results : []);
+      
+      // Store pontoons data for later lookup
+      setPontoonsData(pontoons);
+      
+      // Use the first pontoon to fetch berths
+      if (Array.isArray(pontoons) && pontoons.length > 0) {
+        await fetchBerthsData(pontoons[0].id);
+      } else {
+        setBerthsData([]);
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsPontoonLoading(false);
+    }
+  };
+
+  const fetchBerthsData = async (pontoonId) => {
     setIsBerthLoading(true);
     try {
-      const response = await fetchBerths();
-      console.log('response from fetchBerths', response);
-      const berths = response?.results || [];
+      const response = await fetchBerths(pontoonId);
+      console.log('response berth settings---------------------------------------------------------------', response);
+      const berths = Array.isArray(response)
+        ? response
+        : (response?.results && Array.isArray(response?.results) ? response?.results : []);
       setBerthsData(berths);
       
       // Auto-select the first berth
-      if (Array.isArray(berths) && berths.length > 0 && !selectedBerth) {
+      if (Array.isArray(berths) && berths.length > 0) {
         setSelectedBerth(berths[0].id);
+      } else {
+        setSelectedBerth(null);
       }
     } catch (error) {
       let err_msg = Error(error);
@@ -180,8 +241,7 @@ const MyBookingsScreen = () => {
       setHasMorePages(true);
 
       if (viewMode === 'calendar') {
-        // Only fetch if berth is loaded and selected, and not already fetching
-        if (!isBerthLoading && selectedBerth && !isFetchingCalendar.current) {
+        if (!isBerthLoading && !isPontoonLoading && selectedBerth) {
           fetchCalendarBookings();
         }
       } else {
@@ -189,9 +249,24 @@ const MyBookingsScreen = () => {
       }
       selectedDateRef.current = null;
     }
-  }, [activeTab, isFocused, viewMode, isBerthLoading, selectedBerth]);
+  }, [activeTab, isFocused, viewMode, isBerthLoading, isPontoonLoading, selectedBerth]);
 
-  // Removed duplicate useEffect - handled in main useEffect below
+  // Hide transition loader once initial data is loaded
+  useEffect(() => {
+    if (isFocused && !isLoading && !isPontoonLoading && !isBerthLoading && !isBoatLoading) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        setIsTransitionLoading(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isFocused, isLoading, isPontoonLoading, isBerthLoading, isBoatLoading]);
+
+  useEffect(() => {
+    if (isFocused && viewMode === 'calendar' && selectedBerth && !isFirstFocus.current && !isBerthLoading && !isPontoonLoading) {
+      fetchCalendarBookings();
+    }
+  }, [selectedBerth, isBerthLoading, isPontoonLoading]);
 
   useEffect(() => {
     if (calendarViewMode !== 'day' || viewMode !== 'calendar') {
@@ -251,16 +326,11 @@ const MyBookingsScreen = () => {
     // }
   }, [liveNotifications]);
 
-  // Ref to prevent multiple simultaneous API calls
-  const isFetchingCalendar = useRef(false);
-
   // Fetch bookings for calendar view using the calendar API
   const fetchCalendarBookings = async () => {
-    if (!selectedBerth || isFetchingCalendar.current) {
+    if (!selectedBerth) {
       return;
-    }
-    
-    isFetchingCalendar.current = true;
+    }   
     setIsLoading(true);
     try {
       const startOfMonth = moment(currentMonth).startOf('month').format('YYYY-MM-DD');
@@ -268,11 +338,10 @@ const MyBookingsScreen = () => {
       const dateRange = { startDate: startOfMonth, endDate: endOfMonth };
       
       const response = await fetchBookingsForCalendar(dateRange, selectedBerth);
-      console.log('response from fetchBookingsForCalendar', response);
+      console.log('response calendar bookings', response);
       const bookings = response?.data || [];
-      const availabilityBlocks = response?.berth_settings || [];
       setCalendarBookingsData(bookings);
-      setBerthAvailabilityData(availabilityBlocks);
+      setBerthSettings(response?.berth_settings || []);
       setHasMorePages(false);
       setPage(1);
     } catch (error) {
@@ -280,7 +349,6 @@ const MyBookingsScreen = () => {
       toastContext.showToast(err_msg, "short", "error");
     } finally {
       setIsLoading(false);
-      isFetchingCalendar.current = false;
     }
   };
 
@@ -363,7 +431,6 @@ const MyBookingsScreen = () => {
     navigation.navigate('Notification');
   };
 
-  // Handle month change - debounced to prevent too many calls
   useEffect(() => {
     if (isFocused && viewMode === 'calendar' && selectedBerth && !isBerthLoading && !isFirstFocus.current) {
       fetchCalendarBookings();
@@ -375,31 +442,32 @@ const MyBookingsScreen = () => {
   };
 
   const handleEventPress = (event) => {
-    if (event.booking && event.isCurrentCustomer) {
-      navigation.navigate('BookingManagement', { booking: event.booking });
+    // Handle availability blocks - navigate to NewBooking with prefill data
+    if (event?.isOccupancyBlock && event?.isAvailable) {
+      if (event?.selectedBoatId && event?.berthData) {
+        const prefillData = {
+          selectedBoatId: event?.selectedBoatId,
+          berthName: event?.berthData?.name,
+          // Convert Date objects to ISO strings for serialization
+          startDate: event?.start instanceof Date ? event?.start?.toISOString() : event?.start,
+          endDate: event?.end instanceof Date ? event?.end?.toISOString() : event?.end,
+        };
+        
+        // Include pontoon name if available in berth data
+        if (event?.berthData?.pontoon?.name) {
+          prefillData.pontoonName = event?.berthData?.pontoon?.name;
+        }
+        
+        navigation.navigate('NewBooking', {
+          prefillData
+        });
+      }
       return;
     }
     
-    // Handle availability blocks - navigate to create booking
-    if (event.isSelectedBoat && event.availabilityBlock) {
-      const block = event.availabilityBlock;
-      const berthId = event.berthId || block.berthId;
-      const berthName = block.berthName;
-      
-      // Get time range from the event and convert to ISO strings for serialization
-      const startTime = event.start instanceof Date ? event.start.toISOString() : event.start;
-      const endTime = event.end instanceof Date ? event.end.toISOString() : event.end;
-      
-      // Navigate to NewBooking with pre-filled data
-      navigation.navigate('NewBooking', {
-        prefillData: {
-          berthId: berthId,
-          berthName: berthName,
-          startDate: startTime,
-          endDate: endTime,
-          selectedBoatId: selectedBoat, 
-        }
-      });
+    // Handle regular booking events
+    if (event?.booking && event?.isCurrentCustomer) {
+      navigation.navigate('BookingManagement', { booking: event?.booking });
     }
   };
 
@@ -526,23 +594,7 @@ const MyBookingsScreen = () => {
             contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           >
             <View style={styles.booking_card_list_calendar}>
-              {isBerthLoading || !selectedBerth ? (
-                <View style={styles.noDataContainer}>
-                  <View style={styles.refreshLoaderContainer}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                  </View>
-                </View>
-              // ) : calendarBookingsData.length === 0 ? (
-              //   <View style={styles.noDataContainer}>
-              //     <NoDataImage
-              //       imageSource={require('../assets/images/no_booking.png')}
-              //       title="No bookings yet"
-              //       subtitle="You haven't made any bookings."
-              //       onRefresh={refreshControl}
-              //       isDarkMode={isDarkMode}
-              //     />
-              //   </View>
-              ) : (
+              {!isPontoonLoading && !isBerthLoading && selectedBerth && (
                 <View style={[styles.calendarContainer, {
                   borderColor: isDarkMode ? Colors.dark_separator : '#EFEFEF',
                   borderWidth: 1,
@@ -564,12 +616,27 @@ const MyBookingsScreen = () => {
                       isDarkMode={isDarkMode}
                     />
                     {calendarViewMode === 'day' && (
-                      <BoatSelector
-                        boatsData={boatsData}
-                        selectedBoat={selectedBoat}
-                        onBoatChange={item => setSelectedBoat(item.value)}
-                        isDarkMode={isDarkMode}
-                      />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <BoatSelector
+                          boatsData={boatsData}
+                          selectedBoat={selectedBoat}
+                          onBoatChange={item => setSelectedBoat(item.value)}
+                          isDarkMode={isDarkMode}
+                        />
+                        {selectedBoat && (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => setSelectedBoat(null)}
+                            style={styles.clearButton}
+                          >
+                            <Ionicons 
+                              name="close-circle" 
+                              size={25} 
+                              color={isDarkMode ? Colors.white : '#666666'} 
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     )}
                   </View>
                   <View style={[styles.calendarWrapper, {
@@ -626,7 +693,8 @@ const MyBookingsScreen = () => {
                           onPress={handleEventPress}
                         />
                       )}
-                    //   eventCellStyle={(event, props) => {
+                    />
+                    {/*   eventCellStyle={(event, props) => {
                     //   // For non-day views (week, month), use standard styling without positioning
                     //   const isCurrentUser = event.isCurrentCustomer;
   
@@ -699,9 +767,7 @@ const MyBookingsScreen = () => {
                     //     justifyContent: 'flex-start',
                     //     alignItems: 'flex-start',
                     //   };
-                    // }}
-
-                    />
+                    // }} */}
                   </View>
                 </View>
               )}
@@ -832,7 +898,7 @@ const MyBookingsScreen = () => {
           right={40}
         />
       )}
-      <AbaciLoader visible={isLoading} />
+      <AbaciLoader visible={isLoading || isTransitionLoading} />
     </SafeAreaView>
   );
 };
@@ -997,11 +1063,19 @@ const styles = StyleSheet.create({
   },
   selectorsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     marginTop: -14,
     paddingBottom: 8,
+  },
+  clearButton: {
+    marginTop: 8,
+    marginLeft: 6,
+    padding: 6,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContainer: {
     flex: 1,
