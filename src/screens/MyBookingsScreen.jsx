@@ -128,7 +128,55 @@ const MyBookingsScreen = () => {
       // If no occupancy blocks, return empty array to avoid showing regular events
       return [];
     }
-    // For non-day views or when no boat is selected, show regular calendar events
+    
+    // For month view, filter to only show current customer's bookings and group by date
+    if (calendarViewMode === 'month') {
+      // Filter to only current customer bookings
+      const customerBookings = regularCalendarEvents.filter(event => event.isCurrentCustomer);
+      
+      // Group events by date (using start date as key)
+      const eventsByDate = {};
+      customerBookings.forEach(event => {
+        const dateKey = moment(event.start).format('YYYY-MM-DD');
+        if (!eventsByDate[dateKey]) {
+          eventsByDate[dateKey] = [];
+        }
+        eventsByDate[dateKey].push(event);
+      });
+      
+      // Process events: show first event normally, then add "+X more" event
+      const processedEvents = [];
+      Object.keys(eventsByDate).forEach(dateKey => {
+        const dayEvents = eventsByDate[dateKey];
+        if (dayEvents.length === 1) {
+          // Single event, show as is
+          processedEvents.push(dayEvents[0]);
+        } else if (dayEvents.length > 1) {
+          // Multiple events: show first one normally
+          processedEvents.push(dayEvents[0]);
+          
+          // Create a separate "more" event
+          const firstEvent = dayEvents[0];
+          const moreEvent = {
+            id: `more-${dateKey}`,
+            title: `+${dayEvents.length - 1} more`,
+            start: firstEvent.start,
+            end: firstEvent.start, // Same start/end for month view
+            booking: firstEvent.booking, // Keep reference to first booking
+            isCurrentCustomer: true,
+            hasMoreEvents: true,
+            moreCount: dayEvents.length - 1,
+            allDayEvents: dayEvents, // Store all events for potential use
+            isMoreIndicator: true, // Flag to identify this as a "more" indicator
+          };
+          processedEvents.push(moreEvent);
+        }
+      });
+      
+      return processedEvents;
+    }
+    
+    // For week view or when no boat is selected, show regular calendar events
     return regularCalendarEvents;
   }, [calendarViewMode, selectedBoat, occupancyBlocks, regularCalendarEvents, boatsData, selectedBerthData]);
 
@@ -465,6 +513,14 @@ const MyBookingsScreen = () => {
       return;
     }
     
+    // Handle "more" events in month view - switch to day view for that date
+    if (event?.isMoreIndicator && calendarViewMode === 'month') {
+      const eventDate = event.start instanceof Date ? event.start : new Date(event.start);
+      setCurrentMonth(eventDate);
+      setCalendarViewMode('day');
+      return;
+    }
+    
     // Handle regular booking events
     if (event?.booking && event?.isCurrentCustomer) {
       navigation.navigate('BookingManagement', { booking: event?.booking });
@@ -477,13 +533,30 @@ const MyBookingsScreen = () => {
   };
 
   const navigateMonth = (direction) => {
-    const newMonth = new Date(currentMonth);
-    if (direction === 'prev') {
-      newMonth.setMonth(newMonth.getMonth() - 1);
+    const newDate = new Date(currentMonth);
+    if (calendarViewMode === 'day') {
+      // Move by days in day view
+      if (direction === 'prev') {
+        newDate.setDate(newDate.getDate() - 1);
+      } else {
+        newDate.setDate(newDate.getDate() + 1);
+      }
+    } else if (calendarViewMode === 'week') {
+      // Move by weeks in week view
+      if (direction === 'prev') {
+        newDate.setDate(newDate.getDate() - 7);
+      } else {
+        newDate.setDate(newDate.getDate() + 7);
+      }
     } else {
-      newMonth.setMonth(newMonth.getMonth() + 1);
+      // Move by months in month view
+      if (direction === 'prev') {
+        newDate.setMonth(newDate.getMonth() - 1);
+      } else {
+        newDate.setMonth(newDate.getMonth() + 1);
+      }
     }
-    setCurrentMonth(newMonth);
+    setCurrentMonth(newDate);
   };
 
   return (
@@ -608,35 +681,51 @@ const MyBookingsScreen = () => {
                     onToggleView={() => setViewMode('list')}
                     isDarkMode={isDarkMode}
                   />
-                  <View style={styles.selectorsContainer}>
-                    <BerthSelector
-                      berthsData={berthsData}
-                      selectedBerth={selectedBerth}
-                      onBerthChange={item => setSelectedBerth(item.value)}
-                      isDarkMode={isDarkMode}
-                    />
-                    {calendarViewMode === 'day' && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        <BoatSelector
-                          boatsData={boatsData}
-                          selectedBoat={selectedBoat}
-                          onBoatChange={item => setSelectedBoat(item.value)}
+                  <View style={[
+                    styles.selectorsContainer,
+                    calendarViewMode !== 'day' && { justifyContent: 'center' }
+                  ]}>
+                    {calendarViewMode !== 'day' ? (
+                      <View style={{ width: '100%', alignItems: 'center' }}>
+                        <View style={{ width: 140 }}>
+                          <BerthSelector
+                            berthsData={berthsData}
+                            selectedBerth={selectedBerth}
+                            onBerthChange={item => setSelectedBerth(item.value)}
+                            isDarkMode={isDarkMode}
+                          />
+                        </View>
+                      </View>
+                    ) : (
+                      <>
+                        <BerthSelector
+                          berthsData={berthsData}
+                          selectedBerth={selectedBerth}
+                          onBerthChange={item => setSelectedBerth(item.value)}
                           isDarkMode={isDarkMode}
                         />
-                        {selectedBoat && (
-                          <TouchableOpacity
-                            activeOpacity={0.7}
-                            onPress={() => setSelectedBoat(null)}
-                            style={styles.clearButton}
-                          >
-                            <Ionicons 
-                              name="close-circle" 
-                              size={25} 
-                              color={isDarkMode ? Colors.white : '#666666'} 
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                          <BoatSelector
+                            boatsData={boatsData}
+                            selectedBoat={selectedBoat}
+                            onBoatChange={item => setSelectedBoat(item.value)}
+                            isDarkMode={isDarkMode}
+                          />
+                          {selectedBoat && (
+                            <TouchableOpacity
+                              activeOpacity={0.7}
+                              onPress={() => setSelectedBoat(null)}
+                              style={styles.clearButton}
+                            >
+                              <Ionicons 
+                                name="close-circle" 
+                                size={25} 
+                                color={isDarkMode ? Colors.white : '#666666'} 
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </>
                     )}
                   </View>
                   <View style={[styles.calendarWrapper, {
@@ -646,7 +735,9 @@ const MyBookingsScreen = () => {
                     <Calendar
                       key={`${isDarkMode ? 'dark' : 'light'}-${calendarViewMode}-calendar`}
                       events={calendarEvents}
-                      height={Dimensions.get('window').height - 250}
+                      height={calendarViewMode === 'month' 
+                        ? 400 
+                        : Dimensions.get('window').height - 250}
                       mode={calendarViewMode}
                       date={currentMonth}
                       onSwipeEnd={handleMonthChange}
@@ -654,6 +745,7 @@ const MyBookingsScreen = () => {
                       onPressCell={handleCellPress}
                       showNowIndicator={false}
                       ampm={true}
+                      {...(calendarViewMode === 'day' && { renderHeader: () => null })}
                       style={{
                         paddingTop: 0,
                         paddingHorizontal: 10,
@@ -894,8 +986,8 @@ const MyBookingsScreen = () => {
         <CreateButton
           onPress={() => navigation.navigate('NewBooking')}
           icon={<Lucide name="calendar-plus" size={28} color={Colors.white} />}
-          bottom={130 + insets.bottom}
-          right={40}
+          bottom={115 + insets.bottom}
+          right={35}
         />
       )}
       <AbaciLoader visible={isLoading || isTransitionLoading} />
@@ -1043,7 +1135,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 12,
     overflow: 'hidden',
-    minHeight: 750,
+    minHeight: 600,
   },
   calendarWrapper: {
     position: 'relative',

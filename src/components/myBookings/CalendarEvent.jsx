@@ -16,6 +16,8 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
     }
 
     const isCurrentUser = event.isCurrentCustomer;
+    const isMoreIndicator = event.isMoreIndicator;
+    const moreCount = event.moreCount || 0;
   
     const backgroundColor = isCurrentUser
       ? Colors.primary
@@ -29,24 +31,29 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
         onPress={() => onPress && onPress(event)}
         style={{
           backgroundColor,
-          borderRadius: 4,
-          padding: 2,
+          borderRadius: 3,
+          padding: 1,
+          paddingHorizontal: 3,
           opacity,
           justifyContent: 'center',
           alignItems: 'center',
           top: `${props.style[1]?.top}` || 0,
           position: 'absolute',
+          maxWidth: '95%',
+          alignSelf: 'flex-start',
         }}
       >
         <Text
           numberOfLines={1}
           style={{
             color: Colors.white,
-            fontSize: 10,
+            fontSize: 9,
             fontFamily: 'Inter-SemiBold',
           }}
         >
-          {event.booking?.boat?.name || 'Booking'}
+          {isMoreIndicator 
+            ? `+${moreCount} more` 
+            : (event.booking?.boat?.name || 'Booking')}
         </Text>
       </TouchableOpacity>
     );
