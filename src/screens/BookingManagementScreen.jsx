@@ -7,16 +7,19 @@ import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { BoatDetailsTab, QRCodeTab } from '../components/bookingManagement';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import LinearGradient from 'react-native-linear-gradient';
-import { bookingDetails, checkInBooking, checkOutBooking, deleteBooking } from '../apis/booking';
+import { bookingDetails, checkInBooking, checkOutBooking, deleteBooking, extendBooking } from '../apis/booking';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
+import BookingSuccessModal from '../components/modals/BookingSuccessModal';
+import ExtendBookingModal from '../components/modals/ExtendBookingModal';
 import { ToastContext } from '../context/ToastContext';
 import Error from '../helpers/Error';
 import { useFocusEffect } from '@react-navigation/native';
 import AbaciLoader from '../components/AbaciLoader';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateBooking } from '../../store/bookingSlice';
 
 const BookingManagementScreen = ({ route, navigation }) => {
-  const { booking } = route.params || {};
+  const { bookingId, sourceView } = route.params || {};
   const [activeTab, setActiveTab] = useState('info');
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -24,20 +27,45 @@ const BookingManagementScreen = ({ route, navigation }) => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showCheckoutConfirmationModal, setShowCheckoutConfirmationModal] = useState(false);
   const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
+  const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isTabLoading, setIsTabLoading] = useState(false);
+  const [editSourceView, setEditSourceView] = useState(() => sourceView || 'calendar'); // Store source view for navigation
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [extending, setExtending] = useState(false);
 
   const toastContext = useContext(ToastContext);
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const dispatch = useDispatch();
 
   useFocusEffect(
     useCallback(() => {
-      if (booking) {
+      if (bookingId) {
         fetchBookingDetails();
       }
-    }, [booking])
+    }, [bookingId])
   )
+  
+  // Store sourceView when it changes
+  useEffect(() => {
+    if (route?.params?.sourceView) {
+      setEditSourceView(route.params.sourceView);
+    }
+  }, [route?.params?.sourceView]);
+
+  // Check for edit success when screen comes into focus
+  useEffect(() => {
+    if (route?.params?.editSuccess) {
+      setShowEditSuccessModal(true);
+      // Preserve sourceView from edit navigation params if provided
+      if (route?.params?.sourceView) {
+        setEditSourceView(route.params.sourceView);
+      }
+      // Clear the param to avoid showing again
+      navigation.setParams({ editSuccess: undefined });
+    }
+  }, [route?.params?.editSuccess, route?.params?.sourceView, navigation]);
 
   useEffect(() => {
     if (bookingData?.status === 'CHECKED_OUT' && activeTab === 'qr') {
@@ -52,13 +80,20 @@ const BookingManagementScreen = ({ route, navigation }) => {
   }, [navigation]);
 
   const fetchBookingDetails = async () => {
+    if (!bookingId) {
+      // toastContext.showToast('Booking ID not found', 'short', 'error');
+      // navigation.goBack();
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      const response = await bookingDetails(booking?.id);
+      const response = await bookingDetails(bookingId);
       setBookingData(response);
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
+      // navigation.goBack();
     } finally {
       setIsLoading(false);
     }
@@ -100,30 +135,59 @@ const BookingManagementScreen = ({ route, navigation }) => {
   //   }
   // };
 
-  // const handleCheckOut = () => {
-  //   if (!booking?.id) {
-  //     toastContext.showToast('Booking ID not found', 'short', 'error');
-  //     return;
-  //   }
-  //   setShowCheckoutConfirmationModal(true);
-  // };
+  const handleCheckOut = () => {
+    if (!bookingId) {
+      toastContext.showToast('Booking ID not found', 'short', 'error');
+      return;
+    }
+    setShowCheckoutConfirmationModal(true);
+  };
 
-  // const handleConfirmCheckOut = async () => {
-  //   const bookingId = booking?.id;
+  const handleConfirmCheckOut = async () => {
+    if (!bookingId) {
+      toastContext.showToast('Booking ID not found', 'short', 'error');
+      return;
+    }
     
-  //   setIsCheckingOut(true);
-  //   try {
-  //     setShowCheckoutConfirmationModal(false);
-  //     await checkOutBooking(bookingId);
-  //     toastContext.showToast('Booking checked-out successfully!', 'short', 'success');
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     let err_msg = Error(error);
-  //     toastContext.showToast(err_msg, 'short', 'error');
-  //   } finally {
-  //     setIsCheckingOut(false);
-  //   }
-  // };
+    setIsCheckingOut(true);
+    try {
+      setShowCheckoutConfirmationModal(false);
+      await checkOutBooking(bookingId);
+      toastContext.showToast('Booking checked-out successfully!', 'short', 'success');
+      // Refresh booking details after checkout
+      await fetchBookingDetails();
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  const handleExtendBooking = async (bookingId, hours, minutes, seconds) => {
+    if (!bookingId) {
+      toastContext.showToast('Booking ID not found', 'short', 'error');
+      return;
+    }
+    setExtending(true);
+    try {
+      // seconds parameter is passed by modal but not used by API
+      console.log(bookingId, hours, minutes);
+      const updated = await extendBooking(bookingId, hours, minutes);
+      if (updated) {
+        dispatch(updateBooking(updated));
+        // Refresh booking details after extending
+        await fetchBookingDetails();
+      }
+      toastContext.showToast(`Booking extended by ${hours}:${minutes}`, "short", "success");
+      setShowExtendModal(false);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, "short", "error");
+    } finally {
+      setExtending(false);
+    }
+  };
 
   const handleTabSwitch = (tabName) => {
     if (activeTab !== tabName) {
@@ -136,19 +200,39 @@ const BookingManagementScreen = ({ route, navigation }) => {
   };
 
   const handleEditBooking = () => {
-    if (!booking?.id) {
+    if (!bookingId) {
       toastContext.showToast('Booking ID not found', 'short', 'error');
       return;
     }
     navigation.navigate('NewBooking', {
       editMode: true,
-      bookingId: booking.id,
-      bookingData: bookingData
+      bookingId: bookingId,
+      bookingData: bookingData,
+      sourceView: editSourceView // Pass source view to NewBookingScreen
+    });
+  };
+  
+  const handleCloseEditSuccessModal = () => {
+    setShowEditSuccessModal(false);
+    // Refresh booking details after successful edit
+    if (bookingId) {
+      fetchBookingDetails();
+    }
+  };
+  
+  const handleGoHomeFromEditSuccess = () => {
+    setShowEditSuccessModal(false);
+    // Navigate back to MyBookingsScreen based on source view
+    navigation.navigate('Bookings', {
+      screen: 'MyBookings',
+      params: {
+        viewMode: editSourceView === 'list' ? 'list' : 'calendar'
+      }
     });
   };
 
   const handleDeleteBooking = () => {
-    if (!booking?.id) {
+    if (!bookingId) {
       toastContext.showToast('Booking ID not found', 'short', 'error');
       return;
     }
@@ -156,7 +240,6 @@ const BookingManagementScreen = ({ route, navigation }) => {
   };
 
   const handleConfirmDeleteBooking = async () => {
-    const bookingId = booking?.id;
     
     setShowDeleteConfirmationModal(false);
     try {
@@ -212,37 +295,48 @@ const BookingManagementScreen = ({ route, navigation }) => {
               </View>
             )}
             <Text style={[styles.bookingTitle, { color: isDarkMode ? Colors.white : '#4C4C4C' }]}>Booking Details</Text>
-            <Text style={[styles.bookingId, { color: Colors.primary }]}>{booking?.booking_number}</Text>
+            <Text style={[styles.bookingId, { color: Colors.primary }]}>{bookingData?.booking_number || 'Loading...'}</Text>
           </View>
           <View style={styles.actionButtons}>
-            {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CHECKED_IN' && <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />}
-            {bookingData?.status === 'CHECKED_OUT' ? (
-              <View style={styles.checkedOutButton}>
-                <MaterialDesignIcons name="check-circle" size={15} color={Colors.black} />
-                <Text style={styles.checkedOutText}>Checked Out</Text>
-              </View>
-            ) : null}
-            {/* Check-in and Check-out buttons commented out
+            {bookingData?.status !== 'CANCELLED' && 
+              bookingData?.status !== 'NO_SHOW' && 
+              bookingData?.status !== 'CHECKED_IN' && 
+              bookingData?.status !== 'CHECKED_OUT' && 
+              <View style={[styles.bookingHeaderVerticalDivider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
+              }
             {bookingData?.status === 'CHECKED_OUT' ? (
               <View style={styles.checkedOutButton}>
                 <MaterialDesignIcons name="check-circle" size={15} color={Colors.black} />
                 <Text style={styles.checkedOutText}>Checked Out</Text>
               </View>
             ) : bookingData?.status === 'CHECKED_IN' ? (
-              <TouchableOpacity 
-                style={[styles.checkInButton, isCheckingOut && styles.checkInButtonDisabled]} 
-                onPress={handleCheckOut}
-                disabled={isCheckingOut}
-              >
-                {isCheckingOut ? (
-                  <ActivityIndicator size="small" color={Colors.white} style={styles.checkInIcon} />
-                ) : (
-                  <Image source={require('../assets/images/clock_out.png')} style={styles.checkInIcon} />
-                )}
-                <Text style={styles.checkInText}>
-                  {isCheckingOut ? 'Checking out...' : 'Check-out'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.checkedInActionsContainer}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.extendButton}
+                  onPress={() => setShowExtendModal(true)}
+                  disabled={extending}
+                >
+                  <MaterialDesignIcons name="timer-plus-outline" size={18} color={Colors.primary} style={styles.extendButtonIcon} />
+                  <Text style={styles.extendButtonText}>Extend stay</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.checkInButton, isCheckingOut && styles.checkInButtonDisabled]} 
+                  onPress={handleCheckOut}
+                  disabled={isCheckingOut}
+                >
+                  {isCheckingOut ? (
+                    <ActivityIndicator size="small" color={Colors.white} style={styles.checkInIcon} />
+                  ) : (
+                    <Image source={require('../assets/images/clock_out.png')} style={styles.checkInIcon} />
+                  )}
+                  <Text style={styles.checkInText}>
+                    {isCheckingOut ? 'Checking out...' : 'Check-out'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            {/* Check-in button - Commented out
             ) : bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CANCELLED' ? (
               <TouchableOpacity 
                 style={[styles.checkInButton, isCheckingIn && styles.checkInButtonDisabled]} 
@@ -260,13 +354,23 @@ const BookingManagementScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             ) : null}
             */}
-            {bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'CHECKED_IN' && (
+            {bookingData?.status !== 'CHECKED_OUT' 
+              && bookingData?.status !== 'NO_SHOW' 
+              && bookingData?.status !== 'CANCELLED' 
+              && bookingData?.status !== 'CHECKED_IN' 
+              && bookingData?.status !== 'EXTENDED' 
+              && (
               <TouchableOpacity style={styles.editButton} onPress={handleEditBooking}>
                 <MaterialDesignIcons name="square-edit-outline" size={20} color={Colors.primary} />
                 <Text style={styles.editButtonText}>Edit</Text>
               </TouchableOpacity>
             )}
-            {bookingData?.status !== 'CANCELLED' && bookingData?.status !== 'CHECKED_IN' && bookingData?.status !== 'CHECKED_OUT' && bookingData?.status !== 'NO_SHOW' && (
+            {bookingData?.status !== 'CANCELLED' 
+              && bookingData?.status !== 'CHECKED_IN' 
+              && bookingData?.status !== 'CHECKED_OUT' 
+              && bookingData?.status !== 'NO_SHOW' 
+              && bookingData?.status !== 'EXTENDED' 
+              && (
               <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteBooking}>
                 <MaterialDesignIcons name="close-circle-outline" size={22} color={Colors.white} />
                 <Text style={styles.deleteButtonText}>Cancel</Text>
@@ -329,13 +433,13 @@ const BookingManagementScreen = ({ route, navigation }) => {
         </LinearGradient>
       )}
 
-      {/* Check-in and Check-out Confirmation Modals - Commented out
+      {/* Check-in Confirmation Modal - Commented out
       <ConfirmationModal
         isVisible={showConfirmationModal}
         onRequestClose={() => setShowConfirmationModal(false)}
         onConfirm={handleConfirmCheckIn}
         title="Check-in Confirmation"
-        message={`Are you sure you want to check-in booking #${booking?.booking_number}?`}
+        message={`Are you sure you want to check-in booking #${bookingData?.booking_number || ''}?`}
         confirmText="Check-in"
         cancelText="Cancel"
         showWarningIcon={true}
@@ -351,13 +455,15 @@ const BookingManagementScreen = ({ route, navigation }) => {
         showConfirmIcon={true}
         confirmButtonColor={Colors.primary}
       />
+      */}
 
+      {/* Check-out Confirmation Modal */}
       <ConfirmationModal
         isVisible={showCheckoutConfirmationModal}
         onRequestClose={() => setShowCheckoutConfirmationModal(false)}
         onConfirm={handleConfirmCheckOut}
         title="Check-out Confirmation"
-        message={`Are you sure you want to check-out booking #${booking?.booking_number}?`}
+        message={`Are you sure you want to check-out booking #${bookingData?.booking_number || ''}?`}
         confirmText="Check-out"
         cancelText="Cancel"
         showWarningIcon={true}
@@ -373,7 +479,6 @@ const BookingManagementScreen = ({ route, navigation }) => {
         showConfirmIcon={true}
         confirmButtonColor={Colors.primary}
       />
-      */}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
@@ -381,7 +486,7 @@ const BookingManagementScreen = ({ route, navigation }) => {
         onRequestClose={() => setShowDeleteConfirmationModal(false)}
         onConfirm={handleConfirmDeleteBooking}
         title="Cancel Booking"
-        message={`Are you sure you want to cancel booking #${booking?.booking_number}?`}
+        message={`Are you sure you want to cancel booking #${bookingData?.booking_number || ''}?`}
         confirmText="Cancel Booking"
         cancelText="Keep Booking"
         showWarningIcon={true}
@@ -393,7 +498,25 @@ const BookingManagementScreen = ({ route, navigation }) => {
         showConfirmIcon={true}
         confirmButtonColor="#FF4444"
       />
-      <AbaciLoader visible={isLoading || isTabLoading} />
+
+      {/* Extend Booking Modal */}
+      <ExtendBookingModal
+        visible={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        onExtend={handleExtendBooking}
+        bookingItem={bookingData}
+        extending={extending}
+      />
+
+      {/* Edit Success Modal */}
+      <BookingSuccessModal
+        visible={showEditSuccessModal}
+        onClose={handleCloseEditSuccessModal}
+        onGoHome={handleGoHomeFromEditSuccess}
+        isEditMode={true}
+        bookingData={bookingData}
+      />
+      <AbaciLoader visible={isLoading || isTabLoading || extending} />
     </SafeAreaView>
   );
 };
@@ -484,6 +607,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  checkedInActionsContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
   bookingHeaderVerticalDivider: {
     width: 1,
     height: 60,
@@ -492,11 +620,14 @@ const styles = StyleSheet.create({
   checkInButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     gap: 6,
+    minWidth: 125,
+    height: 36,
   },
   checkInButtonDisabled: {
     backgroundColor: '#CCCCCC',
@@ -511,6 +642,28 @@ const styles = StyleSheet.create({
     width: 15,
     height: 15,
     resizeMode: 'contain',
+  },
+  extendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#F8FFFC',
+    gap: 6,
+    minWidth: 120,
+    height: 36,
+  },
+  extendButtonIcon: {
+    marginRight: 0,
+  },
+  extendButtonText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
   editButton: {
     flexDirection: 'row',

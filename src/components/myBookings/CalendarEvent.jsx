@@ -65,6 +65,7 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
     const leftPercent = event.leftPercent || 0;
     const isAvailable = event.isAvailable;
     const isOccupied = event.isOccupied;
+    const isNonWorkingHours = event.isNonWorkingHours || false;
     const selectedBoatAlreadyBooked = event.selectedBoatAlreadyBooked || false;
 
     // Format start and end times
@@ -72,12 +73,16 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
     const endTime = event.end ? moment(event.end).format('h:mm A') : '';
     const timeRange = startTime && endTime ? `${startTime} - ${endTime}` : '';
 
-    // Different colors for available and occupied blocks
-    const backgroundColor = isAvailable
+    // Different colors for available, occupied blocks, selected boat bookings, and non-working hours
+    const backgroundColor = isNonWorkingHours
+      ? (isDarkMode ? Colors.dark_container : '#F5F5F5') 
+      : isAvailable
       ? 'rgba(76, 175, 80, 0.2)' // Light green for available
-      : 'rgba(158, 158, 158, 0.2)'; // Standard gray for occupied blocks
+      : selectedBoatAlreadyBooked
+      ? 'rgba(33, 150, 243, 0.2)' // Blue for selected boat bookings
+      : 'rgba(244, 67, 54, 0.2)'; // Red for occupied blocks
 
-    // Make availability blocks clickable, but not occupied blocks
+    // Make availability blocks clickable, but not occupied blocks or non-working hours
     const Component = isAvailable ? TouchableOpacity : View;
     const componentProps = isAvailable 
       ? { 
@@ -98,13 +103,18 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
           top: `${props.style[1]?.top}` || 0,
           height: `${props.style[1]?.height}` || 0,
           borderWidth: 1,
-          borderColor: isAvailable 
+          borderColor: isNonWorkingHours
+            ? (isDarkMode ? Colors.dark_separator : '#E0E0E0') // Light gray border for non-working hours
+            : isAvailable 
             ? 'rgba(76, 175, 80, 0.4)' 
-            : 'rgba(158, 158, 158, 0.6)', // Standard gray border for occupied blocks
+            : selectedBoatAlreadyBooked
+            ? 'rgba(33, 150, 243, 0.4)' // Blue border for selected boat bookings
+            : 'rgba(244, 67, 54, 0.6)', // Red border for occupied blocks
           overflow: 'hidden',
         }}
       >
-        {isOccupied && (
+        {/* Show diagonal stripes only for occupied blocks (not for non-working hours or selected boat bookings) */}
+        {isOccupied && !isNonWorkingHours && !selectedBoatAlreadyBooked && (
           <Svg
             height="100%"
             width="100%"
@@ -122,7 +132,7 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
                   y1="0"
                   x2="10"
                   y2="10"
-                  stroke={isDarkMode ? 'rgba(158, 158, 158, 0.3)' : 'rgba(117, 117, 117, 0.3)'}
+                  stroke={isDarkMode ? 'rgba(244, 67, 54, 0.4)' : 'rgba(244, 67, 54, 0.4)'}
                   strokeWidth="1.5"
                 />
               </Pattern>
@@ -134,7 +144,8 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
             />
           </Svg>
         )}
-        {timeRange && (
+        {/* Don't show time range and label for non-working hours */}
+        {timeRange && !isNonWorkingHours && (
           <View style={{ padding: 4 }}>
             <Text
               numberOfLines={1}
@@ -145,7 +156,7 @@ const CalendarEvent = ({ event, props, calendarViewMode, isDarkMode, onPress }) 
                 fontWeight: '500',
               }}
             >
-              {isAvailable ? 'Available' : 'Occupied'}
+              {isAvailable ? 'Available' : (selectedBoatAlreadyBooked ? 'Your Booking' : 'Occupied')}
             </Text>
             <Text
               numberOfLines={1}

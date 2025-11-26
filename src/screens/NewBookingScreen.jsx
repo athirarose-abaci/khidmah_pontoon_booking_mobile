@@ -332,6 +332,7 @@ const NewBookingScreen = ({ navigation, route }) => {
       };
 
       const response = await createBooking(bookingPayload);
+      console.log("response from create booking", response);
       dispatch(addBookings([response]));
       setBookingData(response);
       setShowSuccessModal(true);
@@ -392,7 +393,19 @@ const NewBookingScreen = ({ navigation, route }) => {
 
       const response = await updateBookingAPI(editingBookingId, bookingPayload);
       dispatch(updateBooking(response));
-      setShowSuccessModal(true);
+      
+      // For edit mode, navigate back to BookingManagement without showing modal here
+      // The modal will be shown in BookingManagementScreen
+      if (isEditMode) {
+        navigation.navigate('BookingManagement', { 
+          bookingId: editingBookingId,
+          editSuccess: true,
+          sourceView: route?.params?.sourceView || 'calendar' // Pass sourceView back
+        });
+      } else {
+        // For create mode, show success modal
+        setShowSuccessModal(true);
+      }
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, "long", "error");
@@ -404,7 +417,11 @@ const NewBookingScreen = ({ navigation, route }) => {
   const handleGoHome = () => {
     setShowSuccessModal(false);
     setBookingData(null);
-    navigation.goBack();
+    // For edit mode, navigation already happened in handleSubmitBooking
+    // For create mode, just go back
+    if (!isEditMode) {
+      navigation.goBack();
+    }
   };
 
   const handleCloseModal = () => {
@@ -468,8 +485,7 @@ const NewBookingScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchPontoonsData();
-      fetchBerthsData();
+      fetchPontoonsData(); // This will also fetch berths if pontoon info is available
       fetchBoatsData();
     }, [])
   );
@@ -507,7 +523,22 @@ const NewBookingScreen = ({ navigation, route }) => {
       setBerthsData(response || []);
       dispatch(setBerths(response || []));
       
-      if (response && response?.length === 1) {
+      const prefillData = route?.params?.prefillData;
+      
+      // If prefillData has berthId, select that berth
+      if (prefillData?.berthId && response) {
+        const berth = response.find(b => b?.id === prefillData?.berthId);
+        if (berth) {
+          setBerthName(berth?.name);
+        }
+      } else if (prefillData?.berthName && response) {
+        // Fallback to berth name if ID not found
+        const berth = response.find(b => b?.name === prefillData?.berthName);
+        if (berth) {
+          setBerthName(berth?.name);
+        }
+      } else if (response && response?.length === 1) {
+        // Single berth case
         setBerthName(response?.[0]?.name);
       } else {
         setBerthName('');
@@ -528,7 +559,25 @@ const NewBookingScreen = ({ navigation, route }) => {
       setPontoonsData(pontoons);
       dispatch(setPontoons(pontoons));
       
-      if(response?.length === 1 && !route?.params?.prefillData?.pontoonName) {
+      const prefillData = route?.params?.prefillData;
+      
+      // If prefillData has pontoon info, fetch berths for that pontoon
+      if (prefillData?.pontoonId) {
+        // Find pontoon by ID and fetch its berths
+        const pontoon = pontoons.find(p => p.id === prefillData.pontoonId);
+        if (pontoon) {
+          setPontoonName(pontoon.name);
+          await fetchBerthsData(pontoon.id);
+        }
+      } else if (prefillData?.pontoonName) {
+        // Find pontoon by name and fetch its berths
+        const pontoon = pontoons.find(p => p.name === prefillData.pontoonName);
+        if (pontoon) {
+          setPontoonName(pontoon.name);
+          await fetchBerthsData(pontoon.id);
+        }
+      } else if(response?.length === 1) {
+        // Single pontoon case - fetch its berths
         const singlePontoon = pontoons[0];
         setPontoonName(singlePontoon?.name);
         await fetchBerthsData(singlePontoon?.id);

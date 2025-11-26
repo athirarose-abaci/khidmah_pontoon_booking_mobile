@@ -16,13 +16,13 @@ const LoginScreen = () => {
   // Memoize styles to prevent unnecessary re-renders
   const scrollViewContentStyle = useMemo(() => ({
     flexGrow: 1,
-    paddingBottom: currentScreen === 'register' ? 180 : 0,
+    paddingBottom: currentScreen === 'register' ? 200 : 120,
     minHeight: '100%'
   }), [currentScreen]);
 
   const logoContainerStyle = useMemo(() => [
     styles.logo_container,
-    currentScreen === 'register' && { marginTop: 10 },
+    currentScreen === 'register' && { marginTop: 5 },
     currentScreen === 'otp' && { marginTop: -50 }
   ], [currentScreen]);
 

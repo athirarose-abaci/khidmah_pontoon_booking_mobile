@@ -4,9 +4,9 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
 
-const BoatSelector = ({ boatsData, selectedBoat, onBoatChange, isDarkMode }) => {
+const BoatSelector = ({ boatsData, selectedBoat, onBoatChange, isDarkMode, containerStyle }) => {
   return (
-    <View style={styles.boatDropdownContainer}>
+    <View style={[styles.boatDropdownContainer, containerStyle]}>
       <Dropdown
         style={[styles.boatDropdown, {
           backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5',
@@ -62,11 +62,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     marginTop: 8,
     paddingBottom: 0,
-    marginLeft: -20,
+    marginLeft: -13,
     alignItems: 'center',
     flex: 1,
     borderRadius: 6,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   boatDropdown: {
     backgroundColor: '#F5F5F5',
@@ -78,7 +78,8 @@ const styles = StyleSheet.create({
     minHeight: 36,
     height: 36,
     width: '100%',
-    maxWidth: 150,
+    maxWidth: 220,
+    minWidth: 180,
   },
   boatPlaceholderStyle: {
     fontSize: 17,

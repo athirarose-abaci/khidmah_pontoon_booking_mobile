@@ -4,14 +4,14 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
 
-const BerthSelector = ({ berthsData, selectedBerth, onBerthChange, isDarkMode }) => {
+const BerthSelector = ({ berthsData, selectedBerth, onBerthChange, isDarkMode, containerStyle, dropdownStyle }) => {
   return (
-    <View style={styles.berthDropdownContainer}>
+    <View style={[styles.berthDropdownContainer, containerStyle]}>
       <Dropdown
         style={[styles.berthDropdown, {
           backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5',
           borderColor: isDarkMode ? Colors.dark_separator : 'transparent',
-        }]}
+        }, dropdownStyle]}
         placeholderStyle={[styles.berthPlaceholderStyle, {
           color: isDarkMode ? Colors.font_gray : '#4C4C4C'
         }]}
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flex: 1,
     borderRadius: 6,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   berthDropdown: {
     backgroundColor: '#F5F5F5',
@@ -77,7 +77,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     minHeight: 36,
     height: 36,
-    width: '100%',
+    width: 140,
+    minWidth: 140,
     maxWidth: 140,
   },
   berthPlaceholderStyle: {

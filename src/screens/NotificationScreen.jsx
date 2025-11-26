@@ -195,12 +195,7 @@ const NotificationScreen = ({ navigation }) => {
   const handleNotificationPress = (notification) => {
     
     if (notification?.type === 'BOOKING' && notification?.foreign_key) {
-      const booking = {
-        id: notification?.foreign_key,
-        booking_number: notification?.message?.match(/#BK-\d+/)?.[0] || `#BK-${notification?.foreign_key?.toString()?.padStart(6, '0')}`
-      };
-      
-      navigation.navigate('BookingManagement', { booking });
+      navigation.navigate('BookingManagement', { bookingId: notification?.foreign_key });
     } else if (notification?.type === 'TICKET' && notification?.foreign_key) {
       navigation.navigate('TicketDetail', { ticketId: notification?.foreign_key });
     }

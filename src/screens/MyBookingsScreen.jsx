@@ -11,7 +11,7 @@ import MyBookingsCard from '../components/cards/MyBookingsCard';
 import useTabBarScroll from '../hooks/useTabBarScroll';
 import useBookingEventCalculations from '../hooks/useBookingEventCalculations';
 import CreateButton from '../components/newBooking/CreateButton';
-import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useFocusEffect, useRoute } from '@react-navigation/native';
 import Error from '../helpers/Error';
 import { fetchBookings, fetchBookingsForCalendar } from '../apis/booking';
 import { useDispatch, useSelector } from 'react-redux';
@@ -29,10 +29,12 @@ import BerthSelector from '../components/myBookings/BerthSelector';
 import BoatSelector from '../components/myBookings/BoatSelector';
 import CalendarEvent from '../components/myBookings/CalendarEvent';
 import useBoatOccupancyBlocks, { convertOccupancyBlocksToEvents } from '../hooks/useBoatOccupancyBlocks';
+import { storeData, getData, removeData } from '../helpers/asyncStorageHelper';
 
 const MyBookingsScreen = () => {
   const toastContext = useContext(ToastContext);
   const navigation = useNavigation();
+  const route = useRoute();
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
@@ -89,6 +91,9 @@ const MyBookingsScreen = () => {
   const lastProcessedNotifications = useRef({});
   const unreadCountRef = useRef(unreadCount);
   const isFirstFocus = useRef(true);
+  const calendarWrapperRef = useRef(null);
+  const lastTouchY = useRef(null);
+  const calendarContentTop = useRef(0);
 
   // Get selected berth data
   const selectedBerthData = useMemo(() => {
@@ -106,6 +111,7 @@ const MyBookingsScreen = () => {
   );
 
   // Calculate event tracks and positions using custom hook
+  // regularCalendarEvents is used for month and week views to show current customer bookings
   const bookingsForCalculations = viewMode === 'calendar' ? calendarBookingsData : bookingsData;
   const { calendarEvents: regularCalendarEvents } = useBookingEventCalculations(
     bookingsForCalculations,
@@ -129,60 +135,80 @@ const MyBookingsScreen = () => {
       return [];
     }
     
-    // For month view, filter to only show current customer's bookings and group by date
-    if (calendarViewMode === 'month') {
-      // Filter to only current customer bookings
-      const customerBookings = regularCalendarEvents.filter(event => event.isCurrentCustomer);
-      
-      // Group events by date (using start date as key)
-      const eventsByDate = {};
-      customerBookings.forEach(event => {
-        const dateKey = moment(event.start).format('YYYY-MM-DD');
-        if (!eventsByDate[dateKey]) {
-          eventsByDate[dateKey] = [];
-        }
-        eventsByDate[dateKey].push(event);
-      });
-      
-      // Process events: show first event normally, then add "+X more" event
-      const processedEvents = [];
-      Object.keys(eventsByDate).forEach(dateKey => {
-        const dayEvents = eventsByDate[dateKey];
-        if (dayEvents.length === 1) {
-          // Single event, show as is
-          processedEvents.push(dayEvents[0]);
-        } else if (dayEvents.length > 1) {
-          // Multiple events: show first one normally
-          processedEvents.push(dayEvents[0]);
-          
-          // Create a separate "more" event
-          const firstEvent = dayEvents[0];
-          const moreEvent = {
-            id: `more-${dateKey}`,
-            title: `+${dayEvents.length - 1} more`,
-            start: firstEvent.start,
-            end: firstEvent.start, // Same start/end for month view
-            booking: firstEvent.booking, // Keep reference to first booking
-            isCurrentCustomer: true,
-            hasMoreEvents: true,
-            moreCount: dayEvents.length - 1,
-            allDayEvents: dayEvents, // Store all events for potential use
-            isMoreIndicator: true, // Flag to identify this as a "more" indicator
-          };
-          processedEvents.push(moreEvent);
-        }
-      });
-      
-      return processedEvents;
+    // For day view with multiple boats: if no boat is selected, show empty calendar
+    if (calendarViewMode === 'day' && boatsData.length > 1 && !selectedBoat) {
+      return [];
     }
     
-    // For week view or when no boat is selected, show regular calendar events
-    return regularCalendarEvents;
+    // For month and week views: show current customer bookings
+    if (calendarViewMode === 'month' || calendarViewMode === 'week') {
+      // Filter to only show current customer bookings
+      const customerBookings = regularCalendarEvents.filter(event => event.isCurrentCustomer);
+      
+      // For month view, group events by date
+      if (calendarViewMode === 'month') {
+        // Group events by date (using start date as key)
+        const eventsByDate = {};
+        customerBookings.forEach(event => {
+          const dateKey = moment(event.start).format('YYYY-MM-DD');
+          if (!eventsByDate[dateKey]) {
+            eventsByDate[dateKey] = [];
+          }
+          eventsByDate[dateKey].push(event);
+        });
+        
+        // Process events: show first event normally, then add "+X more" event
+        const processedEvents = [];
+        Object.keys(eventsByDate).forEach(dateKey => {
+          const dayEvents = eventsByDate[dateKey];
+          if (dayEvents.length === 1) {
+            // Single event, show as is
+            processedEvents.push(dayEvents[0]);
+          } else if (dayEvents.length > 1) {
+            // Multiple events: show first one normally
+            processedEvents.push(dayEvents[0]);
+            
+            // Create a separate "more" event
+            const firstEvent = dayEvents[0];
+            const moreEvent = {
+              id: `more-${dateKey}`,
+              title: `+${dayEvents.length - 1} more`,
+              start: firstEvent.start,
+              end: firstEvent.start, // Same start/end for month view
+              booking: firstEvent.booking, // Keep reference to first booking
+              isCurrentCustomer: true,
+              hasMoreEvents: true,
+              moreCount: dayEvents.length - 1,
+              allDayEvents: dayEvents, // Store all events for potential use
+              isMoreIndicator: true, // Flag to identify this as a "more" indicator
+            };
+            processedEvents.push(moreEvent);
+          }
+        });
+        
+        return processedEvents;
+      }
+      
+      // For week view, return customer bookings as is
+      return customerBookings;
+    }
+    
+    // Default: return empty array (should not reach here)
+    return [];
   }, [calendarViewMode, selectedBoat, occupancyBlocks, regularCalendarEvents, boatsData, selectedBerthData]);
 
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
+
+  // Handle route params to set view mode (e.g., when navigating from edit success)
+  useEffect(() => {
+    if (route?.params?.viewMode) {
+      setViewMode(route.params.viewMode);
+      // Clear the param to avoid setting it again on subsequent focuses
+      navigation.setParams({ viewMode: undefined });
+    }
+  }, [route?.params?.viewMode, navigation]);
 
   // Show loader when navigating to this screen
   useFocusEffect(
@@ -243,7 +269,6 @@ const MyBookingsScreen = () => {
     setIsBerthLoading(true);
     try {
       const response = await fetchBerths(pontoonId);
-      console.log('response berth settings---------------------------------------------------------------', response);
       const berths = Array.isArray(response)
         ? response
         : (response?.results && Array.isArray(response?.results) ? response?.results : []);
@@ -269,6 +294,24 @@ const MyBookingsScreen = () => {
       const response = await fetchBoatsList();
       const boats = Array.isArray(response) ? response : (response?.results || []);
       setBoatsData(boats);
+      
+      // Auto-select logic: only apply if we're in day view mode
+      if (calendarViewMode === 'day' && viewMode === 'calendar') {
+        if (boats.length === 1) {
+          // If only one boat, auto-select it
+          setSelectedBoat(boats[0].id);
+          await storeData('lastSelectedBoatId', boats[0].id.toString());
+        } else if (boats.length > 1 && !selectedBoat) {
+          // If multiple boats and no selection, restore last selected boat if available
+          const lastSelectedBoatId = await getData('lastSelectedBoatId');
+          if (lastSelectedBoatId) {
+            const boatExists = boats.find(boat => boat.id.toString() === lastSelectedBoatId);
+            if (boatExists) {
+              setSelectedBoat(parseInt(lastSelectedBoatId));
+            }
+          }
+        }
+      }
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'short', 'error');
@@ -318,9 +361,29 @@ const MyBookingsScreen = () => {
 
   useEffect(() => {
     if (calendarViewMode !== 'day' || viewMode !== 'calendar') {
+      // Clear boat selection when not in day view
       setSelectedBoat(null);
+    } else if (calendarViewMode === 'day' && viewMode === 'calendar' && boatsData.length > 0) {
+      // When switching to day view, auto-select boat if needed
+      if (boatsData.length === 1) {
+        // If only one boat, auto-select it
+        if (!selectedBoat || selectedBoat !== boatsData[0].id) {
+          setSelectedBoat(boatsData[0]?.id);
+          storeData('lastSelectedBoatId', boatsData[0]?.id.toString());
+        }
+      } else if (boatsData.length > 1 && !selectedBoat) {
+        // If multiple boats and no selection, restore last selected boat if available
+        getData('lastSelectedBoatId').then(lastSelectedBoatId => {
+          if (lastSelectedBoatId) {
+            const boatExists = boatsData.find(boat => boat?.id.toString() === lastSelectedBoatId);
+            if (boatExists) {
+              setSelectedBoat(parseInt(lastSelectedBoatId));
+            }
+          }
+        });
+      }
     }
-  }, [calendarViewMode, viewMode]);
+  }, [calendarViewMode, viewMode, boatsData.length]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -409,6 +472,7 @@ const MyBookingsScreen = () => {
     
     try {
       const response = await fetchBookings(pageNumber, limit, searchQuery, status, dateRange);
+      console.log('response bookings', response);
       if (isRefresh || pageNumber === 1) {
         setBookingsData(response?.results || []);
         dispatch(setBookings(response?.results || []));
@@ -523,11 +587,113 @@ const MyBookingsScreen = () => {
     
     // Handle regular booking events
     if (event?.booking && event?.isCurrentCustomer) {
-      navigation.navigate('BookingManagement', { booking: event?.booking });
+      navigation.navigate('BookingManagement', { 
+        bookingId: event?.booking?.id,
+        sourceView: 'calendar' // Track that we came from calendar view
+      });
     }
   };
 
-  const handleCellPress = (date) => {
+  const handleCellPress = (cellData) => {
+    
+    // Extract date from cellData (works for all view modes)
+    let date;
+    if (cellData instanceof Date) {
+      date = new Date(cellData);
+    } else if (cellData && typeof cellData?.getTime === 'function') {
+      // Has Date methods - use getTime() to get timestamp
+      const timestamp = cellData?.getTime();
+      date = new Date(timestamp);
+    } else if (cellData?.date) {
+      date = cellData?.date instanceof Date ? new Date(cellData?.date) : new Date(cellData?.date);
+    } else {
+      date = new Date(cellData);
+    }
+    
+    // Validate the date
+    if (!date || isNaN(date?.getTime())) {
+      return;
+    }
+    
+    // For day view: navigate to create booking screen with pre-filled data
+    if (calendarViewMode === 'day') {
+      
+      // Check if we have required data (berth and boat)
+      if (!selectedBerthData) {
+        toastContext.showToast('Please select a berth first', 'short', 'error');
+        return;
+      }
+      
+      if (!selectedBoat) {
+        toastContext.showToast('Please select a boat first', 'short', 'error');
+        return;
+      }
+      
+      
+      // Get hour from the extracted date (cellData provides the correct hour)
+      const hour = date?.getHours() ?? 0;
+      
+      // Calculate minutes based on Y position within the hour cell
+      let minutes = 0;
+      const hourRowHeight = 35; // Height of each hour row in pixels (matches Calendar hourRowHeight prop)
+      
+      if (lastTouchY.current !== null && calendarViewMode === 'day') {
+        // Use the touch Y coordinate relative to the calendar wrapper
+        const adjustedY = lastTouchY.current;
+        
+        // Calculate minutes within the hour based on position within the row
+        // The hour is already correct from cellData, we just need minutes
+        const positionInRow = adjustedY % hourRowHeight;
+        const minutesPercent = positionInRow / hourRowHeight;
+        
+        // Calculate exact minutes (0-59)
+        minutes = Math.round(minutesPercent * 60);
+        
+        // Clamp minutes to valid range
+        minutes = Math.max(0, Math.min(59, minutes));
+        
+        // Reset after use
+        lastTouchY.current = null;
+      }
+      
+      // Set start time with calculated hour and minutes
+      const startDate = new Date(date);
+      startDate.setHours(hour, minutes, 0, 0);
+      
+      // Validate that the selected date/time is not in the past
+      const now = new Date();
+      if (startDate < now) {
+        toastContext.showToast('Please select a date and time in the future.', 'short', 'error');
+        return;
+      }
+         
+      // Set end date to 1 hour later (default duration)
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
+      
+      const prefillData = {
+        selectedBoatId: selectedBoat,
+        berthId: selectedBerthData?.id,
+        berthName: selectedBerthData?.name,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      };
+      
+      // Include pontoon data if available in berth data
+      if (selectedBerthData?.pontoon) {
+        prefillData.pontoonId = typeof selectedBerthData.pontoon === 'object' 
+          ? selectedBerthData.pontoon.id 
+          : selectedBerthData.pontoon;
+        prefillData.pontoonName = typeof selectedBerthData.pontoon === 'object'
+          ? selectedBerthData.pontoon.name
+          : null;
+      }
+      
+      navigation.navigate('NewBooking', { prefillData });
+      return;
+    }
+    
+    // For month view and week view: switch to day view for the clicked date
     setCurrentMonth(date);
     setCalendarViewMode('day');
   };
@@ -681,57 +847,151 @@ const MyBookingsScreen = () => {
                     onToggleView={() => setViewMode('list')}
                     isDarkMode={isDarkMode}
                   />
+                  {/* Selectors Container - Conditionally styled based on calendar view mode */}
                   <View style={[
                     styles.selectorsContainer,
+                    // Center the container in month/week views for better alignment
                     calendarViewMode !== 'day' && { justifyContent: 'center' }
                   ]}>
+                    {/* Month/Week View: Show only berth selector (centered) or berth + create button */}
                     {calendarViewMode !== 'day' ? (
-                      <View style={{ width: '100%', alignItems: 'center' }}>
-                        <View style={{ width: 140 }}>
+                      <>
+                        {/* If boats exist: Show only centered berth dropdown (boat selector hidden in month/week views) */}
+                        {boatsData.length > 0 ? (
                           <BerthSelector
                             berthsData={berthsData}
                             selectedBerth={selectedBerth}
                             onBerthChange={item => setSelectedBerth(item.value)}
                             isDarkMode={isDarkMode}
+                            containerStyle={{ flex: 0 }} 
                           />
-                        </View>
-                      </View>
+                        ) : (
+                          /* If no boats: Show berth dropdown + "Create New Boat" button */
+                          <>
+                            <BerthSelector
+                              berthsData={berthsData}
+                              selectedBerth={selectedBerth}
+                              onBerthChange={item => setSelectedBerth(item.value)}
+                              isDarkMode={isDarkMode}
+                            />
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                              <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => navigation.navigate('AddBoat')}
+                                style={[styles.createBoatButton, {
+                                  backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5',
+                                  borderColor: isDarkMode ? Colors.dark_separator : 'transparent',
+                                }]}
+                              >
+                                <Ionicons 
+                                  name="add-circle-outline" 
+                                  size={20} 
+                                  color={Colors.primary} 
+                                  style={{ marginTop: -2 }}
+                                />
+                                <Text style={[styles.createBoatButtonText, {
+                                  color: Colors.primary,
+                                }]}>
+                                  Create New Boat
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          </>
+                        )}
+                      </>
                     ) : (
+                      /* Day View: Show berth selector + boat selector (or create button if no boats) */
                       <>
                         <BerthSelector
                           berthsData={berthsData}
                           selectedBerth={selectedBerth}
                           onBerthChange={item => setSelectedBerth(item.value)}
                           isDarkMode={isDarkMode}
+                          containerStyle={{ marginRight: -16 }} // Reduced gap between berth and boat dropdowns
                         />
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                          <BoatSelector
-                            boatsData={boatsData}
-                            selectedBoat={selectedBoat}
-                            onBoatChange={item => setSelectedBoat(item.value)}
-                            isDarkMode={isDarkMode}
-                          />
-                          {selectedBoat && (
+                          {/* If no boats: Show "Create New Boat" button instead of boat selector */}
+                          {boatsData.length === 0 ? (
                             <TouchableOpacity
                               activeOpacity={0.7}
-                              onPress={() => setSelectedBoat(null)}
-                              style={styles.clearButton}
+                              onPress={() => navigation.navigate('AddBoat')}
+                              style={[styles.createBoatButton, {
+                                backgroundColor: isDarkMode ? Colors.dark_container : '#F5F5F5',
+                                borderColor: isDarkMode ? Colors.dark_separator : 'transparent',
+                              }]}
                             >
                               <Ionicons 
-                                name="close-circle" 
-                                size={25} 
-                                color={isDarkMode ? Colors.white : '#666666'} 
+                                name="add-circle-outline" 
+                                size={20} 
+                                color={Colors.primary} 
+                                style={{ marginTop: -2 }}
                               />
+                              <Text style={[styles.createBoatButtonText, {
+                                color: Colors.primary,
+                              }]}>
+                                Create New Boat
+                              </Text>
                             </TouchableOpacity>
+                          ) : (
+                            /* If boats exist: Show boat selector + clear button (when boat is selected) */
+                            <>
+                              <BoatSelector
+                                boatsData={boatsData}
+                                selectedBoat={selectedBoat}
+                                onBoatChange={async (item) => {
+                                  setSelectedBoat(item?.value);
+                                  // Store the selected boat for future sessions
+                                  if (item?.value) {
+                                    await storeData('lastSelectedBoatId', item?.value.toString());
+                                  }
+                                }}
+                                isDarkMode={isDarkMode}
+                              />
+                              {/* Show clear button only when a boat is selected */}
+                              {selectedBoat && (
+                                <TouchableOpacity
+                                  activeOpacity={0.7}
+                                  onPress={async () => {
+                                    setSelectedBoat(null);
+                                    // Clear the stored boat selection
+                                    await removeData('lastSelectedBoatId');
+                                  }}
+                                  style={styles.clearButton}
+                                >
+                                  <Ionicons 
+                                    name="close-circle" 
+                                    size={25} 
+                                    color={isDarkMode ? Colors.white : '#666666'} 
+                                  />
+                                </TouchableOpacity>
+                              )}
+                            </>
                           )}
                         </View>
                       </>
                     )}
                   </View>
-                  <View style={[styles.calendarWrapper, {
-                    borderColor: isDarkMode ? Colors.dark_separator : '#E5E5E5',
-                    backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
-                  }]}>
+                  <View 
+                    ref={calendarWrapperRef}
+                    style={[styles.calendarWrapper, {
+                      borderColor: isDarkMode ? Colors.dark_separator : '#E5E5E5',
+                      backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                    }]}
+                    onLayout={(event) => {
+                      // Measure the calendar content area top position
+                      const { y } = event.nativeEvent.layout;
+                      calendarContentTop.current = y;
+                    }}
+                    onTouchStart={(event) => {
+                      // Capture touch Y coordinate relative to the calendar wrapper
+                      // This fires before onPressCell, allowing us to calculate minutes
+                      // The event doesn't block Calendar's touch handling
+                      if (calendarViewMode === 'day') {
+                        const { locationY } = event.nativeEvent;
+                        lastTouchY.current = locationY;
+                      }
+                    }}
+                  >
                     <Calendar
                       key={`${isDarkMode ? 'dark' : 'light'}-${calendarViewMode}-calendar`}
                       events={calendarEvents}
@@ -742,10 +1002,15 @@ const MyBookingsScreen = () => {
                       date={currentMonth}
                       onSwipeEnd={handleMonthChange}
                       onPressEvent={handleEventPress}
-                      onPressCell={handleCellPress}
+                      onPressCell={(cellData) => {
+                        handleCellPress(cellData);
+                      }}
                       showNowIndicator={false}
                       ampm={true}
-                      {...(calendarViewMode === 'day' && { renderHeader: () => null })}
+                      {...(calendarViewMode === 'day' && { 
+                        renderHeader: () => null,
+                        hourRowHeight: 35 
+                      })}
                       style={{
                         paddingTop: 0,
                         paddingHorizontal: 10,
@@ -912,7 +1177,10 @@ const MyBookingsScreen = () => {
                   <View style={styles.sectionContainer}>
                     <MyBookingsCard 
                       item={item} 
-                      onPress={() => navigation.navigate('BookingManagement', { booking: item })}
+                      onPress={() => navigation.navigate('BookingManagement', { 
+                        bookingId: item?.id,
+                        sourceView: 'list' // Track that we came from list view
+                      })}
                       isCheckedInTab={activeTab === 'Checked In'}
                       onCheckoutSuccess={() => {
                         dispatch(clearBookings());
@@ -1168,6 +1436,35 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  createBoatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginTop: 8,
+    marginLeft: -20,
+    flex: 1,
+    maxWidth: 200,
+    minHeight: 36,
+    height: 36,
+  },
+  createBoatButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
+    marginTop: -2,
+  },
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: -65,
   },
   listContainer: {
     flex: 1,

@@ -255,6 +255,82 @@ function computeCumulativeWidths(
 
   return timelineSegments;
 }
+/**
+ * Get occupied blocks where a boat cannot be placed.
+ * This is the inverse of buildAvailabilityBlocks - it returns segments
+ * where the boat cannot be placed due to various constraints.
+ *
+ * @param timelineSegments  Output from computeCumulativeWidths(...)
+ * @param selectedBoat      The boat to check placement for
+ * @param berth             The berth (has length, max_allowed, etc.)
+ * @returns Array of unavailable blocks with reason why boat cannot be placed
+ */
+export function getUnavailableBlocks(timelineSegments, selectedBoat, berth) {
+	const berthLength = berth.length;
+	const requiredLength =
+		selectedBoat?.length + selectedBoat?.length * (berth.buffer_length / 100);
+
+	const unavailableBlocks = [];
+
+	if (timelineSegments.length === 0) {
+		// If no segments, the entire day is available
+		return [];
+	}
+
+	timelineSegments.forEach((seg, idx) => {
+		const occupiedLength = seg.overlappingBookings.reduce(
+			(sum, b) => sum + (b.total_boat_length ?? 0),
+			0,
+		);
+
+		const availableLength = berthLength - occupiedLength;
+		const reasons = [];
+
+		// A) Boat is already booked in this segment
+		const selectedBoatAlreadyBooked = seg.overlappingBookings.some(
+			(b) => b.boat?.id === selectedBoat?.id,
+		);
+		if (selectedBoatAlreadyBooked) {
+			reasons.push('BOAT_ALREADY_BOOKED');
+		}
+
+		// B) Berth fully occupied
+		if (availableLength <= 0) {
+			reasons.push('BERTH_FULLY_OCCUPIED');
+		}
+
+		// C) Boat does not fit (insufficient space)
+		if (availableLength < requiredLength) {
+			reasons.push('INSUFFICIENT_SPACE');
+		}
+
+		// D) Max boats allowed reached
+		if (seg.overlappingBookings.length >= berth.max_boat_allowed) {
+			reasons.push('MAX_BOATS_REACHED');
+		}
+
+		// If any reason exists, this block is unavailable
+		if (reasons.length > 0) {
+			unavailableBlocks.push({
+				id: `unavailable-${idx}-${seg.start.getTime()}`,
+				start: seg.start,
+				end: seg.end,
+				availableLength,
+				occupiedLength,
+				requiredLength,
+				overlappingBookings: seg.overlappingBookings,
+				reasons, // Array of reasons why boat cannot be placed
+				widthPercent: seg.widthPercent,
+				occupiedCount: seg.overlappingBookings.length,
+				maxAllowed: berth.max_boat_allowed,
+				selectedBoat: selectedBoat,
+				selectedBerth: berth,
+			});
+		}
+	});
+
+	return unavailableBlocks;
+}
 
 function buildAvailabilityBlocks(timelineSegments, selectedBoat, berth, workingStart, workingEnd) {
   const berthLength = berth.length || 100;
@@ -305,17 +381,17 @@ function buildAvailabilityBlocks(timelineSegments, selectedBoat, berth, workingS
     // Skip if maximum boats limit reached
     if (seg.overlappingBookings.length >= (berth.max_boat_allowed || 2)) return;
 
-    availabilityBlocks.push({
-      id: `avail-${idx}-${seg.start.getTime()}`,
-      start: seg.start,
-      end: seg.end,
-      availableLength,
-      occupiedLength,
-      overlappingBookings: seg.overlappingBookings,
-      widthPercent: (requiredLength / berthLength) * 100,
-      leftPercent: 0, // Availability blocks always start at left edge
-      isAvailable: true,
-    });
+    // availabilityBlocks.push({
+    //   id: `avail-${idx}-${seg.start.getTime()}`,
+    //   start: seg.start,
+    //   end: seg.end,
+    //   availableLength,
+    //   occupiedLength,
+    //   overlappingBookings: seg.overlappingBookings,
+    //   widthPercent: (requiredLength / berthLength) * 100,
+    //   leftPercent: 0, // Availability blocks always start at left edge
+    //   isAvailable: true,
+    // });
   });
 
   return availabilityBlocks;
@@ -402,6 +478,11 @@ const useBoatOccupancyBlocks = (
       defaultBufferLength,
       bufferTime,
     );
+    const unavailableBlocks = getUnavailableBlocks(
+      occupiedBlocks, 
+      selectedBoat, 
+      selectedBerthData,
+    );
 
     if (selectedBoatId && selectedBoat) {
       const availabilityBlocks = buildAvailabilityBlocks(
@@ -450,7 +531,7 @@ const useBoatOccupancyBlocks = (
       });
 
       // Add occupied blocks, positioning them to the right of availability blocks if they overlap
-      occupiedBlocks
+      unavailableBlocks
         .filter((b) => b.occupiedLength > 0)
         .forEach((block) => {
           let leftPercent = 0;
@@ -466,15 +547,21 @@ const useBoatOccupancyBlocks = (
             leftPercent = overlappingAvailabilityBlock.widthPercent;
           }
           
+          // Check if selected boat is already booked in this slot
+          const selectedBoatAlreadyBooked = block.overlappingBookings.some(
+            (b) => b.boat?.id === selectedBoatId,
+          );
+          
+          // If selected boat is already booked, prioritize showing it as blue (selected boat booking)
+          // instead of red (occupied). Set isOccupied to false so it doesn't show red or diagonal stripes.
           displayBlocks.push({
             start: block.start,
             end: block.end,
             isAvailable: false,
-            isOccupied: true,
-            selectedBoatAlreadyBooked: block.overlappingBookings.some(
-              (b) => b.boat?.id === selectedBoatId,
-            ),
-            widthPercent: block.widthPercent,
+            isOccupied: !selectedBoatAlreadyBooked, // Set to false if selected boat is booked (priority: blue over red)
+            selectedBoatAlreadyBooked: selectedBoatAlreadyBooked,
+            // widthPercent: block.widthPercent,
+            widthPercent: 100,
             leftPercent: leftPercent,
             occupiedLength: block.occupiedLength,
             availableLength: block.availableLength,
@@ -482,6 +569,49 @@ const useBoatOccupancyBlocks = (
             berthLength,
           });
         });
+
+    // Add non-working hour blocks (before workingStart and after workingEnd)
+    // Get the full day boundaries (midnight to midnight)
+    const fullDayStart = new Date(currentDate);
+    fullDayStart.setHours(0, 0, 0, 0);
+    const fullDayEnd = new Date(currentDate);
+    fullDayEnd.setHours(23, 59, 59, 999);
+
+    // Add block before working hours (if workingStart is after midnight)
+    if (dayStart.getTime() > fullDayStart.getTime()) {
+      displayBlocks.push({
+        start: fullDayStart,
+        end: dayStart,
+        isAvailable: false,
+        isOccupied: false,
+        isNonWorkingHours: true,
+        selectedBoatAlreadyBooked: false,
+        widthPercent: 100,
+        leftPercent: 0,
+        occupiedLength: 0,
+        availableLength: 0,
+        overlappingBookings: [],
+        berthLength,
+      });
+    }
+
+    // Add block after working hours (if workingEnd is before midnight)
+    if (dayEnd.getTime() < fullDayEnd.getTime()) {
+      displayBlocks.push({
+        start: dayEnd,
+        end: fullDayEnd,
+        isAvailable: false,
+        isOccupied: false,
+        isNonWorkingHours: true,
+        selectedBoatAlreadyBooked: false,
+        widthPercent: 100,
+        leftPercent: 0,
+        occupiedLength: 0,
+        availableLength: 0,
+        overlappingBookings: [],
+        berthLength,
+      });
+    }
 
     // Sort blocks by start time, then by left position for proper rendering order
     displayBlocks.sort((a, b) => {
@@ -491,8 +621,9 @@ const useBoatOccupancyBlocks = (
     });
 
     // Calculate position percentages for timeline rendering
-    const totalDuration = dayEnd.getTime() - dayStart.getTime();
-    if (totalDuration <= 0) {
+    // Calendar displays full day (0:00 to 23:59), so all blocks must be positioned relative to full day
+    const fullDayDuration = fullDayEnd.getTime() - fullDayStart.getTime();
+    if (fullDayDuration <= 0) {
       return [];
     }
 
@@ -501,11 +632,14 @@ const useBoatOccupancyBlocks = (
       const blockEnd = block.end.getTime();
       const blockDuration = blockEnd - blockStart;
 
-      const startPercent = ((blockStart - dayStart.getTime()) / totalDuration) * 100;
+      // All blocks positioned relative to full day (0:00 to 23:59)
+      const startPercent = fullDayDuration > 0
+        ? ((blockStart - fullDayStart.getTime()) / fullDayDuration) * 100
+        : 0;
       
       const widthPercent = block.widthPercent !== undefined 
         ? block.widthPercent 
-        : (blockDuration / totalDuration) * 100;
+        : (fullDayDuration > 0 ? (blockDuration / fullDayDuration) * 100 : 0);
       
         const leftPercent = block.leftPercent !== undefined ? block.leftPercent : 0;
 
@@ -557,14 +691,17 @@ const useBoatOccupancyBlocks = (
 export const convertOccupancyBlocksToEvents = (occupancyBlocks, selectedBoat, selectedBerthData) => {
   return occupancyBlocks.map((block, index) => ({
     id: `occupancy-block-${index}-${block.start.getTime()}`,
-    title: block.isAvailable 
-      ? 'Available' 
-      : (block.selectedBoatAlreadyBooked ? 'Your Booking' : 'Occupied'),
+    title: block.isNonWorkingHours
+      ? 'Non-Working Hours'
+      : (block.isAvailable 
+        ? 'Available' 
+        : (block.selectedBoatAlreadyBooked ? 'Your Booking' : 'Occupied')),
     start: block.start,
     end: block.end,
     isOccupancyBlock: true,
     isAvailable: block.isAvailable || false,
     isOccupied: block.isOccupied || false,
+    isNonWorkingHours: block.isNonWorkingHours || false,
     selectedBoatAlreadyBooked: block.selectedBoatAlreadyBooked || false,
     booking: block.overlappingBookings?.[0] || null,
     berthLength: block.berthLength,

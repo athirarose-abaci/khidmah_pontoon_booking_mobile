@@ -2,7 +2,7 @@ import React, { useContext, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
-// import SuccessLottie from '../lottie/SuccessLottie';
+import SuccessLottie from '../lottie/SuccessLottie';
 import { useSelector } from 'react-redux';
 import QRCode from 'react-native-qrcode-svg';
 import Share from 'react-native-share';
@@ -60,15 +60,32 @@ const BookingSuccessModal = ({ visible, onClose, onGoHome, isEditMode = false, b
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* <View style={styles.successIconContainer}>
-              <SuccessLottie 
-                style={styles.lottieAnimation}
-                autoPlay={true}
-                loop={true}
-              />
-            </View> */}
-            
-            {bookingData?.qr_code && !isEditMode && (
+            {isEditMode ? (
+              // Edit Mode: Lottie + Message + Button
+              <>
+                {/* Check Animation - First */}
+                <View style={styles.successIconContainer}>
+                  <SuccessLottie 
+                    style={styles.lottieAnimation}
+                    autoPlay={true}
+                    loop={false}
+                  />
+                </View>
+                
+                {/* Success Message - After Lottie */}
+                <Text style={[styles.successMessage, { color: isDarkMode ? Colors.white : '#282828' }]}>
+                  Your booking has been{'\n'}successfully updated!
+                </Text>
+                
+                {/* Go Home Button */}
+                <TouchableOpacity style={[styles.goHomeButton, { backgroundColor: isDarkMode ? Colors.size_bg_dark : 'white', borderColor: isDarkMode ? Colors.input_border_dark : Colors.primary }]} onPress={onGoHome}>
+                  <Text style={[styles.goHomeButtonText, { color: isDarkMode ? Colors.white : Colors.primary }]}>Go Home</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Create Mode: Existing QR Code Design
+              <>
+                {bookingData?.qr_code && (
               <View style={[styles.qrCard, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
                 <View style={styles.cardHeaderContainer}>
                   <View style={styles.cardHeaderIconContainer}>
@@ -86,9 +103,6 @@ const BookingSuccessModal = ({ visible, onClose, onGoHome, isEditMode = false, b
                   </TouchableOpacity>
                 </View>
                 <View style={[styles.cardHeaderSeparator, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E8EBEC' }]} />
-                <Text style={[styles.successMessage, { color: isDarkMode ? Colors.white : '#333' }]}>
-                  Your booking has been{'\n'}successfully {isEditMode ? 'updated!' : 'created!'}
-                </Text>
                 {bookingData?.qr_code && !isEditMode && (
                   <Text style={[styles.shareMessage, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>
                     Please share the QR code with{'\n'}all passengers
@@ -141,11 +155,13 @@ const BookingSuccessModal = ({ visible, onClose, onGoHome, isEditMode = false, b
                   </View> */}
                 </ViewShot>
               </View>
+                )}
+                
+                <TouchableOpacity style={[styles.goHomeButton, { backgroundColor: isDarkMode ? Colors.size_bg_dark : 'white', borderColor: isDarkMode ? Colors.input_border_dark : Colors.primary }]} onPress={onGoHome}>
+                  <Text style={[styles.goHomeButtonText, { color: isDarkMode ? Colors.white : Colors.primary }]}>Go Home</Text>
+                </TouchableOpacity>
+              </>
             )}
-            
-            <TouchableOpacity style={[styles.goHomeButton, { backgroundColor: isDarkMode ? Colors.size_bg_dark : 'white', borderColor: isDarkMode ? Colors.input_border_dark : Colors.primary }]} onPress={onGoHome}>
-              <Text style={[styles.goHomeButtonText, { color: isDarkMode ? Colors.white : Colors.primary }]}>Go Home</Text>
-            </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
@@ -162,13 +178,14 @@ const styles = StyleSheet.create({
   modalContainer: {
     backgroundColor: 'white',
     borderRadius: 12,
-    paddingVertical: 20,
+    paddingVertical: 30,
     paddingHorizontal: 20,
     marginHorizontal: 20,
     alignItems: 'center',
     position: 'relative',
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '85%',
+    minHeight: 400,
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -180,14 +197,13 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   successMessage: {
-    fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#333',
+    fontSize: 15,
+    fontFamily: 'Poppins-Regular',
+    color: '#282828',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-    lineHeight: 20,
-    letterSpacing: -0.5,
+    marginTop: 0,
+    marginBottom: 40,
+    lineHeight: 22,
   },
   shareMessage: {
     fontSize: 14,
@@ -358,6 +374,18 @@ const styles = StyleSheet.create({
   dottedLineDot: {
     width: 10,
     height: 1,
+  },
+  successIconContainer: {
+    width: 200,
+    height: 200,
+    marginTop: 0,
+    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lottieAnimation: {
+    width: '100%',
+    height: '100%',
   },
   goHomeButton: {
     backgroundColor: 'white',

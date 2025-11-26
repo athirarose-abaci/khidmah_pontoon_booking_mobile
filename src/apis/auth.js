@@ -32,6 +32,7 @@ export const register = async (firstName, lastName, email, phone) => {
         email : email,
         mobile_number : phone
     }
+    console.log("payload from register", payload);
     try {
         const response = await publicAxios.post('users/register/', payload);
         return response;
