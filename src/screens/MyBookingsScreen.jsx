@@ -30,6 +30,8 @@ import BoatSelector from '../components/myBookings/BoatSelector';
 import CalendarEvent from '../components/myBookings/CalendarEvent';
 import useBoatOccupancyBlocks, { convertOccupancyBlocksToEvents } from '../hooks/useBoatOccupancyBlocks';
 import { storeData, getData, removeData } from '../helpers/asyncStorageHelper';
+import useLanguageToggle from '../hooks/useLanguageToggle';
+import { useTranslation } from 'react-i18next';
 
 const MyBookingsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -40,6 +42,8 @@ const MyBookingsScreen = () => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const [unreadCount, setUnreadCount] = useState(0);
   const liveNotifications = useSelector(state => state.notificationSlice.notifications);
+
+  const { i18n, t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState('Upcoming');
   const tabs = BOOKING_TABS;
@@ -73,8 +77,10 @@ const MyBookingsScreen = () => {
   const [hasMorePages, setHasMorePages] = useState(true);
   const [isCreateButtonVisible, setIsCreateButtonVisible] = useState(true);
 
+  const { toggleLanguage, currentLanguage } = useLanguageToggle();
+
   const { onScroll: onTabBarScroll, insets } = useTabBarScroll();
-  
+ 
   const handleScroll = (event) => {
     onTabBarScroll(event);
     
@@ -736,84 +742,105 @@ const MyBookingsScreen = () => {
       <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         <View style={styles.header_container}>
           <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>
-            My Bookings
+            {t('my_bookings')}
           </Text>
-          <TouchableOpacity 
-            activeOpacity={0.7}
-            onPress={handleNotificationPress}
-            style={styles.notification_container}
-          >
-            <Ionicons name="notifications" size={30} color={isDarkMode ? Colors.white : "#6F6F6F"} />
-            {unreadCount > 0 && (
-              <View style={styles.notification_badge}>
-                <Text style={styles.notification_badge_text}>
-                  {unreadCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.filter_container}>
-          <View style={[styles.search_bar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
-            <Ionicons
-              name="search-outline"
-              size={22}
-              color={isDarkMode ? Colors.white : "#EFEFEF"}
-              style={{ marginHorizontal: 12 }}
-            />
-            <TextInput
-              style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
-              placeholder="Search Bookings"
-              placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
-              value={searchQuery !== 'null' ? searchQuery : ''}
-              onChangeText={text => setSearchQuery(text)}
-            />
-          </View>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.date_button, {
-              backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
-            }]}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Ionicons name="calendar-outline" size={27} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Show active date filter */}
-        {selectedDate?.startDate && selectedDate?.endDate && (
-          <View style={[styles.dateFilterBadge, { 
-            backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
-            borderColor: isDarkMode ? Colors.dark_separator : Colors.border_line
-          }]}>
-            <Text style={[styles.dateFilterText, { 
-              color: isDarkMode ? Colors.white : Colors.heading_font 
-            }]}>
-              {`${moment(selectedDate.startDate).format('DD MMM YYYY')} - ${moment(selectedDate.endDate).format('DD MMM YYYY')}`}
-            </Text>
-            <TouchableOpacity
-              style={[styles.clearFilterBtn, { 
-                backgroundColor: isDarkMode ? '#FF4444' : Colors.error 
-              }]}
-              onPress={() => {
-                setSelectedDate(null);
-                selectedDateRef.current = null;
-                dispatch(clearBookings());
-                setPage(1);
-                setHasMorePages(true);
-                if (viewMode === 'calendar') {
-                  if (selectedBerth && !isBerthLoading) {
-                    fetchCalendarBookings();
-                  }
-                } else {
-                  fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
-                }
-              }}
+          <View style={styles.header_actions}>
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              style={styles.language_button}
+              onPress={toggleLanguage}
             >
-              <Ionicons name="close" size={14} color={Colors.white} />
+              {/* <Ionicons name="language" size={26} color={isDarkMode ? Colors.white : "#6F6F6F"} /> */}
+              <Image 
+                source={currentLanguage === 'ar' 
+                  ? require('../assets/images/arabic_lang.png') 
+                  : require('../assets/images/eng_lang.png')} 
+                style={styles.language_flag_image}
+                resizeMode="contain"
+              />
+              <Image source={require('../assets/images/lang_toggle_header.png')} style={styles.lang_toggle_header} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={handleNotificationPress}
+              style={styles.notification_container}
+            >
+              <Ionicons name="notifications" size={30} color={isDarkMode ? Colors.white : "#6F6F6F"} />
+              {unreadCount > 0 && (
+                <View style={styles.notification_badge}>
+                  <Text style={styles.notification_badge_text}>
+                    {unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
+        </View>
+        
+        {viewMode === 'list' && (
+          <>
+            <View style={styles.filter_container}>
+              <View style={[styles.search_bar, { backgroundColor: isDarkMode ? Colors.dark_container : Colors.white }]}>
+                <Ionicons
+                  name="search-outline"
+                  size={22}
+                  color={isDarkMode ? Colors.white : "#EFEFEF"}
+                  style={{ marginHorizontal: 12 }}
+                />
+                <TextInput
+                  style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
+                  placeholder={t('search_bookings')}
+                  placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
+                  value={searchQuery !== 'null' ? searchQuery : ''}
+                  onChangeText={text => setSearchQuery(text)}
+                />
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.date_button, {
+                  backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                }]}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Ionicons name="calendar-outline" size={27} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Show active date filter */}
+            {selectedDate?.startDate && selectedDate?.endDate && (
+              <View style={[styles.dateFilterBadge, { 
+                backgroundColor: isDarkMode ? Colors.dark_container : Colors.white,
+                borderColor: isDarkMode ? Colors.dark_separator : Colors.border_line
+              }]}>
+                <Text style={[styles.dateFilterText, { 
+                  color: isDarkMode ? Colors.white : Colors.heading_font 
+                }]}>
+                  {`${moment(selectedDate.startDate).format('DD MMM YYYY')} - ${moment(selectedDate.endDate).format('DD MMM YYYY')}`}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.clearFilterBtn, { 
+                    backgroundColor: isDarkMode ? '#FF4444' : Colors.error 
+                  }]}
+                  onPress={() => {
+                    setSelectedDate(null);
+                    selectedDateRef.current = null;
+                    dispatch(clearBookings());
+                    setPage(1);
+                    setHasMorePages(true);
+                    if (viewMode === 'calendar') {
+                      if (selectedBerth && !isBerthLoading) {
+                        fetchCalendarBookings();
+                      }
+                    } else {
+                      fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
+                    }
+                  }}
+                >
+                  <Ionicons name="close" size={14} color={Colors.white} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
 
         {viewMode === 'list' && (
@@ -848,11 +875,14 @@ const MyBookingsScreen = () => {
                     isDarkMode={isDarkMode}
                   />
                   {/* Selectors Container - Conditionally styled based on calendar view mode */}
-                  <View style={[
-                    styles.selectorsContainer,
-                    // Center the container in month/week views for better alignment
-                    calendarViewMode !== 'day' && { justifyContent: 'center' }
-                  ]}>
+                  <View 
+                    key={`selectors-${calendarViewMode}-${selectedBoat || 'none'}`}
+                    style={[
+                      styles.selectorsContainer,
+                      // Center the container in month/week views for better alignment
+                      calendarViewMode !== 'day' && { justifyContent: 'center' }
+                    ]}
+                  >
                     {/* Month/Week View: Show only berth selector (centered) or berth + create button */}
                     {calendarViewMode !== 'day' ? (
                       <>
@@ -901,15 +931,15 @@ const MyBookingsScreen = () => {
                       </>
                     ) : (
                       /* Day View: Show berth selector + boat selector (or create button if no boats) */
-                      <>
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, width: '100%' }}>
                         <BerthSelector
                           berthsData={berthsData}
                           selectedBerth={selectedBerth}
                           onBerthChange={item => setSelectedBerth(item.value)}
                           isDarkMode={isDarkMode}
-                          containerStyle={{ marginRight: -16 }} // Reduced gap between berth and boat dropdowns
+                          containerStyle={{ marginRight: 12, flex: 0 }} // Space between berth and boat dropdowns
                         />
-                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}>
                           {/* If no boats: Show "Create New Boat" button instead of boat selector */}
                           {boatsData.length === 0 ? (
                             <TouchableOpacity
@@ -934,7 +964,7 @@ const MyBookingsScreen = () => {
                             </TouchableOpacity>
                           ) : (
                             /* If boats exist: Show boat selector + clear button (when boat is selected) */
-                            <>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}>
                               <BoatSelector
                                 boatsData={boatsData}
                                 selectedBoat={selectedBoat}
@@ -946,6 +976,7 @@ const MyBookingsScreen = () => {
                                   }
                                 }}
                                 isDarkMode={isDarkMode}
+                                containerStyle={{ flex: 1, minWidth: 0 }}
                               />
                               {/* Show clear button only when a boat is selected */}
                               {selectedBoat && (
@@ -965,10 +996,10 @@ const MyBookingsScreen = () => {
                                   />
                                 </TouchableOpacity>
                               )}
-                            </>
+                            </View>
                           )}
                         </View>
-                      </>
+                      </View>
                     )}
                   </View>
                   <View 
@@ -996,8 +1027,8 @@ const MyBookingsScreen = () => {
                       key={`${isDarkMode ? 'dark' : 'light'}-${calendarViewMode}-calendar`}
                       events={calendarEvents}
                       height={calendarViewMode === 'month' 
-                        ? 400 
-                        : Dimensions.get('window').height - 250}
+                        ? 420 
+                        : Dimensions.get('window').height - 170}
                       mode={calendarViewMode}
                       date={currentMonth}
                       onSwipeEnd={handleMonthChange}
@@ -1010,6 +1041,17 @@ const MyBookingsScreen = () => {
                       {...(calendarViewMode === 'day' && { 
                         renderHeader: () => null,
                         hourRowHeight: 35 
+                      })}
+                      {...(calendarViewMode === 'week' && { 
+                        weekDayHeaderHighlightColor: Colors.primary,
+                        dayHeaderHighlightColor: Colors.primary,
+                        dayHeaderStyle: {
+                          transform: [{ scale: 0.75 }],
+                        },
+                        headerContainerStyle: {
+                          minHeight: 55,
+                          maxHeight: 60,
+                        },
                       })}
                       style={{
                         paddingTop: 0,
@@ -1219,36 +1261,38 @@ const MyBookingsScreen = () => {
           </View>
         )}
       </View>
-      <CalendarModal
-        visible={showDatePicker}
-        onClose={() => setShowDatePicker(false)}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        selectedDateRef={selectedDateRef}
-        onRangeSelected={(newSelection) => {
-          setShowDatePicker(false)
-          dispatch(clearBookings());
-          setPage(1);
-          if (viewMode === 'calendar') {
-            if (selectedBerth && !isBerthLoading) {
-              fetchCalendarBookings();
+      {viewMode === 'list' && (
+        <CalendarModal
+          visible={showDatePicker}
+          onClose={() => setShowDatePicker(false)}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          selectedDateRef={selectedDateRef}
+          onRangeSelected={(newSelection) => {
+            setShowDatePicker(false)
+            dispatch(clearBookings());
+            setPage(1);
+            if (viewMode === 'calendar') {
+              if (selectedBerth && !isBerthLoading) {
+                fetchCalendarBookings();
+              }
+            } else {
+              fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), newSelection);
             }
-          } else {
-            fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), newSelection);
-          }
-        }}
-        onClear={() => {
-          dispatch(clearBookings());
-          setPage(1);
-          if (viewMode === 'calendar') {
-            if (selectedBerth && !isBerthLoading) {
-              fetchCalendarBookings();
+          }}
+          onClear={() => {
+            dispatch(clearBookings());
+            setPage(1);
+            if (viewMode === 'calendar') {
+              if (selectedBerth && !isBerthLoading) {
+                fetchCalendarBookings();
+              }
+            } else {
+              fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
             }
-          } else {
-            fetchBookingsData(1, limit, false, searchQuery, getBackendStatus(activeTab), null);
-          }
-        }}
-      />
+          }}
+        />
+      )}
 
       {isCreateButtonVisible && (
         <CreateButton
@@ -1285,6 +1329,33 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: Colors.font_gray,
     fontFamily: 'Inter-SemiBold',
+  },
+  header_actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  language_button: {
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#8A8A8A',
+    borderRadius: 20,
+    overflow: 'visible',
+  },
+  language_flag_image: {
+    width: 24,
+    height: 24,
+    marginLeft: 8,
+    tintColor: '#E5E5E5',
+  },
+  lang_toggle_header: {
+    width: 25,
+    height: 25,
+    marginBottom: 1,
+    marginLeft: 10,
   },
   notification_container: {
     position: 'relative',
@@ -1403,7 +1474,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 12,
     overflow: 'hidden',
-    minHeight: 600,
+    minHeight: 680,
   },
   calendarWrapper: {
     position: 'relative',
@@ -1424,10 +1495,12 @@ const styles = StyleSheet.create({
   selectorsContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 12,
     marginTop: -14,
     paddingBottom: 8,
+    width: '100%',
+    minWidth: 0, // Allow flex children to shrink properly
   },
   clearButton: {
     marginTop: 8,
@@ -1436,6 +1509,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'flex-start', // Ensure button aligns to top
   },
   createBoatButton: {
     flexDirection: 'row',

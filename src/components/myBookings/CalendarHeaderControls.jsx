@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, I18nManager } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import moment from 'moment';
@@ -48,7 +48,7 @@ const CalendarHeaderControls = ({ calendarViewMode, onCalendarViewModeChange, cu
             fontSize: 1,
             opacity: 0,
           }]}
-          iconStyle={styles.calendarViewIconStyle}
+          iconStyle={{ width: 0, height: 0 }}
           data={[
             { label: 'Day', value: 'day' },
             { label: 'Week', value: 'week' },
@@ -60,13 +60,25 @@ const CalendarHeaderControls = ({ calendarViewMode, onCalendarViewModeChange, cu
           placeholder=""
           value={calendarViewMode}
           onChange={onCalendarViewModeChange}
-          renderRightIcon={() => (
-            <Image 
-              source={require('../../assets/images/calendar_view.png')} 
-              style={styles.calendarViewImage}
-              resizeMode="contain"
-            />
-          )}
+          {...(I18nManager.isRTL ? {
+            renderLeftIcon: () => (
+              <Image 
+                source={require('../../assets/images/calendar_view.png')} 
+                style={styles.calendarViewImage}
+                resizeMode="contain"
+              />
+            ),
+            renderRightIcon: () => null
+          } : {
+            renderRightIcon: () => (
+              <Image 
+                source={require('../../assets/images/calendar_view.png')} 
+                style={styles.calendarViewImage}
+                resizeMode="contain"
+              />
+            ),
+            renderLeftIcon: () => null
+          })}
           itemContainerStyle={{
             backgroundColor: isDarkMode ? Colors.dark_container : Colors.white
           }}
@@ -84,7 +96,7 @@ const CalendarHeaderControls = ({ calendarViewMode, onCalendarViewModeChange, cu
           }}
         />
       </View>
-      <View style={styles.monthNavContainer}>
+      <View style={[styles.monthNavContainer, { direction: 'ltr' }]}>
         <TouchableOpacity
           onPress={() => onNavigateMonth('prev')}
           style={styles.monthNavButton}

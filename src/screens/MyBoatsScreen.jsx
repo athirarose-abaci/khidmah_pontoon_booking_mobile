@@ -15,6 +15,7 @@ import Error from "../helpers/Error";
 import { fetchBoats } from "../apis/boat";
 import { useDispatch, useSelector } from "react-redux";
 import { setBoats, clearBoats } from "../../store/boatSlice";
+import { useTranslation } from "react-i18next";
 
 const MyBoatsScreen = () => {
   const toastContext = useContext(ToastContext);
@@ -31,6 +32,8 @@ const MyBoatsScreen = () => {
   const [searchQuery, setSearchQuery] = useState('null');
   const [isSearching, setIsSearching] = useState(false);
   const [hasMorePages, setHasMorePages] = useState(true);
+
+  const { t } = useTranslation();
 
   const { onScroll, insets } = useTabBarScroll();
 
@@ -123,7 +126,7 @@ const MyBoatsScreen = () => {
       <View style={[styles.main_container, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.bg_color }]}>
         {/* Header */}
         <View style={styles.header_container}>
-          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>My Boats</Text>
+          <Text style={[styles.header_title, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>{t('my_boats')}</Text>
 
           <TouchableOpacity
             activeOpacity={0.7}
@@ -131,7 +134,7 @@ const MyBoatsScreen = () => {
             onPress={handleAddBoat}
           >
             <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
-            <Text style={styles.addBoatText}>Add new boat</Text>
+            <Text style={styles.addBoatText}>{t('add_boat')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -146,7 +149,7 @@ const MyBoatsScreen = () => {
             />
             <TextInput
               style={[styles.search_input, { color: isDarkMode ? Colors.white : Colors.black }]}
-              placeholder="Search boats"
+              placeholder={t('search_boats')}
               placeholderTextColor={isDarkMode ? Colors.font_gray : Colors.primary}
               value={searchQuery!=='null' ? searchQuery : ''}
               onChangeText={text => setSearchQuery(text)}

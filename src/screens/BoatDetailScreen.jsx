@@ -14,6 +14,7 @@ import ConfirmationModal from '../components/modals/ConfirmationModal';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateBoatStatus, removeBoat } from '../../store/boatSlice';
 import { BASE_URL_IMAGE } from '../constants/baseUrl';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,6 +38,8 @@ const BoatDetailScreen = () => {
   const [deleteErrorModalVisible, setDeleteErrorModalVisible] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  const { t } = useTranslation();
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
@@ -189,7 +192,7 @@ const BoatDetailScreen = () => {
           activeOpacity={0.7}
         >
           <Ionicons name="chevron-back" size={24} color="#fff" />
-          <Text style={styles.backText}>Boats</Text>
+          <Text style={styles.backText}>{t('boats')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -210,7 +213,7 @@ const BoatDetailScreen = () => {
               <View style={styles.registrationRow}>
                 <Text style={[styles.boatId, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>{boat?.registration_number || 'N/A'}</Text>
                 <Text style={[styles.sizeText, { color: isDarkMode ? Colors.dark_text_secondary : '#666' }]}>
-                  Length: {boat?.length} ft
+                  {t('length')}: {boat?.length} ft
                 </Text>
               </View>
               <Text style={[styles.boatName, { color: Colors.primary }]}>{boat?.name}</Text>
@@ -224,7 +227,7 @@ const BoatDetailScreen = () => {
               activeOpacity={0.7}
             >
               <Feather name="edit" size={18} color={Colors.primary} />
-              <Text style={styles.editButtonText}>Edit</Text>
+              <Text style={styles.editButtonText}>{t('edit')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -241,7 +244,7 @@ const BoatDetailScreen = () => {
                 size={18} 
                 color={boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50"} 
               />
-              <Text style={[styles.disableButtonText, { color: boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50" }]}>Disable</Text>
+              <Text style={[styles.disableButtonText, { color: boat?.status === 'ACTIVE' ? "#C0082C" : "#4CAF50" }]}>{t('disable')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -250,7 +253,7 @@ const BoatDetailScreen = () => {
               activeOpacity={0.7}
             >
               <Ionicons name="trash" size={18} color="#fff" />
-              <Text style={styles.deleteButtonText}>Delete</Text>
+              <Text style={styles.deleteButtonText}>{t('delete')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -273,7 +276,7 @@ const BoatDetailScreen = () => {
         {/* Boat images section */}
         <View style={[styles.imagesSection, { backgroundColor: isDarkMode ? Colors.dark_bg_color : Colors.white }]}>
           <View style={[styles.divider, { backgroundColor: isDarkMode ? Colors.dark_separator : '#E9ECEF' }]} />
-          <Text style={[styles.sectionTitle, { color: isDarkMode ? Colors.white : '#333' }]}>Boat Images</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkMode ? Colors.white : '#333' }]}>{t('boat_images')}</Text>
           {boat?.images?.length > 0 ? (
             <View style={styles.imagesGrid}>
               {boat?.images.map((image, index) => (
@@ -297,7 +300,7 @@ const BoatDetailScreen = () => {
                 style={styles.noImagesIcon} 
                 resizeMode="contain" 
               />
-              <Text style={[styles.noImagesText, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>No boat images found</Text>
+              <Text style={[styles.noImagesText, { color: isDarkMode ? Colors.dark_text_secondary : Colors.font_gray }]}>{t('no_boat_images_found')}</Text>
             </View>
           )}
         </View>

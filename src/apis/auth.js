@@ -5,9 +5,10 @@ export const userLogin = async (email) => {
         email : email,
     }
     try {
-        const response = await publicAxios.post('users/login/', payload);
+        const response = await publicAxios.post('users/check-email/', payload);
         return response;
     } catch (error) {
+        console.log("error from login", error);
         throw error;
     }
 };
@@ -21,6 +22,7 @@ export const verifyOTP = async (email, otp) => {
         const response = await publicAxios.post('users/verify-otp/', payload);
         return response;
     } catch (error) {
+        console.log("error from verifyOTP", error);
         throw error;
     }
 };
@@ -37,6 +39,7 @@ export const register = async (firstName, lastName, email, phone) => {
         const response = await publicAxios.post('users/register/', payload);
         return response;
     } catch (error) {
+        console.log("error from register", error);
         throw error;
     }
 };

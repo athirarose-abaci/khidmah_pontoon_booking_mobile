@@ -15,8 +15,8 @@ const useTabBarScroll = () => {
 
   const getTabBarStyle = () => ({
     position: 'absolute',
-    left: 20,
-    right: 20,
+    // left: 20,
+    // right: 20,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },

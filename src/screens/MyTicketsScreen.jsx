@@ -13,6 +13,7 @@ import CreateButton from '../components/newBooking/CreateButton';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { useNavigation } from '@react-navigation/native';
 import useTabBarScroll from '../hooks/useTabBarScroll';
+import { useTranslation } from 'react-i18next';
 
 const MyTicketsScreen = () => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
@@ -20,6 +21,8 @@ const MyTicketsScreen = () => {
   const toastContext = useContext(ToastContext);
   const navigation = useNavigation();
   const { onScroll } = useTabBarScroll();
+
+  const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
   const [subject, setSubject] = useState('');
@@ -60,7 +63,7 @@ const MyTicketsScreen = () => {
             styles.header_title, 
             { color: isDarkMode ? Colors.white : Colors.font_gray } 
           ]}>
-            Support
+            {t('support')}
           </Text>
         </View>
 
@@ -82,13 +85,13 @@ const MyTicketsScreen = () => {
                 styles.cardHeaderText,
                 { color: isDarkMode ? Colors.white : Colors.label_light }
               ]}>
-                Raise a complaint
+                {t('raise_complaint')}
               </Text>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[ styles.label, { color: isDarkMode ? Colors.white : '#6E6E6E' } ]}>
-                Title
+                {t('title')}
               </Text>
               <TextInput
                 style={[
@@ -101,7 +104,7 @@ const MyTicketsScreen = () => {
                 ]}
                 value={subject}
                 onChangeText={setSubject}
-                placeholder="Enter complaint title"
+                placeholder={t('enter_title')}
                 placeholderTextColor={isDarkMode ? Colors.font_gray : '#C8C8C8'}
               />
             </View>
@@ -109,7 +112,7 @@ const MyTicketsScreen = () => {
             {/* Message Input */}
             <View style={styles.inputGroup}>
               <Text style={[ styles.label, { color: isDarkMode ? Colors.white : '#6E6E6E' } ]}>
-                Message
+                {t('message')}
               </Text>
               <TextInput
                 style={[
@@ -123,7 +126,7 @@ const MyTicketsScreen = () => {
                 ]}
                 value={message}
                 onChangeText={setMessage}
-                placeholder="Enter your message"
+                placeholder={t('enter_message')}
                 placeholderTextColor={isDarkMode ? Colors.font_gray : '#C8C8C8'}
                 multiline
                 numberOfLines={6}
@@ -141,14 +144,14 @@ const MyTicketsScreen = () => {
               disabled={!subject.trim() || !message.trim()}
               activeOpacity={0.8}
             >
-              <Text style={styles.sendButtonText}>Send</Text>
+              <Text style={styles.sendButtonText}>{t('send')}</Text>
             </TouchableOpacity>
 
             <Text style={[
               styles.noteText,
               { color: isDarkMode ? Colors.dark_text_secondary : '#959595' }
             ]}>
-              Note: This email is being sent to the helpdesk{'\n'}regarding your complaint. A copy will also be sent to{'\n'}your inbox.
+              {t('note')}
             </Text>
           </View>
         </ScrollView>

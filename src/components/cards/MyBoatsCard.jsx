@@ -4,10 +4,13 @@ import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../constants/customStyles";
 import { useSelector } from "react-redux";
 import { BASE_URL_IMAGE } from "../../constants/baseUrl";
+import { useTranslation } from "react-i18next";
 
 const MyBoatsCard = ({ item, isLastItem = false }) => {
   const navigation = useNavigation();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+
+  const { t } = useTranslation();
 
   const handlePress = () => {
     navigation.navigate('BoatDetail', { boatId: item.id });
@@ -56,7 +59,7 @@ const MyBoatsCard = ({ item, isLastItem = false }) => {
       <Text style={[styles.boatName, { color: isDarkMode ? Colors.white : Colors.black }]}>{item.name}</Text>
       <Text style={[styles.boatId]}>{item.registration_number}</Text>
         <Text style={[styles.boatSize, { backgroundColor: isDarkMode ? Colors.size_bg_dark : Colors.size_bg_light }]}>
-        Length: {item.length} ft
+        {t('length')}: {item.length} ft
       </Text>
     </TouchableOpacity>
   );

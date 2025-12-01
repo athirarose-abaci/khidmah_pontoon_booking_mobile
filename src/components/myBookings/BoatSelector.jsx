@@ -62,11 +62,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     marginTop: 8,
     paddingBottom: 0,
-    marginLeft: -13,
-    alignItems: 'center',
+    marginLeft: 0,
+    alignItems: 'flex-start',
     flex: 1,
     borderRadius: 6,
     overflow: 'visible',
+    minWidth: 0, // Allow flex to shrink properly
   },
   boatDropdown: {
     backgroundColor: '#F5F5F5',
@@ -79,7 +80,8 @@ const styles = StyleSheet.create({
     height: 36,
     width: '100%',
     maxWidth: 220,
-    minWidth: 180,
+    minWidth: 150, // Reduced from 180 to allow more flexibility
+    flexShrink: 1, // Allow dropdown to shrink if needed
   },
   boatPlaceholderStyle: {
     fontSize: 17,

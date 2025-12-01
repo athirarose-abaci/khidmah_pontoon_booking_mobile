@@ -1,4 +1,4 @@
-import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard, FlatList, ActivityIndicator, Linking } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Clipboard, FlatList, ActivityIndicator, Linking, I18nManager } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
@@ -25,6 +25,7 @@ import { BASE_URL_IMAGE } from '../constants/baseUrl';
 import { fetchBoats } from '../apis/boat';
 import { fetchOrganizationSettings } from '../apis/system';
 import { setIsDarkMode } from '../../store/themeSlice';
+import { useTranslation } from 'react-i18next';
 
 const ProfileScreen = () => {
   const { onScroll, insets } = useTabBarScroll();
@@ -54,6 +55,7 @@ const ProfileScreen = () => {
   const currentAuthState = useSelector(state => state.authSlice.authState);
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isFocused) {
@@ -196,7 +198,7 @@ const ProfileScreen = () => {
           source={isDarkMode ? require('../assets/images/profile_bg_dark.png') : require('../assets/images/profile_bg.png')}
         >
           <View style={styles.header_container}>
-            <Text style={styles.header_title}>My Profile</Text>
+            <Text style={styles.header_title}>{t('my_profile')}</Text>
           </View>
           <View style={styles.image_container}>
             <View style={styles.circle_background}>
@@ -249,8 +251,8 @@ const ProfileScreen = () => {
           >
             <View style={styles.boat_container}>
               <View style={styles.boat_title_row}>
-                <Text style={styles.boat_title}>My Boats</Text>
-                <Text style={styles.boat_count}>{boatsCount} boats</Text>
+                <Text style={styles.boat_title}>{t('my_boats')}</Text>
+                <Text style={styles.boat_count}>{boatsCount} {t('boats')}</Text>
               </View>
               <FlatList
                 ref={boatsListRef}
@@ -301,7 +303,7 @@ const ProfileScreen = () => {
                         <Text style={styles.boat_id}>{boat?.registration_number}</Text>
                         <View style={[styles.size_container, { backgroundColor: isDarkMode ? '#1C1D20' : 'white' }]}>
                           <Text style={[styles.size_text, { color: isDarkMode ? Colors.white : Colors.font_gray }]}>
-                            Length: {boat?.length} ft
+                           {t('length')}: {boat?.length} ft
                           </Text>
                         </View>
                       </LinearGradient>
@@ -322,7 +324,7 @@ const ProfileScreen = () => {
                   <Lucide name="headset" size={30} color={Colors.primary} />
                 </View>
                 <View style={styles.support_content}>
-                  <Text style={[styles.support_label, { color: isDarkMode ? Colors.white : '#373737' }]}>Customer Support</Text>
+                  <Text style={[styles.support_label, { color: isDarkMode ? Colors.white : '#373737' }]}>{t('customer_support')}</Text>
                   <TouchableOpacity onPress={handleCallPhoneNumber}>
                     <Text style={[styles.support_number, { color: isDarkMode ? Colors.white : '#373737' }]}>
                       {organizationSettingsData?.customer_care_phone || ""}
@@ -342,7 +344,7 @@ const ProfileScreen = () => {
               <View style={styles.option_item}>
                 <View style={styles.option_left}>
                   <Lucide name="moon" size={23} color={Colors.primary} />
-                  <Text style={[styles.option_text, { color: isDarkMode ? Colors.white : '#373737' }]}>Dark Mode</Text>
+                  <Text style={[styles.option_text, { color: isDarkMode ? Colors.white : '#373737' }]}>{t('dark_mode')}</Text>
                 </View>
                 <Switch
                   trackColor={{
@@ -372,10 +374,14 @@ const ProfileScreen = () => {
                 <View style={styles.option_left}>
                   <AntDesign name="logout" size={23} color="#FF5722" />
                   <Text style={[styles.option_text, { color: '#FF5722' }]}>
-                    Logout
+                    {t('logout')}
                   </Text>
                 </View>
-                <Lucide name="chevron-right" size={23} color="#FF5722" />
+                <Lucide 
+                  name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
+                  size={23} 
+                  color="#FF5722" 
+                />
               </TouchableOpacity>
             </View>
             
